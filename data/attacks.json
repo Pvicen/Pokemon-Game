@@ -1,0 +1,134 @@
+{
+    "Pikachu": [
+        {
+            "name": "Thunder Shock",
+            "type": "Electric",
+            "damage": 40
+        },
+        {
+            "name": "Thunderbolt",
+            "type": "Electric",
+            "damage": 90
+        }
+    ],
+    "Raichu": [
+        {
+            "name": "Thunder Shock",
+            "type": "Electric",
+            "damage": 40
+        },
+        {
+            "name": "Thunderbolt",
+            "type": "Electric",
+            "damage": 90
+        }
+    ],
+    "Bulbasaur": [
+        {
+            "name": "Vine Whip",
+            "type": "Grass",
+            "damage": 45
+        },
+        {
+            "name": "Razor Leaf",
+            "type": "Grass",
+            "damage": 55
+        }
+    ],
+    "Ivysaur": [
+        {
+            "name": "Vine Whip",
+            "type": "Grass",
+            "damage": 45
+        },
+        {
+            "name": "Razor Leaf",
+            "type": "Grass",
+            "damage": 55
+        }
+    ],
+    "Squirtle": [
+        {
+            "name": "Water Gun",
+            "type": "Water",
+            "damage": 40
+        },
+        {
+            "name": "Hydro Pump",
+            "type": "Water",
+            "damage": 110
+        }
+    ],
+    "Wartortle": [
+        {
+            "name": "Water Gun",
+            "type": "Water",
+            "damage": 40
+        },
+        {
+            "name": "Hydro Pump",
+            "type": "Water",
+            "damage": 110
+        }
+    ],
+    "Greninja": [
+        {
+            "name": "Water Gun",
+            "type": "Water",
+            "damage": 40
+        },
+        {
+            "name": "Hydro Pump",
+            "type": "Water",
+            "damage": 110
+        }
+    ],
+    "Charmeleon": [
+        {
+            "name": "Ember",
+            "type": "Fire",
+            "damage": 40
+        },
+        {
+            "name": "Flamethrower",
+            "type": "Fire",
+            "damage": 90
+        }
+    ],
+    "Charizard": [
+        {
+            "name": "Ember",
+            "type": "Fire",
+            "damage": 40
+        },
+        {
+            "name": "Flamethrower",
+            "type": "Fire",
+            "damage": 90
+        }
+    ],
+    "Mewtwo": [
+        {
+            "name": "Confusion",
+            "type": "Psychic",
+            "damage": 50
+        },
+        {
+            "name": "Psychic",
+            "type": "Psychic",
+            "damage": 90
+        }
+    ],
+    "Normal_attacks": [
+        {
+            "name": "Quick Attack",
+            "type": "Normal",
+            "damage": 30
+        },
+        {
+            "name": "Tackle",
+            "type": "Normal",
+            "damage": 45
+        }
+    ]
+}

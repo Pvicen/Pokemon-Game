@@ -1,0 +1,46 @@
+{
+    "Potion": {
+        "name": "Potion",
+        "effect": "Recupera 20 puntos de salud."
+    },
+    "SuperPotion": {
+        "name": "Super Potion",
+        "effect": "Recupera 50 puntos de salud."
+    },
+    "HyperPotion": {
+        "name": "Hyper Potion",
+        "effect": "Recupera 100 puntos de salud."
+    },
+    "FullRestore": {
+        "name": "Full Restore",
+        "effect": "Restaura toda la salud y elimina efectos negativos."
+    },
+    "Antidote": {
+        "name": "Antidote",
+        "effect": "Elimina el envenenamiento del Pokémon."
+    },
+    "ParalyzeHeal": {
+        "name": "Paralyze Heal",
+        "effect": "Elimina la parálisis del Pokémon."
+    },
+    "XAttack": {
+        "name": "X Attack",
+        "effect": "Aumenta el ataque en +20 puntos durante el combate."
+    },
+    "XDefense": {
+        "name": "X Defense",
+        "effect": "Aumenta la defensa en +20 puntos durante el combate."
+    },
+    "MuscleBand": {
+        "name": "Muscle Band",
+        "effect": "Aumenta en +10 el daño de los ataques físicos."
+    },
+    "WiseGlasses": {
+        "name": "Wise Glasses",
+        "effect": "Aumenta en +10 el daño de los ataques especiales."
+    },
+    "ToughHelmet": {
+        "name": "Tough Helmet",
+        "effect": "El rival recibe 5 puntos de daño al atacar físicamente."
+    }
+}

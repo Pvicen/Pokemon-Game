@@ -1,0 +1,105 @@
+{
+    "Pikachu": {
+        "Base_attack": 86,
+        "Element_type": "Electric",
+        "Health": 96,
+        "Defense": 74,
+        "Evolution": "Raichu",
+        "Current_level": "1",
+        "Evolution_level": 4,
+        "Special_defense": 75,
+        "Speed": 84
+    },
+    "Raichu": {
+        "Base_attack": 68,
+        "Health": 104,
+        "Element_type": "Electric",
+        "Speed": 68,
+        "Current_level": "Max",
+        "Defense": 83,
+        "Special_defense": 85
+    },
+    "Bulbasaur": {
+        "Base_attack": 87,
+        "Health": 88,
+        "Element_type": "Grass",
+        "Defense": 79,
+        "Current_level": "1",
+        "Evolution": "Ivysaur",
+        "Evolution_level": 1,
+        "Special_defense": 94,
+        "Speed": 94
+    },
+    "Ivysaur": {
+        "Base_attack": 70,
+        "Health": 79,
+        "Element_type": "Grass",
+        "Defense": 73,
+        "Speed": 69,
+        "Evolution_level": 1,
+        "Current_level": "Max",
+        "Special_defense": 54
+    },
+    "Squirtle": {
+        "Base_attack": 102,
+        "Health": 93,
+        "Element_type": "Water",
+        "Defense": 87,
+        "Evolution": "Watortle",
+        "Evolution_level": 1,
+        "Special_defense": 61,
+        "Speed": 100,
+        "Current_level": "1"
+    },
+    "Wartortle": {
+        "Base_attack": 102,
+        "Health": 96,
+        "Element_type": "Water",
+        "Defense": 99,
+        "Evolution_level": 1,
+        "Special_defense": 78,
+        "Speed": 78,
+        "Current_level": "Max"
+    },
+    "Charmeleon": {
+        "Base_attack": 81,
+        "Health": 121,
+        "Element_type": "Fire",
+        "Defense": 75,
+        "Evolution": "Charizard",
+        "Evolution_level": 1,
+        "Special_defense": 76,
+        "Speed": 88,
+        "Current_level": "1"
+    },
+    "Charizard": {
+        "Base_attack": 114,
+        "Health": 123,
+        "Element_type": "Fire",
+        "Defense": 75,
+        "Evolution_level": 1,
+        "Special_defense": 75,
+        "Speed": 110,
+        "Current_level": "Max"
+    },
+    "Mewtwo": {
+        "Base_attack": 98,
+        "Health": 91,
+        "Element_type": "Psychic",
+        "Defense": 68,
+        "Evolution_level": 1,
+        "Special_defense": 105,
+        "Speed": 79,
+        "Current_level": "Max"
+    },
+    "Greninja": {
+        "Base_attack": 111,
+        "Health": 100,
+        "Defense": 78,
+        "Evolution": "",
+        "Evolution_level": 1,
+        "Special_defense": 70,
+        "Speed": 82,
+        "Current_level": "Max"
+    }
+}
