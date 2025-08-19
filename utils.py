@@ -32,7 +32,7 @@ def load_pokemons_json():
         if not name.strip():
             continue
         
-        special_attakcs = attacks_data.get(name, [])
+        special_attacks = attacks_data.get(name, [])
         normal_attacks = attacks_data.get("Normal_attacks", [])
         
         pokemon = Pokemon(

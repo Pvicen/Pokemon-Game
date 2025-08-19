@@ -12,7 +12,7 @@ class IAcontroller():
         dmg = atk["damage"]
         
         if atk_type == "Normal":
-            estimated_damage = max(1, dmg, - target.defense * 0.4)
+            estimated_damage = max(1, dmg - target.defense * 0.4)
             mult = 1.0
         else:
             mult, _ = get_effectiveness(actor.element_type, target.element_type)

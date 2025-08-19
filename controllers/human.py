@@ -13,27 +13,71 @@ class HumanController():
     def SelecPokemon(actor):
         
         initial_pokemons = load_pokemons_json()
-        option1 = initial_pokemons[2]
-        option2 = initial_pokemons[4]
-        option3 = initial_pokemons[6]
+        
         print("Hello player, Now you need choose your first pokemon thats your options")
         
+        for pokemon in initial_pokemons:
+            print(f"name: {pokemon['name']} type: {pokemon['type']} level: {pokemon['level']}")
+            
 
     def ChooseAttack(actor):
 
-        all_attacks = list(actor.normal_attakcs) + list(actor.special_attakcs)
-
-        for atk in all_attacks:
-            if isinstance(atk, dict):
+        all_attacks = []
+        
+        if getattr(actor, "special_attacks", None):
+            all_attacks.extend(list(actor.special_attacks))
+            
+        if getattr(actor, "normal_attacks", None):
+            all_attacks.extend(list(actor.normal_attacks))
+        
+        if not all_attacks:
+            print(f"🤖 {getattr(actor, 'name', 'Pokémon')} don’t have available attacks.")
+            return None
+        
+        if not isinstance(atk, dict) or not all( k in atk for k in ("name", "type", "damage")):
+                print("Invalid attack format")
+                return None
+        
+        while True:
+            print("\n🌀 Available attacks:")
+            for i, atk in enumerate(all_attacks, start=1):
+                atk_type = str(atk["type"]).capitalize()
+                atk_dmg = int(atk["damage"])
+                print(f"[{i}: {atk['name']} | Type: {atk_type} | Damage: {atk_dmg}")
+            print("[0: Cancel] / no attack")
+                
+            print("\n")
+                
+            choice = input("Choose your attack (number): ")
+            
+            if choice == "0":
+                print("😴 You decided not to attack this turn.")
+                return None
+            
+            if not choice.isdigit():
+                print("❌ Invalid input, please enter a number.")
                 continue
+            
+            index = int(choice) - 1
+                
+            if 0 <= index < len(all_attacks):
+                chosen_attack = all_attacks[index]
+                return chosen_attack
+            else:   
+                print("❌ Invalid number, no attack executed.")
+                return None
 
-        if not atk:
-            print("Attacks not avaliable")
+
+    def Human_turn(actor, target):
+        
+        attack = HumanController.ChooseAttack(actor)
+
+        if not attack:
+            print(f"😴 {actor.name} decided not to attack this turn.")
             return
 
-        if atk["normal"] == "normal":
-            print(f"name: {atk["name"]} type: {atk["type"]} damage: {atk["damage"]}") 
-        else:
-            print(f"name: {atk["name"]} type: {atk["type"]} damage: {atk["damage"]}")
+        name = attack["name"]
+        base_dmg = int(attack["damage"])
+        type = str(attack["type"]).capitalize()
 
-        
+        print(f"\n😎 {actor.name} attacked with {name} (type: {type}, damage: {base_dmg})"  )
