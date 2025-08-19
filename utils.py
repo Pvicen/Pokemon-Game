@@ -38,7 +38,7 @@ def load_pokemons_json():
         pokemon = Pokemon(
             name = name,
             normal_attacks = normal_attacks,
-            special_attacks = special_attakcs,
+            special_attacks = special_attacks,
             health = attrs.get("Health", 0),
             element_type = attrs.get("Element_type", "unknown"),
             defense = attrs.get("Defense", 0),
