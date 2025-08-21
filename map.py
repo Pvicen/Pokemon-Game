@@ -76,7 +76,6 @@ def map():
                     char_to_draw = " @"
                     
                     if object_in_cell:
-                        pokemon_combat(player_pokemon=None, enemy_pokemon=None)
                         map_objets.remove(object_in_cell)
                         
                     
@@ -93,10 +92,10 @@ def map():
         direction = readchar.readchar()
         
         if direction == "w":
-            new_position = [my_position[POSITION_X], (my_position[POSITION_Y] - 1) % MAP_WITHD]
+            new_position = [my_position[POSITION_X], (my_position[POSITION_Y] - 1) % MAP_HEIGHT]
             
         elif direction == "s":
-            new_position = [my_position[POSITION_X], (my_position[POSITION_Y] + 1) % MAP_WITHD]
+            new_position = [my_position[POSITION_X], (my_position[POSITION_Y] + 1) % MAP_HEIGHT]
             
         elif direction == "a":
             new_position = [(my_position[POSITION_X] - 1) % MAP_WITHD, my_position[POSITION_Y]]

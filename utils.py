@@ -1,70 +1,119 @@
 import json
 import random
-import os
+from pathlib import Path
+from functools import lru_cache
 from .models import Pokemon, EvolvedPokemon
 
-def determine_attack_order(pokemon1, pokemon2):
-    if pokemon1.speed > pokemon2.speed:
-        return pokemon1, pokemon2
+def determine_attack_order(p1, p2):
+    if p1.speed > p2.speed:
+        return p1, p2
     
-    elif pokemon2.speed > pokemon1.speed:
-        return pokemon2, pokemon1
+    elif p2.speed > p1.speed:
+        return p2, p1
     
     else:
-        return random.sample([pokemon1, pokemon2], 2)
+        return tuple(random.sample([p1, p2], 2))
+
+def _project_root():
+    here = Path(__file__).resolve().parent
+    
+    for base_carpet in (here, here.parent, here.parent.parent):
+        d = base_carpet / "data"
+        if d.exists() and d.is_dir():
+            return base_carpet
+    raise FileNotFoundError("Data directory not found in the project structure.")
+
+def _data_dir():
+    return _project_root() / "data"
 
 
-def load_attacks_json():
-    attack_path = os.path.join(os.path.dirname(__file__), "data", "attacks.json")
-    with open(attack_path, "r") as file:
-        return json.load(file)
-
-
-def load_pokemons_json():
-    data_path = os.path.join(os.path.dirname(__file__), "data", "pokemons.json")
-    with open(data_path, "r") as file:
-        data = json.load(file)
+def _read_json(path: Path):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
         
-    attacks_data = load_attacks_json()
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"❌ File not found: {path.name} in {path.parent} directory.") from e
+    
+    except json.JSONDecodeError as e:
+        raise ValueError(f"❌ Error decoding JSON from file: {path.name}. Please check the file format (line {e.lineno}, columna  {e.colno}).") from e
+    
 
-    pokemons = []
+@lru_cache
+def load_attacks_json() -> dict:
+    
+    data = _read_json(_data_dir() / "attacks.json")
+    
+    if not isinstance(data, dict):
+        raise ValueError("❌ Invalid format in attacks.json. Expected a dict of attacks.")
+    
+    for key, lst in data.items():
+        
+        if not isinstance(lst, list):
+            raise ValueError(f"❌ Invalid format for attack '{key}' in attacks.json. Expected a list of attacks.")
+        
+        for atk in lst:
+            if not (isinstance(atk, dict) and all(k in atk for k in ("name", "type", "damage"))):
+                raise ValueError(f"❌ Invalid attack format in '{key}:{atk}'.")
+    
+    return data
+
+@lru_cache
+def load_pokemons_json() -> list[Pokemon]:
+    
+    data = _read_json(_data_dir() / "pokemons.json")
+    
+    if not isinstance(data, dict):
+        raise ValueError("❌ Invalid format in pokemons.json. Expected a dict of Pokémon.")
+    attacks_map= load_attacks_json()
+    
+    pokemons:list[Pokemon] = []
+    
     for name, attrs in data.items():
-        if not name.strip():
-            continue
+        if not isinstance(attrs, dict) or not name.strip():
+            raise ValueError(f"❌ Invalid format for Pokémon '{name}' in pokemons.json. Expected a dict of attributes.")
         
-        special_attacks = attacks_data.get(name, [])
-        normal_attacks = attacks_data.get("Normal_attacks", [])
-        
-        pokemon = Pokemon(
-            name = name,
-            normal_attacks = normal_attacks,
-            special_attacks = special_attacks,
-            health = attrs.get("Health", 0),
-            element_type = attrs.get("Element_type", "unknown"),
-            defense = attrs.get("Defense", 0),
-            special_defense = attrs.get("Special_defense", 0),
-            speed = attrs.get("Speed", 0),
-            evolution = attrs.get("Evolution", None),
-            evolution_level = attrs.get("Evolution_level", None),
-            current_level = attrs.get("Current_level", None),
-        )
-        pokemons.append(pokemon)
+        special_attacks = attacks_map.get(name, [])
+        normal_attacks = attacks_map.get("Normal_attacks", [])
+        pokemons.append(Pokemon(
+            name=name,
+            normal_attacks=normal_attacks,
+            special_attacks=special_attacks,
+            health=attrs.get("Health", 0),
+            element_type=attrs.get("Element_type", "unknown"),
+            defense=attrs.get("Defense", 0),
+            special_defense=attrs.get("Special_defense", 0),
+            speed=attrs.get("Speed", 0),
+            evolution=attrs.get("Evolution", None),
+            evolution_level=attrs.get("Evolution_level", None),
+            current_level=attrs.get("Current_level", None),
+        ))
     
     return pokemons
 
 
-def load_items():
+@lru_cache
+def load_type_chart() -> dict:
+    data = _read_json(_data_dir() / "type_effectiveness.json")
+    if not isinstance(data, dict):
+        raise ValueError("❌ Invalid format in type_effectiveness.json. Expected a dict of type effectiveness.")
+    return data
+
+
+@lru_cache
+def load_items() -> dict:
     
-    items_path = os.path.join(os.path.dirname(__file__), "data", "items.json")
-    with open(items_path, "r", encoding="utf-8") as file:
-        items = json.load(file)
+    data = _read_json(_data_dir() / "items.json")
+    if not isinstance(data, dict):
+        raise ValueError("❌ Invalid format in items.json. Expected a dict of items.")
 
     items_dict = {}
     
-    for name, effect in items.items():
-        print(name, effect)
+    for name, effect in data.items():
+        if not isinstance(effect, dict) or not all(k in effect for k in ("effect", "type")):
+            raise ValueError(f"❌ Invalid item format for '{name}': {effect}. Expected a dict with 'effect' and 'type'.")
         items_dict[name] = effect
 
-    return items_dict   
+    return data, items_dict  
         
     

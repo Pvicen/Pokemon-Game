@@ -39,7 +39,7 @@ class IAcontroller():
         
         
         for atk in all_attakcs:
-            estimated_damage, mult = IAcontroller.CalculatingDamages(actor, target, atk)
+            mult, estimated_damage = IAcontroller.CalculatingDamages(actor, target, atk)
             if estimated_damage > best_estimated or (estimated_damage == best_estimated and mult > best_mult):
                 best = atk
                 best_estimated = estimated_damage

@@ -23,7 +23,7 @@ class Pokemon:
         self.current_level = current_level
         
         
-    def ShowAllStats(self):
+    def ShowStats(self):
         print(f"Attributes of {self.name}:", sep="")
         print(f"-type: {self.element_type}")
         print(f"-Health: {self.health}")
@@ -33,12 +33,6 @@ class Pokemon:
         print(f"-Evolution: {self.evolution}")
         print(f"-Evolution_level: {self.evolution_level}")
         print(f"-Current_level: {self.current_level}")
-    
-    def ShowBasicStats(self):
-        print(f"Attributes of {self.name}:", sep="")
-        print(f"-Health: {self.health}")
-        print(f"-Current_level: {self.current_level}")
-        
     
     def is_alive(self):
         if self.health < 0:
@@ -55,10 +49,10 @@ class Pokemon:
     
     def perform_combat(self, enemy, get_effectinveness, calculate_damage):
         self.health_bar()
-        self.show_stats()
+        self.ShowStats()
         print("\n")
         enemy.health_bar()
-        enemy.show_stats()
+        enemy.ShowStats()
         print("\n")
             
     def upgrade_pokemon(self):
@@ -72,8 +66,8 @@ class EvolvedPokemon(Pokemon):
         self.evolution_attack = evolution_attack
         self.used_evolution_attack = False
         
-    def show_stats(self):
-        super().show_stats()
+    def ShowStats(self):
+        super().ShowStats()
         print(f"-Evolution_Attack: {self.evolution_attack}")
     
     def combined_attack(self, enemy):

@@ -1,12 +1,8 @@
-import json
-import os
+from .utils import load_type_chart
 import random
 
 # Open json file
-json_path = os.path.join(os.path.dirname(__file__), "data", "type_effectiveness.json")
-
-with open(json_path, "r", encoding="utf-8") as file:
-    POKEMON_TYPE_EFFECTIVENESS = json.load(file)
+POKEMON_TYPE_EFFECTIVENESS = load_type_chart()
 
 # get damage multiplier
 def get_effectiveness(attacker_type: str, defender_type: str) -> float:

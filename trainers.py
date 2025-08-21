@@ -22,7 +22,7 @@ class Trainer:
         return any(p.is_alive() for p in self.team)
     
 
-    def SwitchPokemon(self, index: int) -> bool:
+    def CheckPokemonSwitch(self, index: int) -> bool:
         if 0 <= index < len(self.team) and self.team[index].is_alive() and index != self.active_index:
             self.active_index = index
             print(f"Switched to {self.ActivePokemon.name}")
@@ -38,6 +38,6 @@ class Trainer:
                 return True
         return False
     
-    def UseItems(slef, item_name: str) -> bool:
+    def UseItems(self, item_name: str) -> bool:
         pass # Implement item usage logic here
     
