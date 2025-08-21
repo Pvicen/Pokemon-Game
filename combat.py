@@ -13,15 +13,12 @@ def pokemon_combat(player_pokemon, enemy_pokemon):
         print("\n" + "=" * 40)
         print(f"🌀 TURN {turn}")
         print("=" * 40 + "\n")
-                
-        
 
 
         input("\n🔽 End of shift. Press [ENTERL to continue...")
         os.system("cls" if os.name == "nt" else "clear")
 
 
-        
 
         turn += 1
 
