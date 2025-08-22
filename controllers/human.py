@@ -12,42 +12,39 @@ class HumanController():
         print("[0] - Flee")
         
         option = input("Enter your choice: ").strip()
-        
         if not option.isdigit():
             print("❌ Invalid input, please enter a number.")
             return None
         
         option = int(option)
-        if option.isdigit():
-            
-            if option == 1:
-                atk = self.ChooseAttack(trainer.ActivePokemon)
-                return {"type": "attack", "attack": atk} if atk else {"type": "skip"}
+        if option == 1:
+            atk = self.ChooseAttack(trainer.ActivePokemon)
+            return {"type": "attack", "attack": atk} if atk else {"type": "skip"}
                 
-            elif option == 2:
-                idx = self.SwitchPokemon(trainer)
-                return {"type": "switch", "index": idx} if idx is not None else {"type": "skip"}
+        elif option == 2:
+            idx = self.SwitchPokemon(trainer)
+            return {"type": "switch", "index": idx} if idx is not None else {"type": "skip"}
             
-            # This is a placeholder for item usage logic
-            # You can implement item usage logic in the Trainer class
-            # and call it here.
-            elif option == 3:
-                item = self.UseItem(trainer)
-                return {"type": "item", "item": item} if item else {"type": "skip"}
+        # This is a placeholder for item usage logic
+        elif option == 3:
+            item = self.UseItem(trainer)
+            return {"type": "item", "item": item} if item else {"type": "skip"}
             
-            elif option == 0:
-                print("You chose to flee from the battle.")
-                return {"type": "flee"}
+        elif option == 0:
+            return {"type": "flee"}
                 
+        return None
                 
             
-    
-    
+    @staticmethod
     def UseItem(actor):
         
         items = load_items()
-        
-        print("Avaliavle items for use")
+        if not items:
+            print("No items available.")
+            return None
+        # TODO: mostrar items y elegir uno
+        return None
         
     def SelecFirstPokemon(trainer, actor):
         
@@ -81,7 +78,7 @@ class HumanController():
             else:
                 print(f"❌❌ Number out of range (1-{len(initials)}). Try again...")
                 
-
+    @staticmethod
     def ChooseAttack(actor):
 
         all_attacks = []
@@ -139,17 +136,32 @@ class HumanController():
         for i, p in enumerate(trainer.team, start=1):
             status = "Ok" if p.is_alive() else "K.O"
             active = " (Active)" if i - 1 == trainer.active_index else ""
-            print(f"[{i}] - {p.name} {active} - {p.health}/{p.maximun_hp} - Status: {status}{active}")
+            print(f"[{i}] - {p.name} - {p.health}/{p.maximun_hp} - Status: {status}{active}")
 
-        choice = input("Enter the number of the Pokémon to switch: ").strip()
+        print("[0] - Cancel switch")
         
-        if not choice.isdigit():
-            print("❌ Invalid input, please enter a number.")
-            return None
-        
-        index = int(choice) - 1
-        return index if trainer.SwitchPokemon(index) else None
+        while True:
+            
+            choice = input("Enter the number of the Pokémon to switch: ").strip()
+            
+            if choice == "0":
+                return None
+            
+            if not choice.isdigit():
+                print("❌ Invalid input, please enter a number.")
+                return None
+            
+            index = int(choice) - 1
+            if trainer.CheckPokemonSwitch(index):
+                return index
+            else:
+                print("❌ Invalid choice. Make sure the Pokémon is alive and not the current active one.")
 
-    def Human_turn(actor, target):
+
+    def Human_turn(actor, target, trainer):
         
-        pass
+        idx = HumanController.ChooseSwitchPokemon(trainer)
+        if idx is not None:
+            trainer.SwitchPokemon(idx)
+            
+        pass # Implement attack logic here

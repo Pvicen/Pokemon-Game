@@ -7,7 +7,7 @@ class Trainer:
         if not team or not all(isinstance(p, Pokemon) for p in team):
             raise ValueError("Equipo inválido")
         
-        self
+        self.name = name
         self.team = team
         self.active_index = 0
         self.controller = controller
@@ -23,20 +23,20 @@ class Trainer:
     
 
     def CheckPokemonSwitch(self, index: int) -> bool:
-        if 0 <= index < len(self.team) and self.team[index].is_alive() and index != self.active_index:
-            self.active_index = index
-            print(f"Switched to {self.ActivePokemon.name}")
-            return True
+        return (
+            0 <= index < len(self.team)
+            and self.team[index].is_alive()
+            and index != self.active_index
+        )
+        
     
-    def AutoSwitchPokemon(self) -> bool:
-        if self.active.is_alive():
-           return True
-        for i, pokemon in enumerate(self.team):
-            if pokemon.is_alive() and i != self.active_index:
-                self.active_index = i
-                print(f"Switched to {pokemon.name}")
-                return True
+    def SwitchPokemon(self, index: int) -> bool:
+        if self.CheckPokemonSwitch(index):
+            self.active_index = index
+            print(f"🔄 {self.name} switched to {self.ActivePokemon.name}!")
+            return True
         return False
+        
     
     def UseItems(self, item_name: str) -> bool:
         pass # Implement item usage logic here

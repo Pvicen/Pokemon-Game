@@ -58,7 +58,7 @@ class Pokemon:
     def upgrade_pokemon(self):
         pass
         
-
+"""""
 class EvolvedPokemon(Pokemon):
     
     def __init__(self, name, element_type, health, base_attack, defense, speed, special_attacks, evolution_attack):
@@ -82,3 +82,4 @@ class EvolvedPokemon(Pokemon):
             
         else:
             self.use_attack(enemy)
+"""

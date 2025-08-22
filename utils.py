@@ -107,13 +107,10 @@ def load_items() -> dict:
     if not isinstance(data, dict):
         raise ValueError("❌ Invalid format in items.json. Expected a dict of items.")
 
-    items_dict = {}
-    
     for name, effect in data.items():
         if not isinstance(effect, dict) or not all(k in effect for k in ("effect", "type")):
             raise ValueError(f"❌ Invalid item format for '{name}': {effect}. Expected a dict with 'effect' and 'type'.")
-        items_dict[name] = effect
 
-    return data, items_dict  
+    return data
         
     

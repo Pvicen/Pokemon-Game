@@ -25,9 +25,9 @@ if __name__ == "__main__":
     main()
 
 # Agregar las siguientes cosas:
-# 1) Agregar el mapa interativo
-# 2) Eleccion de pokemon a usar
-# 3) Crear una historia
-# 4) Crear sistema de evolucion
-# 5) crear el sistema de inventario
-# 6) Hacer que el enemigo ataque segun mas le convenga
+# 1) Agregar el mapa interativo 
+# 3) Crear una historia 
+# 5) crear el sistema de inventario **
+# 6) Crear sistema de niveles y experiencia 
+# 7) hacer combate funcional 
+# 8) terminar de pulir la IA, terminar el controlador humano y el trainers**
