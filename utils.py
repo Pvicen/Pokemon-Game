@@ -140,7 +140,7 @@ def _Validating_Items(key: str, item: dict[str, Any]) -> Dict[str, Any]:
             try:
                 effect["amount"] = int(amount)
             except Exception:
-                 raise ValueError(f"❌ Item '{name}' (heal) 'percent' must be a float in (0.0, 1.0].")ç
+                 raise ValueError(f"❌ Item '{name}' (heal) 'percent' must be a float in (0.0, 1.0].")
         if percent is not None:
             try:
                 effect["percent"] = float(percent)
