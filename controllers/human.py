@@ -5,35 +5,38 @@ from ..trainers import Trainer
 class HumanController():
     
     def choose_action(self, trainer, enemy_trainer):
-        print("\nChoose your action:")
-        print("[1] - Attack")
-        print("[2] - Switch Pokémon")
-        print("[3] - Use Item")
-        print("[0] - Flee")
         
-        option = input("Enter your choice: ").strip()
-        if not option.isdigit():
-            print("❌ Invalid input, please enter a number.")
-            return None
-        
-        option = int(option)
-        if option == 1:
-            atk = self.ChooseAttack(trainer.ActivePokemon)
-            return {"type": "attack", "attack": atk} if atk else {"type": "skip"}
-                
-        elif option == 2:
-            idx = self.SwitchPokemon(trainer)
-            return {"type": "switch", "index": idx} if idx is not None else {"type": "skip"}
+        while True:
+            print("\nChoose your action:")
+            print("[1] - Attack")
+            print("[2] - Switch Pokémon")
+            print("[3] - Use Item")
+            print("[0] - Flee")
             
-        # This is a placeholder for item usage logic
-        elif option == 3:
-            item = self.UseItem(trainer)
-            return {"type": "item", "item": item} if item else {"type": "skip"}
+            option = input("Enter your choice: ").strip()
+            if not option.isdigit():
+                print("❌ Invalid input, please enter a number.")
+                return None
             
-        elif option == 0:
-            return {"type": "flee"}
+            option = int(option)
+            if option == 1:
+                atk = self.ChooseAttack(trainer.ActivePokemon)
+                return {"type": "attack", "attack": atk} if atk else {"type": "skip"}
+                    
+            elif option == 2:
+                idx = self.SwitchPokemon(trainer)
+                return {"type": "switch", "index": idx} if idx is not None else {"type": "skip"}
                 
-        return None
+            # This is a placeholder for item usage logic
+            elif option == 3:
+                item = self.UseItem(trainer)
+                return {"type": "item", "item": item} if item else {"type": "skip"}
+                
+            elif option == 0:
+                return {"type": "flee"}
+            
+            else:
+                print("❌ Invalid option, please choose 0-3.")
                 
             
     @staticmethod
@@ -45,6 +48,7 @@ class HumanController():
             return None
         # TODO: mostrar items y elegir uno
         return None
+    
         
     def SelecFirstPokemon(trainer, actor):
         
@@ -96,9 +100,7 @@ class HumanController():
         while True:
             
             print("\n🌀 Available attacks:")
-            
             for i, atk in enumerate(all_attacks, start=1):
-                
                 if not isinstance(atk, dict) or not all( k in atk for k in ("name", "type", "damage")):
                     print("Invalid attack format")
                     return None
@@ -108,40 +110,35 @@ class HumanController():
                 print(f"[{i}]: {atk['name']} | Type: {atk_type} | Damage: {atk_dmg}")
             print("[0: Cancel] / no attack")
                 
-            print("\n")
-                
             choice = input("Choose your attack (number): ")
-            
             if choice == "0":
                 print("😴 You decided not to attack this turn.")
                 return None
-            
             if not choice.isdigit():
                 print("❌ Invalid input, please enter a number.")
                 continue
             
             index = int(choice) - 1
-                
             if 0 <= index < len(all_attacks):
-                chosen_attack = all_attacks[index]
-                return chosen_attack
-            else:   
-                print("❌ Invalid number, no attack executed.")
-                return None
+                return all_attacks[index]  
+            print("❌ Invalid number, try again.")
     
     
     def ChooseSwitchPokemon(self, trainer):
+        
+        has_options = any(trainer.CheckPokemonSwitch(i) for i,_ in enumerate(trainer.team))
+        if not has_options:
+            print("🛑 No available Pokémon to switch.")
+            return None
         
         print("Choose a Pokémon to switch (alive and different from the current):")
         for i, p in enumerate(trainer.team, start=1):
             status = "Ok" if p.is_alive() else "K.O"
             active = " (Active)" if i - 1 == trainer.active_index else ""
             print(f"[{i}] - {p.name} - {p.health}/{p.maximun_hp} - Status: {status}{active}")
-
         print("[0] - Cancel switch")
         
         while True:
-            
             choice = input("Enter the number of the Pokémon to switch: ").strip()
             
             if choice == "0":
@@ -158,10 +155,8 @@ class HumanController():
                 print("❌ Invalid choice. Make sure the Pokémon is alive and not the current active one.")
 
 
-    def Human_turn(actor, target, trainer):
+    def Human_turn(trainer, enemy_trainer):
         
-        idx = HumanController.ChooseSwitchPokemon(trainer)
-        if idx is not None:
-            trainer.SwitchPokemon(idx)
-            
-        pass # Implement attack logic here
+        controller = trainer.controller or HumanController()
+        action = controller.choose_action(trainer, enemy_trainer)
+        return action or {"type": "skip"}

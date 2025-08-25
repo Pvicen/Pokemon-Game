@@ -26,7 +26,7 @@ class IAcontroller():
         
         if not actor.is_alive():
             idx = IAcontroller.BestSwitch(trainer, target)
-            return {"type": "switch", "pokemon": idx} if idx is not None else {"type": "skip"}
+            return {"type": "switch", "index": idx} if idx is not None else {"type": "skip"}
         
         current_score = IAcontroller._current_position_score(actor, target)
         best_idx = IAcontroller.BestSwitch(trainer, target)
@@ -35,13 +35,13 @@ class IAcontroller():
             best_switch_score = IAcontroller._current_position_score(trainer.team[best_idx], target)
             
         if best_switch_score is not None and best_switch_score >= 1.30 * current_score:
-            return {"type": "switch", "pokemon": best_idx}
+            return {"type": "switch", "index": best_idx}
         
         best_dmg, best_atk = IAcontroller._Calculating_Damages(actor, target)
         if best_atk:
             return {"type": "attack", "attack": best_atk}
         if best_idx is not None:
-            return {"type": "switch", "pokemon": best_idx}
+            return {"type": "switch", "index": best_idx}
         return {"type": "skip"}
         
     
@@ -82,7 +82,7 @@ class IAcontroller():
         # Calculate how much damage the enemy can do to the ally
         defense_mult, _ = get_effectiveness(enemy.element_type, ally.element_type)
         #Calculate  the best damage the ally can do to the enemy
-        best_off_damage = IAcontroller._Calculating_Damages(ally, enemy)
+        best_off_damage, _ = IAcontroller._Calculating_Damages(ally, enemy)
         
         hp_ratio = ally.health / ally.maximun_hp if ally.maximun_hp > 0 else 0.0
         speed_bonus = 1.10 if getattr(ally, "speed", 0) > getattr(enemy, "speed", 0) else 1.00
@@ -124,7 +124,7 @@ class IAcontroller():
         
         offense_mult, _ = get_effectiveness(active.element_type, enemy.element_type)
         defense_mult, _ = get_effectiveness(enemy.element_type, active.element_type)
-        best_off_damage = IAcontroller._Calculating_Damages(active, enemy)
+        best_off_damage, _ = IAcontroller._Calculating_Damages(active, enemy)
         
         hp_ratio = active.health / active.maximun_hp if active.maximun_hp > 0 else 0.0
         speed_bonus = 1.10 if getattr(active, "speed", 0) > getattr(enemy, "speed", 0) else 1.00
@@ -143,25 +143,6 @@ class IAcontroller():
     
     
     @staticmethod
-    def IA_turn(actor, target):
+    def IA_turn(trainer, enemy_trainer):
         
-        attack = IAcontroller.BestMove(actor, target)
-
-        if not attack:
-            return
-
-        name = attack["name"]
-        base_dmg = int(attack["damage"])
-        type = str(attack["type"]).capitalize()
-
-        if type == "Normal":
-            dmg, msg = damage_without_element(actor, target, base_dmg)
-            print(msg)
-        else:
-            dmg, eff_msg = get_effectiveness(actor.element_type, target.element_type)
-            print(eff_msg)
-            dmg = calculate_damage(actor, target, base_dmg, attack_type=type)
-            
-        target.health -= dmg
-        target.is_alive()
-        
+        return IAcontroller.ChooseAction(trainer, enemy_trainer)

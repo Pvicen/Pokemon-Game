@@ -1,46 +1,127 @@
 {
-    "Potion": {
-        "name": "Potion",
-        "effect": "Recupera 20 puntos de salud."
+  "Potion": {
+    "name": "Potion",
+    "type": "healing",
+    "target": "ally",
+    "effect": {
+      "kind": "heal",
+      "amount": 20
     },
-    "SuperPotion": {
-        "name": "Super Potion",
-        "effect": "Recupera 50 puntos de salud."
+    "battle_only": false,
+    "reusable": false,
+    "description": "Restores 20 HP."
+  },
+  "SuperPotion": {
+    "name": "Super Potion",
+    "type": "healing",
+    "target": "ally",
+    "effect": {
+      "kind": "heal",
+      "amount": 50
     },
-    "HyperPotion": {
-        "name": "Hyper Potion",
-        "effect": "Recupera 100 puntos de salud."
+    "battle_only": false,
+    "reusable": false,
+    "description": "Restores 50 HP."
+  },
+  "MaxPotion": {
+    "name": "Max Potion",
+    "type": "healing",
+    "target": "ally",
+    "effect": {
+      "kind": "heal",
+      "percent": 1.0
     },
-    "FullRestore": {
-        "name": "Full Restore",
-        "effect": "Restaura toda la salud y elimina efectos negativos."
+    "battle_only": false,
+    "reusable": false,
+    "description": "Fully restores HP."
+  },
+  "Revive": {
+    "name": "Revive",
+    "type": "revive",
+    "target": "ally",
+    "effect": {
+      "kind": "revive",
+      "revive_hp": "half"
     },
-    "Antidote": {
-        "name": "Antidote",
-        "effect": "Elimina el envenenamiento del Pokémon."
+    "battle_only": false,
+    "reusable": false,
+    "description": "Revives a fainted Pokémon with half HP."
+  },
+  "MaxRevive": {
+    "name": "Max Revive",
+    "type": "revive",
+    "target": "ally",
+    "effect": {
+      "kind": "revive",
+      "revive_hp": "full"
     },
-    "ParalyzeHeal": {
-        "name": "Paralyze Heal",
-        "effect": "Elimina la parálisis del Pokémon."
+    "battle_only": false,
+    "reusable": false,
+    "description": "Revives a fainted Pokémon with full HP."
+  },
+  "XAttack": {
+    "name": "X Attack",
+    "type": "buff",
+    "target": "ally",
+    "effect": {
+      "kind": "buff",
+      "stat": "normal_attacks",
+      "stages": 1
     },
-    "XAttack": {
-        "name": "X Attack",
-        "effect": "Aumenta el ataque en +20 puntos durante el combate."
+    "battle_only": true,
+    "reusable": false,
+    "description": "Raises the power of normal attacks by 1 stage this battle."
+  },
+  "XSpecialAttack": {
+    "name": "X Special Attack",
+    "type": "buff",
+    "target": "ally",
+    "effect": {
+      "kind": "buff",
+      "stat": "special_attacks",
+      "stages": 1
     },
-    "XDefense": {
-        "name": "X Defense",
-        "effect": "Aumenta la defensa en +20 puntos durante el combate."
+    "battle_only": true,
+    "reusable": false,
+    "description": "Raises the power of special attacks by 1 stage this battle."
+  },
+  "XDefense": {
+    "name": "X Defense",
+    "type": "buff",
+    "target": "ally",
+    "effect": {
+      "kind": "buff",
+      "stat": "defense",
+      "stages": 1
     },
-    "MuscleBand": {
-        "name": "Muscle Band",
-        "effect": "Aumenta en +10 el daño de los ataques físicos."
+    "battle_only": true,
+    "reusable": false,
+    "description": "Raises Defense by 1 stage this battle."
+  },
+  "XSpecialDefense": {
+    "name": "X Special Defense",
+    "type": "buff",
+    "target": "ally",
+    "effect": {
+      "kind": "buff",
+      "stat": "special_defense",
+      "stages": 1
     },
-    "WiseGlasses": {
-        "name": "Wise Glasses",
-        "effect": "Aumenta en +10 el daño de los ataques especiales."
+    "battle_only": true,
+    "reusable": false,
+    "description": "Raises Special Defense by 1 stage this battle."
+  },
+  "ToughHelmet": {
+    "name": "Tough Helmet",
+    "type": "buff",
+    "target": "enemy",
+    "effect": {
+      "kind": "buff",
+      "stat": "defense",
+      "stages": -1
     },
-    "ToughHelmet": {
-        "name": "Tough Helmet",
-        "effect": "El rival recibe 5 puntos de daño al atacar físicamente."
-    }
+    "battle_only": true,
+    "reusable": false,
+    "description": "Debuffs the enemy's Defense by 1 stage (example enemy-target item)."
+  }
 }

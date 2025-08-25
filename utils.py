@@ -2,6 +2,7 @@ import json
 import random
 from pathlib import Path
 from functools import lru_cache
+from typing import Any, Dict
 from .models import Pokemon, EvolvedPokemon
 
 def determine_attack_order(p1, p2):
@@ -100,17 +101,103 @@ def load_type_chart() -> dict:
     return data
 
 
+def _Validating_Items(key: str, item: dict[str, Any]) -> Dict[str, Any]:
+    
+    _ALLOWED_ITEM_TYPES = {"healing", "revive", "buff"}
+    _ALLOWED_TARGETS = {"ally", "enemy"}
+    _ALLOWED_EFFECTS_KINDS = {"heal", "revive", "buff"}
+    _ALLOWED_BUFF_STATS = {"attack", "defense", "special_defense", "special_attacks"}
+    
+    if not isinstance(item, dict):
+        raise ValueError(f"❌ Invalid item entry for '{key}': expected object, got {type(item).__name__}")
+
+    name = str(item.get("name")or key).strip()
+    item_type = str(item.get("type", "")).strip().lower()
+    target = str(item.get("target", "")).strip().lower()
+    effect = item.get("effect", None)
+
+    if not name:
+        raise ValueError(f"❌ Item '{key}' is missing a 'name'.")
+    if item_type not in _ALLOWED_ITEM_TYPES:
+        raise ValueError(f"❌ Item '{name}' has invalid 'type': {item_type!r}. Allowed: {_ALLOWED_ITEM_TYPES}")
+    if target not in _ALLOWED_TARGETS:
+        raise ValueError(f"❌ Item '{name}' has invalid 'target': {target!r}. Allowed: {_ALLOWED_TARGETS}")
+    if not isinstance(effect, dict):
+         raise ValueError(f"❌ Item '{name}' must provide an 'effect' object.")
+
+    kind = str(effect.get("effect", "")).strip().lower()
+    if kind not in _ALLOWED_EFFECTS_KINDS:
+         raise ValueError(f"❌ Item '{name}' has invalid effect.kind={kind!r}. Allowed: {_ALLOWED_EFFECTS_KINDS}")
+
+    if item_type == "healing":
+        if kind != "heal":
+            raise ValueError(f"❌ Item '{name}' type=healing must use effect.kind='heal'.")
+        amount = effect.get("amount", None)
+        percent = effect.get("percent", None)
+        if amount is None and percent is None:
+            raise ValueError(f"❌ Item '{name}' (heal) 'amount' must be integer.")
+        if amount is not None:
+            try:
+                effect["amount"] = int(amount)
+            except Exception:
+                 raise ValueError(f"❌ Item '{name}' (heal) 'percent' must be a float in (0.0, 1.0].")ç
+        if percent is not None:
+            try:
+                effect["percent"] = float(percent)
+                if not (0.0 < effect["percent"] <= 1.0):
+                    raise ValueError
+            except Exception:
+                 raise ValueError(f"❌ Item '{name}' (heal) 'percent' must be a float in (0.0, 1.0].")
+             
+    if item_type == "revive":
+        if kind != "revive":
+            raise ValueError(f"❌ Item '{name}' type=revive must use effect.kind='revive'.")
+        revive_hp = str(effect.get("revive_hp", "")).strip().lower()
+        if revive_hp not in {"full", "half"}:
+            raise ValueError(f"❌ Item '{name}' (revive) 'revive_hp' must be 'half' or 'full'.")
+            
+    if item_type == "buff":
+        if kind != "buff":
+             raise ValueError(f"❌ Item '{name}' type=buff must use effect.kind='buff'.")
+        stat = str(effect.get("stat", "")).strip()
+        stages = effect.get("stages", None)
+
+        if stat not in _ALLOWED_BUFF_STATS:
+            raise ValueError(
+                f"❌ Item '{name}' (buff) 'stat' must be one of: {_ALLOWED_BUFF_STATS}, got {stat!r}."
+            )
+        try:
+            effect["stages"] = int(stages)
+        except Exception:
+            raise ValueError(f"❌ Item '{name}' (buff) 'stages' must be integer.")
+        
+        battle_only =  bool(effect.get("battle_only", False))
+        reusable = bool(effect.get("reusable", False))
+        description = item.get("description", "")
+        if description is not None:
+            description = str(description)
+        
+        return {
+            "name": name,
+            "type": item_type,
+            "target": target,
+            "effect": effect,
+            "battle_only": battle_only,
+            "reusable": reusable,
+            "description": description,
+        } 
+        
+        
 @lru_cache
 def load_items() -> dict:
     
     data = _read_json(_data_dir() / "items.json")
+    
     if not isinstance(data, dict):
         raise ValueError("❌ Invalid format in items.json. Expected a dict of items.")
 
-    for name, effect in data.items():
-        if not isinstance(effect, dict) or not all(k in effect for k in ("effect", "type")):
-            raise ValueError(f"❌ Invalid item format for '{name}': {effect}. Expected a dict with 'effect' and 'type'.")
-
-    return data
-        
+    normalized: Dict[str, Dict[str, Any]] = {}
+    for key, item in data.items():
+        normalized[key] = _Validating_Items(key, item)
     
+    return normalized
