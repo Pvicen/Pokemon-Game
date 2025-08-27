@@ -1,9 +1,10 @@
 from .models import Pokemon
 from .utils import load_items
+from .inventory import Inventory
 
 class Trainer:
     
-    def __init__(self, name:str, team: list[Pokemon], controller = None, bag= None):
+    def __init__(self, name:str, team: list[Pokemon], controller=None, bag: Inventory | None = None):
         if not team or not all(isinstance(p, Pokemon) for p in team):
             raise ValueError("Equipo inválido")
         
@@ -11,8 +12,10 @@ class Trainer:
         self.team = team
         self.active_index = 0
         self.controller = controller
-        self.bag = bag if bag is not None else load_items()
         
+        #Default items
+        self.bag = bag if bag is not None else Inventory({"Potion": 1, "XDefense": 1})
+            
     @property
     def ActivePokemon(self) -> Pokemon:
         return self.team[self.active_index]
@@ -38,6 +41,8 @@ class Trainer:
         return False
         
     
-    def UseItems(self, item_name: str) -> bool:
-        pass # Implement item usage logic here
-    
+    def UseItems(self, item_key: str, enemy_trainer=None, in_battle: bool = True) -> bool:
+        if self.bag is None:
+            print("❌ No inventory available.")
+            return False
+        return self.bag.use(item_key, user_trainer=self, target_trainer=enemy_trainer, in_battle=in_battle)

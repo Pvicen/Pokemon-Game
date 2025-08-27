@@ -71,7 +71,7 @@ def load_pokemons_json() -> list[Pokemon]:
     pokemons:list[Pokemon] = []
     
     for name, attrs in data.items():
-        if not isinstance(attrs, dict) or not name.strip():
+        if not isinstance(attrs, dict) or not name.strip().lower():
             raise ValueError(f"❌ Invalid format for Pokémon '{name}' in pokemons.json. Expected a dict of attributes.")
         
         special_attacks = attacks_map.get(name, [])
@@ -159,7 +159,7 @@ def _Validating_Items(key: str, item: dict[str, Any]) -> Dict[str, Any]:
     if item_type == "buff":
         if kind != "buff":
              raise ValueError(f"❌ Item '{name}' type=buff must use effect.kind='buff'.")
-        stat = str(effect.get("stat", "")).strip()
+        stat = str(effect.get("stat", "")).strip().lower()
         stages = effect.get("stages", None)
 
         if stat not in _ALLOWED_BUFF_STATS:

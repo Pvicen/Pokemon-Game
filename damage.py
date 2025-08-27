@@ -31,10 +31,10 @@ def damage_without_element(attacker, defender, base_attack):
     damage_after_defense = max(1, int(raw_damage - defender.defense * 0.4))
     
     if random_bonus > 0:
-        message = "💥 ¡Golpe crítico!"
+        message = "💥 ¡Critical HITTTT!"
     elif random_bonus < 0:
-        message = "💤 Fue un golpe débil..."
+        message = "💤 Was a weak Hit"
     else:
-        message = "😐 Golpe normal."
+        message = "😐 Normal Hit"
     
     return damage_after_defense, message

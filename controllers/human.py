@@ -1,6 +1,7 @@
 from ..models import Pokemon, EvolvedPokemon
 from ..utils import load_items, load_pokemons_json
 from ..trainers import Trainer
+from ..inventory import Inventory
 
 class HumanController():
     
@@ -38,20 +39,48 @@ class HumanController():
             else:
                 print("❌ Invalid option, please choose 0-3.")
                 
-            
-    @staticmethod
-    def UseItem(actor):
-        
-        items = load_items()
-        if not items:
-            print("No items available.")
-            return None
-        # TODO: mostrar items y elegir uno
-        return None
     
+    def UseItem(trainer, enemy_trainer=None, in_battle: bool = True):
+        bag = getattr(trainer, "bag", None)
+        if bag is None:
+            print("❌ No inventory available.")
+            return None
+        
+        usable = bag.usable_items(in_battle= in_battle)
+        if not usable:
+            print("❌No usable items.")
+            return None
+        
+        print("\n🎒 Your items:")
+        keys =list(usable.keys())
+        for i, k in enumerate(keys, start=1):
+            idef = bag.get(k) or {}
+            desc = idef.get("description", "")
+            quantity = usable[k]
+            print(f"[{i}] {idef.get('name', k)} x{quantity} — {desc}")
+        print("[0] Cancel")
+
+        while True:
+            choice = input("Choose item (number): ").strip()
+            
+            if choice == "0":
+                return None
+                
+            if not choice.isdigit():
+                print("❌ Invalid input. Please enter a number")
+                return None
+            
+            index = int(choice) - 1
+            if not (0 <= index < len(keys)):
+                print("❌ Input out of range.")
+                return None
+
+            item_key = keys[index]
+            ok = trainer.UseItems(item_key, enemy_trainer=enemy_trainer, in_battle=in_battle)
+            return item_key if ok else None
+        
         
     def SelecFirstPokemon(trainer, actor):
-        
         pokemons = load_pokemons_json()
         ALLOWED_POKEMONS = ["Squirtle", "Charmander", "Bulbasaur", "Pikachu"]
         initials = [p for p in pokemons if p.name in ALLOWED_POKEMONS]
@@ -81,6 +110,7 @@ class HumanController():
                 return chosen_pokemon
             else:
                 print(f"❌❌ Number out of range (1-{len(initials)}). Try again...")
+                
                 
     @staticmethod
     def ChooseAttack(actor):
