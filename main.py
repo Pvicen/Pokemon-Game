@@ -26,8 +26,5 @@ if __name__ == "__main__":
 
 # Agregar las siguientes cosas:
 # 1) Agregar el mapa interativo 
-# 3) Crear una historia 
-# 5) crear el sistema de inventario **
-# 6) Crear sistema de niveles y experiencia 
-# 7) hacer combate funcional 
-# 8) terminar de pulir la IA, terminar el controlador humano y el trainers**
+# 2) Crear sistema de niveles y experiencia 
+# 3) hacer combate funcional 

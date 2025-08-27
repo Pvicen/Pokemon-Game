@@ -13,7 +13,7 @@ class Inventory:
             
         
     def add_items (self, key: str, quantity: int = 1) -> None:
-        if key not in self.definitions:
+        if key not in self._definitions:
             raise ValueError(f"❌ Item '{key}' is not defined.")
         
         if quantity <= 0:
@@ -84,7 +84,7 @@ class Inventory:
             print(f"❌ '{idef['name']}' can only be used in battle.")
             return False
         
-        reusable = bool(idef.get("reausable", False))
+        reusable = bool(idef.get("reusable", False))
         if not reusable and not self.has(item_key):
             print(f"❌ You don't have '{idef['name']}' in your bag.")
             return False
@@ -117,7 +117,7 @@ class Inventory:
             raise ValueError(f"❌ Unsupported item type: {item_type!r}.")
         
         if ok and not reusable:
-            self.remove_item(item_key, 1)
+            self.remove_items(item_key, 1)
             
         return ok
     

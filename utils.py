@@ -125,7 +125,7 @@ def _Validating_Items(key: str, item: dict[str, Any]) -> Dict[str, Any]:
     if not isinstance(effect, dict):
          raise ValueError(f"❌ Item '{name}' must provide an 'effect' object.")
 
-    kind = str(effect.get("effect", "")).strip().lower()
+    kind = str(effect.get("kind", "")).strip().lower()
     if kind not in _ALLOWED_EFFECTS_KINDS:
          raise ValueError(f"❌ Item '{name}' has invalid effect.kind={kind!r}. Allowed: {_ALLOWED_EFFECTS_KINDS}")
 
