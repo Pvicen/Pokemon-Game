@@ -4,6 +4,31 @@ import random
 # Open json file
 POKEMON_TYPE_EFFECTIVENESS = load_type_chart()
 
+# ---------- helpers for temp buff stages ----------
+
+def _stages_value(pokemon, key:str):
+    if hasattr(pokemon, "_temp_buffs"):
+        return int(getattr(pokemon, "_temp_buffs", {}))
+    return 0
+
+
+def _stages_multiplier(stages: int):
+    return 1.0 + 0.1 * stages
+
+
+def _effectiveness_base_attack(base_attack: int, attacker, kind: str):
+    stages = _stages_value(attacker, kind)
+    mult = _stages_multiplier(stages)
+    return max(1, int(round(base_attack * mult)))
+
+
+def _effectiveness_defense(base_defense: int, defender, stat_name: str):
+    stages = _stages_value(defender, stat_name)
+    mult = _stages_multiplier(stages)
+    return max(1, int(round(base_defense * mult)))
+
+# ---------- effectiveness ----------
+
 # get damage multiplier
 def get_effectiveness(attacker_type: str, defender_type: str) -> float:
     type_data = POKEMON_TYPE_EFFECTIVENESS.get(attacker_type.capitalize(), {})
