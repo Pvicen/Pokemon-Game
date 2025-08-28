@@ -101,5 +101,16 @@
         "Special_defense": 70,
         "Speed": 82,
         "Current_level": "Max"
+    },
+    "Psyduck": {
+        "Base_attack": 52,
+        "Element_type": "Water",
+        "Health": 50,
+        "Defense": 48,
+        "Evolution": "golduck",
+        "Evolution_level": 1,
+        "Special_defense": 50,
+        "Speed": 55,
+        "current_level": 1
     }
 }

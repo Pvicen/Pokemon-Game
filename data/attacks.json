@@ -119,6 +119,18 @@
             "damage": 90
         }
     ],
+    "psyduck": [
+        {
+            "name": "Aqua tail",
+            "type": "Water",
+            "damage": 90
+        },
+        {
+            "name": "Water Gun",
+            "type": "Water",
+            "damage": 40
+        }
+    ],
     "Normal_attacks": [
         {
             "name": "Quick Attack",
