@@ -42,12 +42,16 @@ def get_effectiveness(attacker_type: str, defender_type: str) -> float:
         message = "🔸 Special attack is normal."      
     return multiplier, message
 
+
 # Get damage with element
 def calculate_damage(attacker, defender, base_attack, attack_type="special"):
+    new_base = _effectiveness_base_attack(base_attack, attacker, "special_attacks")
     effectiveness, _ = get_effectiveness(attacker.element_type, defender.element_type)
-    new_damage = base_attack * effectiveness
-    final_damage = max(1, int(new_damage - defender.special_defense * 0.5))
+    new_damage = new_base * effectiveness
+    eff_special_defense = _effectiveness_base_attack(get(defender, "special_defensle", 0), defender, "special_defense")
+    final_damage = max(1, int(new_damage - eff_special_defense * 0.5))
     return final_damage
+
 
 # Get damage withtout element
 def damage_without_element(attacker, defender, base_attack):
@@ -58,7 +62,7 @@ def damage_without_element(attacker, defender, base_attack):
     if random_bonus > 0:
         message = "💥 ¡Critical HITTTT!"
     elif random_bonus < 0:
-        message = "💤 Was a weak Hit"
+        message = "💤 Was a weak Hit
     else:
         message = "😐 Normal Hit"
     
