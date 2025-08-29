@@ -1,4 +1,3 @@
-from requests import get
 from .utils import load_type_chart
 import random
 
