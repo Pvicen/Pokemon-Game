@@ -54,7 +54,7 @@ class HumanController():
         print("\n🎒 Your items:")
         keys =list(usable.keys())
         for i, k in enumerate(keys, start=1):
-            idef = bag.get(k) or {}
+            idef = bag.get_definitions(k) or {}
             desc = idef.get("description", "")
             quantity = usable[k]
             print(f"[{i}] {idef.get('name', k)} x{quantity} — {desc}")
