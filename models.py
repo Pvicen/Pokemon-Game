@@ -22,7 +22,8 @@ class Pokemon:
         self.evolution_level = evolution_level
         self.current_level = current_level
         
-        
+    
+
     def ShowStats(self):
         print(f"Attributes of {self.name}:", sep="")
         print(f"-type: {self.element_type}")
@@ -34,17 +35,11 @@ class Pokemon:
         print(f"-Evolution_level: {self.evolution_level}")
         print(f"-Current_level: {self.current_level}")
     
+
     def is_alive(self):
         if self.health < 0:
             self.health = 0
         return self.health > 0
-    
-    
-    def health_bar(self):
-        length = 20
-        units = int((self.health * length) / self.maximun_hp)
-        bar = "█" * units + " " * (length - units)
-        print(f"❤️  Vida de {self.name}: [{bar}] {self.health}/{self.maximun_hp}")
     
     
     def perform_combat(self, enemy, get_effectinveness, calculate_damage):
