@@ -1,3 +1,4 @@
+from requests import get
 from .utils import load_type_chart
 import random
 
@@ -8,7 +9,7 @@ POKEMON_TYPE_EFFECTIVENESS = load_type_chart()
 
 def _stages_value(pokemon, key:str):
     if hasattr(pokemon, "_temp_buffs"):
-        return int(getattr(pokemon, "_temp_buffs", {}))
+        return getattr(pokemon, "_temp_buffs", {}).get(key, 0)
     return 0
 
 
@@ -45,25 +46,29 @@ def get_effectiveness(attacker_type: str, defender_type: str) -> float:
 
 # Get damage with element
 def calculate_damage(attacker, defender, base_attack, attack_type="special"):
-    new_base = _effectiveness_base_attack(base_attack, attacker, "special_attacks")
+    buff_special = _effectiveness_base_attack(base_attack, attacker, "special_attacks")
     effectiveness, _ = get_effectiveness(attacker.element_type, defender.element_type)
-    new_damage = new_base * effectiveness
-    eff_special_defense = _effectiveness_base_attack(get(defender, "special_defensle", 0), defender, "special_defense")
+    new_damage = buff_special * effectiveness
+    eff_special_defense = _effectiveness_base_attack(getattr(defender, "special_defense", 0), defender, "special_defense")
+    
     final_damage = max(1, int(new_damage - eff_special_defense * 0.5))
     return final_damage
 
 
 # Get damage withtout element
 def damage_without_element(attacker, defender, base_attack):
+    buff_normal = _effectiveness_base_attack(base_attack, attacker, "normal_attacks")
     random_bonus = random.randint(-3, 3)
-    raw_damage = base_attack + random_bonus
-    damage_after_defense = max(1, int(raw_damage - defender.defense * 0.4))
+    eff_normal_defense = _effectiveness_defense(getattr(defender, "defense", 0), defender, "defense")
+    
+    raw_damage = buff_normal + random_bonus
+    damage_after_defense = max(1, int(raw_damage - eff_normal_defense * 0.4))
     
     if random_bonus > 0:
         message = "💥 ¡Critical HITTTT!"
     elif random_bonus < 0:
-        message = "💤 Was a weak Hit
+        message = "💤 Was a weak Hit"
     else:
         message = "😐 Normal Hit"
-    
+        
     return damage_after_defense, message
