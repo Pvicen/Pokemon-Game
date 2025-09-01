@@ -1,203 +1,152 @@
-import json
-import random
-from pathlib import Path
+from __future__ import annotations
+
+from random import sample
 from functools import lru_cache
-from typing import Any, Dict
-from .models import Pokemon, EvolvedPokemon
+from typing import Any, Dict, Iterable, List, Tuple
 
-def determine_attack_order(p1, p2):
-    if p1.speed > p2.speed:
-        return p1, p2
-    
-    elif p2.speed > p1.speed:
-        return p2, p1
-    
-    else:
-        return tuple(random.sample([p1, p2], 2))
-
-def _project_root():
-    here = Path(__file__).resolve().parent
-    
-    for base_carpet in (here, here.parent, here.parent.parent):
-        d = base_carpet / "data"
-        if d.exists() and d.is_dir():
-            return base_carpet
-    raise FileNotFoundError("Data directory not found in the project structure.")
-
-def _data_dir():
-    return _project_root() / "data"
+from .models import Pokemon
+# 👉 Importa SOLO la fachada pública de data_io (sin internos):
+from data_io import (
+    load_attacks,
+    load_pokemons,
+    load_items as _io_load_items,
+    load_type_chart as _io_load_type_chart,
+)
 
 
-def _read_json(path: Path):
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-        
-    except FileNotFoundError as e:
-        raise FileNotFoundError(f"❌ File not found: {path.name} in {path.parent} directory.") from e
-    
-    except json.JSONDecodeError as e:
-        raise ValueError(f"❌ Error decoding JSON from file: {path.name}. Please check the file format (line {e.lineno}, columna  {e.colno}).") from e
-    
+def determine_attack_order(pokemon1, pokemon2):
+    s1 = getattr(pokemon1, "speed", None)
+    s2 = getattr(pokemon2, "speed", None)
+    if s1 is None or s2 is None:
+        raise AttributeError("Both participants must have a 'speed' attribute.")
 
-@lru_cache
-def load_attacks_json() -> dict:
-    
-    data = _read_json(_data_dir() / "attacks.json")
-    
-    if not isinstance(data, dict):
-        raise ValueError("❌ Invalid format in attacks.json. Expected a dict of attacks.")
-    
-    for key, lst in data.items():
-        
-        if not isinstance(lst, list):
-            raise ValueError(f"❌ Invalid format for attack '{key}' in attacks.json. Expected a list of attacks.")
-        
-        for atk in lst:
-            if not (isinstance(atk, dict) and all(k in atk for k in ("name", "type", "damage"))):
-                raise ValueError(f"❌ Invalid attack format in '{key}:{atk}'.")
-    
-    return data
+    if s1 > s2:
+        return pokemon1, pokemon2
+    if s2 > s1:
+        return pokemon2, pokemon1
+    # tie-breaker
+    return tuple(sample([pokemon1, pokemon2], k=2))
 
-@lru_cache
-def load_pokemons_json() -> list[Pokemon]:
-    
-    data = _read_json(_data_dir() / "pokemons.json")
-    
-    if not isinstance(data, dict):
-        raise ValueError("❌ Invalid format in pokemons.json. Expected a dict of Pokémon.")
-    attacks_map= load_attacks_json()
-    
-    pokemons:list[Pokemon] = []
-    
-    for name, attrs in data.items():
-        if not isinstance(attrs, dict) or not name.strip().lower():
-            raise ValueError(f"❌ Invalid format for Pokémon '{name}' in pokemons.json. Expected a dict of attributes.")
-        
-        special_attacks = attacks_map.get(name, [])
-        normal_attacks = attacks_map.get("Normal_attacks", [])
-        pokemons.append(Pokemon(
-            name=name,
-            normal_attacks=normal_attacks,
-            special_attacks=special_attacks,
-            health=attrs.get("Health", 0),
-            element_type=attrs.get("Element_type", "unknown"),
-            defense=attrs.get("Defense", 0),
-            special_defense=attrs.get("Special_defense", 0),
-            speed=attrs.get("Speed", 0),
-            evolution=attrs.get("Evolution", None),
-            evolution_level=attrs.get("Evolution_level", None),
-            current_level=attrs.get("Current_level", None),
-        ))
-    
-    return pokemons
+
+def clamp(value: float | int, lo: float | int, hi: float | int):
+    if lo > hi:
+        lo, hi = hi, lo
+    return lo if value < lo else hi if value > hi else value
+
 
 
 @lru_cache
-def load_type_chart() -> dict:
-    data = _read_json(_data_dir() / "type_effectiveness.json")
-    if not isinstance(data, dict):
-        raise ValueError("❌ Invalid format in type_effectiveness.json. Expected a dict of type effectiveness.")
-    return data
+def load_items() -> Dict[str, Dict[str, Any]]:
+    return _io_load_items()
 
 
-def _Validating_Items(key: str, item: dict[str, Any]) -> Dict[str, Any]:
-    
-    _ALLOWED_ITEM_TYPES = {"healing", "revive", "buff"}
-    _ALLOWED_TARGETS = {"ally", "enemy"}
-    _ALLOWED_EFFECTS_KINDS = {"heal", "revive", "buff"}
-    _ALLOWED_BUFF_STATS = {"attack", "defense", "special_defense", "special_attacks"}
-    
-    if not isinstance(item, dict):
-        raise ValueError(f"❌ Invalid item entry for '{key}': expected object, got {type(item).__name__}")
-
-    name = str(item.get("name")or key).strip()
-    item_type = str(item.get("type", "")).strip().lower()
-    target = str(item.get("target", "")).strip().lower()
-    effect = item.get("effect", None)
-
-    if not name:
-        raise ValueError(f"❌ Item '{key}' is missing a 'name'.")
-    if item_type not in _ALLOWED_ITEM_TYPES:
-        raise ValueError(f"❌ Item '{name}' has invalid 'type': {item_type!r}. Allowed: {_ALLOWED_ITEM_TYPES}")
-    if target not in _ALLOWED_TARGETS:
-        raise ValueError(f"❌ Item '{name}' has invalid 'target': {target!r}. Allowed: {_ALLOWED_TARGETS}")
-    if not isinstance(effect, dict):
-         raise ValueError(f"❌ Item '{name}' must provide an 'effect' object.")
-
-    kind = str(effect.get("kind", "")).strip().lower()
-    if kind not in _ALLOWED_EFFECTS_KINDS:
-         raise ValueError(f"❌ Item '{name}' has invalid effect.kind={kind!r}. Allowed: {_ALLOWED_EFFECTS_KINDS}")
-
-    if item_type == "healing":
-        if kind != "heal":
-            raise ValueError(f"❌ Item '{name}' type=healing must use effect.kind='heal'.")
-        amount = effect.get("amount", None)
-        percent = effect.get("percent", None)
-        if amount is None and percent is None:
-            raise ValueError(f"❌ Item '{name}' (heal) 'amount' must be integer.")
-        if amount is not None:
-            try:
-                effect["amount"] = int(amount)
-            except Exception:
-                 raise ValueError(f"❌ Item '{name}' (heal) 'percent' must be a float in (0.0, 1.0].")
-        if percent is not None:
-            try:
-                effect["percent"] = float(percent)
-                if not (0.0 < effect["percent"] <= 1.0):
-                    raise ValueError
-            except Exception:
-                 raise ValueError(f"❌ Item '{name}' (heal) 'percent' must be a float in (0.0, 1.0].")
-             
-    if item_type == "revive":
-        if kind != "revive":
-            raise ValueError(f"❌ Item '{name}' type=revive must use effect.kind='revive'.")
-        revive_hp = str(effect.get("revive_hp", "")).strip().lower()
-        if revive_hp not in {"full", "half"}:
-            raise ValueError(f"❌ Item '{name}' (revive) 'revive_hp' must be 'half' or 'full'.")
-            
-    if item_type == "buff":
-        if kind != "buff":
-             raise ValueError(f"❌ Item '{name}' type=buff must use effect.kind='buff'.")
-        stat = str(effect.get("stat", "")).strip().lower()
-        stages = effect.get("stages", None)
-
-        if stat not in _ALLOWED_BUFF_STATS:
-            raise ValueError(
-                f"❌ Item '{name}' (buff) 'stat' must be one of: {_ALLOWED_BUFF_STATS}, got {stat!r}."
-            )
-        try:
-            effect["stages"] = int(stages)
-        except Exception:
-            raise ValueError(f"❌ Item '{name}' (buff) 'stages' must be integer.")
-        
-        battle_only =  bool(effect.get("battle_only", False))
-        reusable = bool(effect.get("reusable", False))
-        description = item.get("description", "")
-        if description is not None:
-            description = str(description)
-        
-        return {
-            "name": name,
-            "type": item_type,
-            "target": target,
-            "effect": effect,
-            "battle_only": battle_only,
-            "reusable": reusable,
-            "description": description,
-        } 
-        
-        
 @lru_cache
-def load_items() -> dict:
-    
-    data = _read_json(_data_dir() / "items.json")
-    
-    if not isinstance(data, dict):
-        raise ValueError("❌ Invalid format in items.json. Expected a dict of items.")
+def load_type_chart() -> Dict[str, Dict[str, float]]:
+    return _io_load_type_chart()
 
-    normalized: Dict[str, Dict[str, Any]] = {}
-    for key, item in data.items():
-        normalized[key] = _Validating_Items(key, item)
+
+@lru_cache
+def _attacks_data() -> Any:
+    return load_attacks()
+
+
+def _key_ci_map(d: Dict[str, Any]) -> Dict[str, Any]:
+    return {str(k).strip().lower(): v for k, v in d.items()}
+
+
+def _extract_owner_attacks(attacks_data: Any, owner_name: str) -> List[Dict[str, Any]]:
+    owner_key = owner_name.strip().lower()
+    # Shape A: normalized with "by_owner"
+    if isinstance(attacks_data, dict) and "by_owner" in attacks_data:
+        by_owner = attacks_data.get("by_owner", {})
+        if isinstance(by_owner, dict):
+            ci = _key_ci_map(by_owner)
+            maybe = ci.get(owner_key, [])
+            if isinstance(maybe, list) and all(isinstance(x, dict) for x in maybe):
+                return list(maybe)
+
+    # Shape B: raw legacy grouping (keys: "Pikachu", "Normal_attacks", ...)
+    if isinstance(attacks_data, dict):
+        ci = _key_ci_map(attacks_data)
+        maybe = ci.get(owner_key, [])
+        if isinstance(maybe, list) and all(isinstance(x, dict) for x in maybe):
+            return list(maybe)
+
+    return []
+
+
+def _extract_normal_attacks(attacks_data: Any) -> List[Dict[str, Any]]:
+    # Shape A
+    if isinstance(attacks_data, dict) and "normal" in attacks_data:
+        maybe = attacks_data.get("normal", [])
+        if isinstance(maybe, list) and all(isinstance(x, dict) for x in maybe):
+            return list(maybe)
+
+    # Shape B (case-insensitive key "Normal_attacks")
+    if isinstance(attacks_data, dict):
+        ci = _key_ci_map(attacks_data)
+        maybe = ci.get("normal_attacks", [])
+        if isinstance(maybe, list) and all(isinstance(x, dict) for x in maybe):
+            return list(maybe)
+
+    return []
+
+
+# -------------------- Pokémon factories --------------------
+
+def _pokemon_from_def(
+    pdef: Dict[str, Any],
+    *,
+    special_attacks: List[Dict[str, Any]],
+    normal_attacks: List[Dict[str, Any]],
+) -> Pokemon:
     
-    return normalized
+    name = pdef.get("name", "Unknown")
+    element_type = pdef.get("element_type", "unknown")
+    # The engine capitalizes on lookup; we keep lower-case canonical type here.
+    health = int(pdef.get("health", 0))
+    defense = int(pdef.get("defense", 0))
+    special_defense = int(pdef.get("special_defense", 0))
+    speed = int(pdef.get("speed", 0))
+    evolution = pdef.get("evolution", None)
+    evolution_level = pdef.get("evolution_level", None)
+    current_level = pdef.get("current_level", None)
+
+    # Convert canonical lowercase element_type to Title-case if you prefer visuals
+    # but your damage/get_effectiveness already handles capitalization.
+    return Pokemon(
+        name=name,
+        element_type=element_type,
+        health=health,
+        normal_attacks=normal_attacks or [],
+        defense=defense,
+        special_defense=special_defense,
+        speed=speed,
+        evolution=evolution,
+        evolution_level=evolution_level,
+        current_level=current_level,
+        special_attacks=special_attacks or [],
+    )
+
+
+@lru_cache
+def load_pokemons_json() -> List[Pokemon]:
+    pokedex = load_pokemons()        # dict[str, dict] keyed by lower name
+    attacks_data = _attacks_data()   # flexible shape supported
+    normal = _extract_normal_attacks(attacks_data)
+
+    objs: List[Pokemon] = []
+    for key, pdef in pokedex.items():
+        # pdef['name'] keeps the nicely-cased display name (e.g., "Pikachu")
+        display_name = str(pdef.get("name", key)).strip()
+        specials = _extract_owner_attacks(attacks_data, display_name)
+        obj = _pokemon_from_def(pdef, special_attacks=specials, normal_attacks=normal)
+        objs.append(obj)
+    return objs
+
+
+# -------------------- Back-compat: attacks passthrough --------------------
+
+@lru_cache
+def load_attacks_json() -> Dict[str, Any]:
+    return _attacks_data()

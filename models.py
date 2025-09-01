@@ -1,4 +1,6 @@
+from __future__ import annotations
 from .damage import get_effectiveness, calculate_damage, damage_without_element
+from .data_io import load_attacks_json, load_item
 
 class Pokemon:
     

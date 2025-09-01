@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Optional, Dict, Any
-from .utils import load_items
+from .utils import load_items, clamp
 
 class Inventory:
     
@@ -9,7 +9,7 @@ class Inventory:
         self._definitions = load_items()
         if initial_counts:
             for item_name, quantity in initial_counts.items():
-                self.add_item(item_name, quantity)
+                self.add_items(item_name, quantity)
             
         
     def add_items (self, key: str, quantity: int = 1) -> None:
@@ -29,7 +29,7 @@ class Inventory:
         self.counts[key] -= quantity
         if self.counts[key] <= 0:
             self.counts.pop(key, None)
-            print(f"The item {[key]} has been remove successfully")
+            print(f"The item {[key]} has_item been remove successfully")
         return True
     
     
@@ -50,7 +50,7 @@ class Inventory:
         return dict(self.counts)
     
     
-    def has_items(self, key: str) -> bool:
+    def has_item(self, key: str) -> bool:
         return self.count(key) > 0
     
     
@@ -63,7 +63,7 @@ class Inventory:
         k: qty
         for k, qty in self.counts.items()
         if qty > 0
-        and (idef := self.get_def(k))
+        and (idef := self.get_definitions(k))
         and (not in_battle or not idef.get("battle_only", False))
     }
     
@@ -85,7 +85,7 @@ class Inventory:
             return False
         
         reusable = bool(idef.get("reusable", False))
-        if not reusable and not self.has(item_key):
+        if not reusable and not self.has_item(item_key):
             print(f"❌ You don't have '{idef['name']}' in your bag.")
             return False
         
@@ -127,7 +127,7 @@ class Inventory:
             return False
         
         if not hasattr(pokemon, "health") or not hasattr(pokemon, "maximun_hp"):
-            raise ValueError(f"❌ Target {pokemon} has no health fields.")
+            raise ValueError(f"❌ Target {pokemon} has_item no health fields.")
         
         if pokemon.health <= 0:
             print(f"⚠️ {pokemon.name} is fainted. Use a Revive pill to restore it.")
@@ -144,7 +144,7 @@ class Inventory:
             healed = int(max(1, pokemon.maximun_hp * float(percent)))
         
         old_health = pokemon.health
-        pokemon.health = min(pokemon.maximun_hp, pokemon.health + max(0, healed))
+        pokemon.health = clamp(pokemon.maximun_hp, pokemon.health + max(0, healed))
         gained = pokemon.health - old_health
         print(f"✨ {pokemon.name} healed {gained} HP ({old_health}->{pokemon.health}/{pokemon.maximun_hp}).")
         return True
@@ -163,7 +163,7 @@ class Inventory:
         else:
             pokemon.health = max(1, pokemon.maximun_hp // 2)
 
-        print(f"💫 {pokemon.name} has been revived to {pokemon.health}/{pokemon.maximun_hp} HP.")
+        print(f"💫 {pokemon.name} has_item been revived to {pokemon.health}/{pokemon.maximun_hp} HP.")
         return True
     
     

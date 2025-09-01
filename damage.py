@@ -1,9 +1,15 @@
-from .utils import load_type_chart
+from .data_io import load_type_chart
 import random
 
 # Open json file
-POKEMON_TYPE_EFFECTIVENESS = load_type_chart()
+_TYPE_CHART = None
 
+
+def _get_type_chart():
+    global _TYPE_CHART
+    if _TYPE_CHART is None:
+        _TYPE_CHART = load_type_chart
+    return _TYPE_CHART
 # ---------- helpers for temp buff stages ----------
 
 def _stages_value(pokemon, key:str):
@@ -31,7 +37,7 @@ def _effectiveness_defense(base_defense: int, defender, stat_name: str):
 
 # get damage multiplier
 def get_effectiveness(attacker_type: str, defender_type: str) -> float:
-    type_data = POKEMON_TYPE_EFFECTIVENESS.get(attacker_type.capitalize(), {})
+    type_data = _get_type_chart.get(attacker_type.capitalize(), {})
     multiplier = type_data.get(defender_type.capitalize(), 1.0)
 
     if multiplier > 1.0:

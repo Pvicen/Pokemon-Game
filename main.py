@@ -1,24 +1,25 @@
-from .models import Pokemon, EvolvedPokemon
+from .data_io import load_pokemons_json, load_items, load_attacks_json, load_type_chart
+from .trainers import Trainer
+from .controllers import HumanController, IAcontroller
 from .combat import pokemon_combat
-from .map import map
-from .damage import get_effectiveness, calculate_damage
-from .utils import load_attacks_json, load_pokemons, load_type_chart, load_items
-
 
 def main():
     print("🔰 Welcome to the Pokémon Battle Arena 🔰\n")
 
     # Create map
-    A = load_attacks_json(); P = load_pokemons(); T = load_type_chart(); I = load_items()
+    A = load_attacks_json(); P = load_pokemons_json(); T = load_type_chart(); I = load_items()
     print(isinstance(A, dict), len(P) > 0, isinstance(T, dict), isinstance(I, dict))
+
+        # Example trainers
+    player_team = [P[1], P[2], P[3]]
+    enemy_team  = [P[4], P[5], P[6]]
     
-    pokemons = load_pokemons()
     
-    player_pokemon = pokemons[1]
-    enemy_pokemon = pokemons[3]
-    
-    # Start the battle
-    pokemon_combat(player_pokemon, enemy_pokemon)
+    player = Trainer(name="Player", team=player_team, controller=HumanController())
+    enemy  = Trainer(name="Rival",  team=enemy_team,  controller=IAcontroller())
+
+
+    pokemon_combat(player, enemy)
     
 
 if __name__ == "__main__":
