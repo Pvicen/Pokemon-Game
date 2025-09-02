@@ -1,5 +1,19 @@
 from __future__ import annotations
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
+
+
+def _coerce_level(val: Union[int, float, str, None]) -> int:
+    if val is None:
+        return 1
+    if isinstance(val, (int, float)):
+        return max(1, int(val))
+    if isinstance(val, str):
+        s = val.strip()
+        if s.isdigit():
+            return max(1, int(s))
+        return 1
+    return 1
+
 
 class Pokemon:
     def __init__(
@@ -46,42 +60,9 @@ class Pokemon:
         
     # ---------------- XP and levels ----------------
     def gain_xp(self, amount: int) -> None:
-        print(f"⭐ {self.name} gained {amount} XP!")
-        self.xp += amount
-        while self.xp >= self.xp_to_next:
-            self.level_up()
-    
-    
-    def level_up(self) -> None:
-        self.xp -= self.xp_to_next
-        self.level += 1
-        self.xp_to_next = int(self.xp_to_next * 1.5)
-
-        # aumentar stats básicos
-        self.maximun_hp += 5
-        self.defense += 2
-        self.special_defense += 2
-        self.speed += 1
-        self.health = self.maximun_hp  # curar al subir nivel
-
-        print(f"⬆️ {self.name} leveled up! Now level {self.level}.")
-
-        # chequear evolución
-        if self.evolution and self.evolution_level and self.level >= self.evolution_level:
-            self.evolve()
-            
-    
-    def evolve(self):
-        print(f"🌟 {self.name} is evolving into {self.evolution}!")
-        # aquí puedes cargar la definición de la evolución desde tu pokedex
-        self.name = self.evolution
-        # stats upgrade al evolucionar (puedes ajustarlo)
-        self.maximun_hp += 21
-        self.defense += 6
-        self.special_defense += 10
-        self.speed += 7
-        self.health = self.maximun_hp
-    
+        if amount <= 0:
+            return
+        self.exp = int(self.exp) + int(amount)
 
     # ---------------- basic status ----------------
 
