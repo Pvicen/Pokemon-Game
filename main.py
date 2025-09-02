@@ -39,6 +39,7 @@ if __name__ == "__main__":
     main()
 
 # Agregar las siguientes cosas:
-# 1) Agregar el mapa interativo ñ
+# 1) Agregar el mapa interativo 
 # 2) Crear sistema de niveles y experiencia 
-# 3) hacer combate funcional 
+# 3) Arreglar los bugs relacionados con el combat.py
+# 4) Unificar como crear los equipos como elegir los pokemons, etc.
