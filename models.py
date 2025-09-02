@@ -16,6 +16,7 @@ class Pokemon:
         current_level: Optional[int | str] = None,
         special_attacks: Optional[List[Dict[str, Any]]] = None,
     ) -> None:
+        
         # --- base identity ---
         self.name: str = str(name)
         self.element_type: str = str(element_type).strip().lower() if element_type is not None else "unknown"
@@ -36,9 +37,51 @@ class Pokemon:
         self.evolution: Optional[str] = (str(evolution).strip().lower() if evolution else None)
         self.evolution_level: Optional[int] = (int(evolution_level) if evolution_level is not None else None)
         self.current_level: Optional[int | str] = current_level
+        self.xp: int = 0
+        self.xp_to_next: int = 50
         
         
         self._temp_buffs: Dict[str, int] = {}
+        
+        
+    # ---------------- XP and levels ----------------
+    def gain_xp(self, amount: int) -> None:
+        print(f"⭐ {self.name} gained {amount} XP!")
+        self.xp += amount
+        while self.xp >= self.xp_to_next:
+            self.level_up()
+    
+    
+    def level_up(self) -> None:
+        self.xp -= self.xp_to_next
+        self.level += 1
+        self.xp_to_next = int(self.xp_to_next * 1.5)
+
+        # aumentar stats básicos
+        self.maximun_hp += 5
+        self.defense += 2
+        self.special_defense += 2
+        self.speed += 1
+        self.health = self.maximun_hp  # curar al subir nivel
+
+        print(f"⬆️ {self.name} leveled up! Now level {self.level}.")
+
+        # chequear evolución
+        if self.evolution and self.evolution_level and self.level >= self.evolution_level:
+            self.evolve()
+            
+    
+    def evolve(self):
+        print(f"🌟 {self.name} is evolving into {self.evolution}!")
+        # aquí puedes cargar la definición de la evolución desde tu pokedex
+        self.name = self.evolution
+        # stats upgrade al evolucionar (puedes ajustarlo)
+        self.maximun_hp += 21
+        self.defense += 6
+        self.special_defense += 10
+        self.speed += 7
+        self.health = self.maximun_hp
+    
 
     # ---------------- basic status ----------------
 
@@ -93,11 +136,9 @@ class Pokemon:
 
     @property
     def all_attacks(self) -> List[Dict[str, Any]]:
-        """Return the concatenation of special + normal attacks (a new list)."""
         return list(self.special_attacks) + list(self.normal_attacks)
 
     def show_stats(self) -> None:
-        """Simple pretty print (non-essential, kept for debugging)."""
         print(f"Attributes of {self.name}:")
         print(f"- Type: {self.element_type}")
         print(f"- Health: {self.health}/{self.maximun_hp}")
@@ -108,17 +149,16 @@ class Pokemon:
         print(f"- Evolution Level: {self.evolution_level}")
         print(f"- Current Level: {self.current_level}")
         
-        
 
 class EvolvedPokemon(Pokemon):
     
-    def __init__(self, name, element_type, health, base_attack, defense, speed, special_attacks, evolution_attack):
-        super().__init__(name, element_type, health, base_attack, defense, speed, special_attacks)
+    def __init__(self, name, element_type, health, defense, speed, special_attacks, evolution_attack):
+        super().__init__(name, element_type, health, defense, speed, special_attacks)
         self.evolution_attack = evolution_attack
         self.used_evolution_attack = False
         
-    def ShowStats(self):
-        super().ShowStats()
+    def show_stats(self):
+        super().show_stats()
         print(f"-Evolution_Attack: {self.evolution_attack}")
     
     def combined_attack(self, enemy):
@@ -133,3 +173,5 @@ class EvolvedPokemon(Pokemon):
             
         else:
             self.use_attack(enemy)
+
+    

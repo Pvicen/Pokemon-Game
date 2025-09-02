@@ -9,6 +9,7 @@ from .damage import calculate_damage, get_effectiveness, damage_without_element
 from .inventory import Inventory
 from .controllers import HumanController, IAcontroller
 from .utils import determine_attack_order
+from .experience import ExperienceManager
 
 
 CLEAR_CMD = "cls" if os.name == "nt" else "clear"
@@ -116,7 +117,10 @@ def _apply_attack(attacker: Pokemon, defender: Pokemon, attack: Dict[str: Any]) 
     return (before - after), "\n".join(msg_lines)
 
 
-def _take_turn(attacker_trainer: Trainer, defender_trainer: Trainer) -> bool:
+def _take_turn(attacker_trainer: Trainer,
+               defender_trainer: Trainer,
+               xp_manager: Optional[ExperienceManager] = None,
+    ) -> bool:
     actor = attacker_trainer.ActivePokemon
     target = defender_trainer.ActivePokemon
 
@@ -135,6 +139,11 @@ def _take_turn(attacker_trainer: Trainer, defender_trainer: Trainer) -> bool:
         print(msg)
         # If defender fainted, handle switch
         if not target.is_alive():
+            try:
+                if xp_manager is not None:
+                    xp_manager.on_ko(attacker=actor, defender=target)
+            except Exception:
+                pass
             return _handle_faint_and_switch(defender_trainer, attacker_trainer)
         return True
 
@@ -229,58 +238,97 @@ def _handle_faint_and_switch(trainer, enemy_trainer):
     return False
 
 
-def pokemon_combat(trainer_a, trainer_b, *, pause_between_turns:bool=False, clear_between_turns: bool=False):
+def pokemon_combat(trainer_a,
+                   trainer_b,
+                   *,
+                   pause_between_turns:bool=False,
+                   clear_between_turns: bool=False,
+    ):
+    
     print("⚔️  BATTLE START!")
-    _print_status(trainer_a)
-    _print_status(trainer_b)
+    _print_status(trainer_a.ActivePokemon, trainer_b.ActivePokemon)
     print()
+    
+    xp = None
+    if ExperienceManager is not None:
+        xp = ExperienceManager()
+        xp.start_battle()
 
     # Battle loop
     round_n = 1
     while True:
         print(f"\n===== ROUND {round_n} =====")
-        # Early exit if someone already lost
+        
         if not trainer_a.HasAvaliablePokemon():
             print(f"🏆 Winner: {trainer_b.name}")
-            _cleanup_battle(trainer_a, trainer_b)
+            try:
+                if xp is not None:
+                    for line in xp.finalize(trainer_b, trainer_a):
+                        print(line)
+            finally:
+                _cleanup_battle(trainer_a, trainer_b)
             return trainer_b.name
+        
         if not trainer_b.HasAvaliablePokemon():
             print(f"🏆 Winner: {trainer_a.name}")
-            _cleanup_battle(trainer_a, trainer_b)
+            try:
+                if xp is not None:
+                    for line in xp.finalize(trainer_a, trainer_b):
+                        print(line)
+            finally:
+                _cleanup_battle(trainer_a, trainer_b)
             return trainer_a.name
+        
+        try:
+            if xp is not None:
+                xp.on_turn_begin([trainer_a.ActivePokemon, trainer_b.ActivePokemon])
+        except Exception:
+            pass
 
         a_first, b_second = determine_attack_order(trainer_a.ActivePokemon, trainer_b.ActivePokemon)
-        # Map order to trainers
         first_trainer = trainer_a if a_first is trainer_a.ActivePokemon else trainer_b
         second_trainer = trainer_b if first_trainer is trainer_a else trainer_a
 
         # FIRST ACTS
-        if not _take_turn(first_trainer, second_trainer):
-            # someone fled or has no Pokémon
-            winner = second_trainer.name if first_trainer.HasAvaliablePokemon() is False else None
-            if winner is None:
-                # If first ended voluntarily (flee), second is winner
-                winner = second_trainer.name
-            print(f"🏆 Winner: {winner}")
-            _cleanup_battle(trainer_a, trainer_b)
-            return winner
+        if not _take_turn(first_trainer, second_trainer, xp_manager=xp):
+            winner_tr = second_trainer if not first_trainer.HasAvaliablePokemon() or getattr(first_trainer, "_fled", False) else second_trainer
+            loser_tr = first_trainer
+            print(f"🏆 Winner: {winner_tr.name}")
+            try:
+                if xp is not None:
+                    for line in xp.finalize(winner_tr, loser_tr):
+                        print(line)
+            finally:
+                _cleanup_battle(trainer_a, trainer_b)
+            return winner_tr.name
 
         # If second lost after first action, check victory:
         if not second_trainer.HasAvaliablePokemon():
             print(f"🏆 Winner: {first_trainer.name}")
+            try:
+                if xp is not None:
+                    for line in xp.finalize(first_trainer, second_trainer):
+                        print(line)
+            finally:
+                _cleanup_battle(trainer_a, trainer_b)
             return first_trainer.name
 
         # SECOND ACTS
-        if not _take_turn(second_trainer, first_trainer):
-            winner = first_trainer.name
-            print(f"🏆 Winner: {winner}")
-            _cleanup_battle(trainer_a, trainer_b)
-            return winner
+        if not _take_turn(second_trainer, first_trainer, xp_manager=xp):
+            winner_tr = first_trainer
+            loser_tr = second_trainer
+            print(f"🏆 Winner: {winner_tr.name}")
+            try:
+                if xp is not None:
+                    for line in xp.finalize(winner_tr, loser_tr):
+                        print(line)
+            finally:
+                _cleanup_battle(trainer_a, trainer_b)
+            return winner_tr.name
 
         # Post-round status
         print("\n--- Status ---")
-        _print_status(trainer_a)
-        _print_status(trainer_b)
+        _print_status(trainer_a.ActivePokemon, trainer_b.ActivePokemon)
 
         # Optional pause (for UX when juegas a mano)
         if pause_between_turns:
@@ -288,7 +336,11 @@ def pokemon_combat(trainer_a, trainer_b, *, pause_between_turns:bool=False, clea
                 input("Press Enter to continue...")
             except KeyboardInterrupt:
                 print("\n⏹️  Battle interrupted.")
-                _cleanup_battle(trainer_a, trainer_b)
+                try:
+                    if xp is not None:
+                        pass
+                finally:
+                    _cleanup_battle(trainer_a, trainer_b)
                 return None
             
         if clear_between_turns:
