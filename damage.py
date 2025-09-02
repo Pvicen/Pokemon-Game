@@ -1,20 +1,15 @@
-from .data_io import load_type_chart
+from __future__ import annotations
 import random
+from typing import Tuple
 
-# Open json file
-_TYPE_CHART = None
+from .data_io import load_type_chart
 
+TYPE_CHART = load_type_chart
 
-def _get_type_chart():
-    global _TYPE_CHART
-    if _TYPE_CHART is None:
-        _TYPE_CHART = load_type_chart
-    return _TYPE_CHART
-# ---------- helpers for temp buff stages ----------
 
 def _stages_value(pokemon, key:str):
     if hasattr(pokemon, "_temp_buffs"):
-        return getattr(pokemon, "_temp_buffs", {}).get(key, 0)
+        return int(getattr(pokemon, "_temp_buffs", {}).get(key, 0))
     return 0
 
 
@@ -33,34 +28,44 @@ def _effectiveness_defense(base_defense: int, defender, stat_name: str):
     mult = _stages_multiplier(stages)
     return max(1, int(round(base_defense * mult)))
 
-# ---------- effectiveness ----------
 
-# get damage multiplier
-def get_effectiveness(attacker_type: str, defender_type: str) -> float:
-    type_data = _get_type_chart.get(attacker_type.capitalize(), {})
-    multiplier = type_data.get(defender_type.capitalize(), 1.0)
+def _lookup_chart(attacker_type: str, defende_type: str):
+    attacker = (attacker_type or "").strip()
+    defender = (defende_type or "").strip()
+    if not attacker or not defender:
+        return 1.0
+    
+    attacker_l = attacker.lower()
+    defender_l = defender.lower()
 
-    if multiplier > 1.0:
-        message = "💥 ¡Special attakcs are too effective!"
-    elif multiplier < 1.0:
-        message = "😐 Special attacks are not at all effective..."
+    row = TYPE_CHART.get(attacker_l) or TYPE_CHART.get(defender_l)
+    if not isinstance(row, dict):
+        return 1.0
+    
+    return float(row.get(defender_l, row.get(defender_l.title(), 1,0)))
+    
+
+def get_effectiveness(attacker_type: str, defender_type: str) -> Tuple[float, str]:
+    mult = _lookup_chart(attacker_type, defender_type)
+    if mult > 1.0:
+        msg = "💥 Special attack is super effective!"
+    elif mult < 1.0 and mult > 0.0:
+        msg = "😐 Special attack is not very effective..."
+    elif mult == 0.0:
+        msg = "🛡️ It has no effect!"
     else:
-        message = "🔸 Special attack is normal."      
-    return multiplier, message
+        msg = "🔸 Normal effectiveness."
+    return mult, msg
 
 
-# Get damage with element
 def calculate_damage(attacker, defender, base_attack, attack_type="special"):
     buff_special = _effectiveness_base_attack(base_attack, attacker, "special_attacks")
     effectiveness, _ = get_effectiveness(attacker.element_type, defender.element_type)
     new_damage = buff_special * effectiveness
     eff_special_defense = _effectiveness_base_attack(getattr(defender, "special_defense", 0), defender, "special_defense")
-    
-    final_damage = max(1, int(new_damage - eff_special_defense * 0.5))
-    return final_damage
+    return max(1, int(new_damage - eff_special_defense * 0.5))
 
 
-# Get damage withtout element
 def damage_without_element(attacker, defender, base_attack):
     buff_normal = _effectiveness_base_attack(base_attack, attacker, "normal_attacks")
     random_bonus = random.randint(-3, 3)

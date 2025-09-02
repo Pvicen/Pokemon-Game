@@ -9,22 +9,14 @@ from .errors import DataPathError
 
 
 # You can adapt these to your project name if you want stronger namespacing
-_ENV_PROJECT_ROOT_CANDIDATES = (
-    "Pokemon",
-    "C:\Users\moral\Documents\Pokemon",
-)
-_ENV_DATA_DIR_CANDIDATES = (
-    "POKEMON_GAME_DATA_DIR",
-    "DATA_DIR",
-)
+_ENV_PROJECT_ROOT_CANDIDATES = ("Pokemon",
+                                r"C:\Users\moral\Documents\Pokemon",
+                                )
+_ENV_DATA_DIR_CANDIDATES = ("POKEMON_GAME_DATA_DIR","DATA_DIR")
 
 _DEFAULT_DATA_SUBDIR = "data"
 
-_MARKERS_DEFAULT = (
-    "pyproject.toml",  # modern Python projects
-    ".git",            # git repo root
-    _DEFAULT_DATA_SUBDIR,  # fallback if a top-level "data" exists
-)
+_MARKERS_DEFAULT = ("pyproject.toml",".git",_DEFAULT_DATA_SUBDIR)
 
 
 def _read_env_path(keys: Iterable[str]) -> Optional[Path]:

@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import Optional, Dict, Any
-from .utils import load_items, clamp
+
+from .utils import clamp
+from .data_io import load_items
 
 class Inventory:
     

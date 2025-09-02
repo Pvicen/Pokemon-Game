@@ -1,5 +1,5 @@
 from .models import Pokemon
-from .utils import load_items
+from .data_io import load_items
 from .inventory import Inventory
 
 class Trainer:

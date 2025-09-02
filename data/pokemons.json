@@ -94,6 +94,7 @@
     },
     "Greninja": {
         "Base_attack": 111,
+        "Element_type": "Water",
         "Health": 100,
         "Defense": 78,
         "Evolution": "",

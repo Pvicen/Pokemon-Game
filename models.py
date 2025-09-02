@@ -1,61 +1,115 @@
 from __future__ import annotations
-from .damage import get_effectiveness, calculate_damage, damage_without_element
-from .data_io import load_attacks_json, load_item
+from typing import Dict, Any, Optional, List
 
 class Pokemon:
-    
-    def __init__(self, name, element_type, health, normal_attacks, defense, special_defense, speed, evolution, evolution_level, current_level, special_attacks = None):
-        
-        # Stats
-        self.name = name
-        self.element_type = element_type
-        self.health = health
-        self.defense = defense
-        self.special_defense = special_defense
-        self.speed = speed
-        self.maximun_hp = health
-        
-        # Attacks
-        self.special_attacks = special_attacks if special_attacks else []
-        self.normal_attacks = normal_attacks if normal_attacks else []
-        
-        # Evolution
-        self.evolution = evolution
-        self.evolution_level = evolution_level
-        self.current_level = current_level
-        
-    
+    def __init__(
+        self,
+        name: str,
+        element_type: str,
+        health: int,
+        normal_attacks: Optional[List[Dict[str, Any]]] = None,
+        defense: int = 0,
+        special_defense: int = 0,
+        speed: int = 0,
+        evolution: Optional[str] = None,
+        evolution_level: Optional[int] = None,
+        current_level: Optional[int | str] = None,
+        special_attacks: Optional[List[Dict[str, Any]]] = None,
+    ) -> None:
+        # --- base identity ---
+        self.name: str = str(name)
+        self.element_type: str = str(element_type).strip().lower() if element_type is not None else "unknown"
 
-    def ShowStats(self):
-        print(f"Attributes of {self.name}:", sep="")
-        print(f"-type: {self.element_type}")
-        print(f"-Health: {self.health}")
-        print(f"-Defense: {self.defense}")
-        print(f"-Special_defense: {self.special_defense}")
-        print(f"-Speed: {self.speed}")
-        print(f"-Evolution: {self.evolution}")
-        print(f"-Evolution_level: {self.evolution_level}")
-        print(f"-Current_level: {self.current_level}")
-    
+        # --- stats ---
+        self.health: int = max(0, int(health))
+        self.maximun_hp: int = max(1, int(health))
+        self.max_hp: int = self.maximun_hp
+        self.defense: int = max(0, int(defense))
+        self.special_defense: int = max(0, int(special_defense))
+        self.speed: int = max(0, int(speed))
 
-    def is_alive(self):
+        # --- attacks ---
+        self.special_attacks: List[Dict[str, Any]] = list(special_attacks) if special_attacks else []
+        self.normal_attacks: List[Dict[str, Any]] = list(normal_attacks) if normal_attacks else []
+
+        # --- evolution info ---
+        self.evolution: Optional[str] = (str(evolution).strip().lower() if evolution else None)
+        self.evolution_level: Optional[int] = (int(evolution_level) if evolution_level is not None else None)
+        self.current_level: Optional[int | str] = current_level
+        
+        
+        self._temp_buffs: Dict[str, int] = {}
+
+    # ---------------- basic status ----------------
+
+    def is_alive(self) -> bool:
         if self.health < 0:
             self.health = 0
         return self.health > 0
-    
-    
-    def perform_combat(self, enemy, get_effectinveness, calculate_damage):
-        self.health_bar()
-        self.ShowStats()
-        print("\n")
-        enemy.health_bar()
-        enemy.ShowStats()
-        print("\n")
-            
-    def upgrade_pokemon(self):
-        pass
+
+    def clamp_hp(self) -> None:
+        if self.health < 0:
+            self.health = 0
+        if self.health > self.maximun_hp:
+            self.health = self.maximun_hp
+
+    # ---------------- damage / healing ----------------
+
+    def take_damage(self, amount: int) -> int:
+        dmg = max(0, int(amount))
+        before = self.health
+        self.health = max(0, before - dmg)
+        return before - self.health
+
+    def heal(self, amount: int) -> int:
+        inc = max(0, int(amount))
+        before = self.health
+        self.health = min(self.maximun_hp, before + inc)
+        return self.health - before
+
+    def heal_percent(self, ratio: float) -> int:
+        r = float(ratio)
+        if r <= 0.0:
+            return 0
+        target = int(round(self.maximun_hp * r))
+        want = target - self.health
+        return self.heal(max(0, want))
+
+    # ---------------- stages / buffs ----------------
+
+    def get_stage(self, stat: str) -> int:
+        return int(self._temp_buffs.get(stat, 0))
+
+    def apply_stage_buff(self, stat: str, delta: int) -> int:
+        cur = self.get_stage(stat)
+        new = cur + int(delta)
+        self._temp_buffs[stat] = new
+        return new
+
+    def clear_battle_buffs(self) -> None:
+        self._temp_buffs.clear()
+
+    # ---------------- convenience ----------------
+
+    @property
+    def all_attacks(self) -> List[Dict[str, Any]]:
+        """Return the concatenation of special + normal attacks (a new list)."""
+        return list(self.special_attacks) + list(self.normal_attacks)
+
+    def show_stats(self) -> None:
+        """Simple pretty print (non-essential, kept for debugging)."""
+        print(f"Attributes of {self.name}:")
+        print(f"- Type: {self.element_type}")
+        print(f"- Health: {self.health}/{self.maximun_hp}")
+        print(f"- Defense: {self.defense}")
+        print(f"- Special Defense: {self.special_defense}")
+        print(f"- Speed: {self.speed}")
+        print(f"- Evolution: {self.evolution}")
+        print(f"- Evolution Level: {self.evolution_level}")
+        print(f"- Current Level: {self.current_level}")
         
-"""""
+        
+
 class EvolvedPokemon(Pokemon):
     
     def __init__(self, name, element_type, health, base_attack, defense, speed, special_attacks, evolution_attack):
@@ -79,4 +133,3 @@ class EvolvedPokemon(Pokemon):
             
         else:
             self.use_attack(enemy)
-"""
