@@ -113,12 +113,10 @@ def validate_type_chart_schema(*args, **kwargs):
     return validate_type_chart(*args, **kwargs)
 
 
-# Optional: graceful presence of names that were listed before but might not exist
-# Define no-op aliases only if you actually have these in your errors module.
 try:
     from .errors import MalformedJSONError  # type: ignore
 except Exception:
-    class MalformedJSONError(Exception):  # fallback to keep imports stable
+    class MalformedJSONError(Exception):
         pass
 
 try:

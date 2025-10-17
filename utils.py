@@ -5,7 +5,7 @@ from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Tuple
 
 from .models import Pokemon
-# 👉 Importa SOLO la fachada pública de data_io (sin internos):
+
 from .data_io import (
     load_attacks,
     load_pokemons,

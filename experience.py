@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Iterable, Any
 
-# Try to import project utilities; provide safe fallbacks if missing
 try:
     from .utils import clamp, load_attacks_json
 except Exception:
@@ -13,7 +12,6 @@ except Exception:
         return {}
 
 try:
-    # We'll use canonical normalized pokedex (lower-cased keys)
     from data_io import load_pokemons as io_load_pokemons
 except Exception:
     io_load_pokemons = None
@@ -287,6 +285,7 @@ class Participation:
 
 @dataclass
 class BattleXPTracker:
+    
     cfg: XPConfig = field(default_factory=XPConfig)
     participants: Dict[Any, Participation] = field(default_factory=dict)
     ko_events: List[KOEvent] = field(default_factory=list)

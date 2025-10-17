@@ -8,7 +8,6 @@ from typing import Iterable, Optional
 from .errors import DataPathError
 
 
-# You can adapt these to your project name if you want stronger namespacing
 _ENV_PROJECT_ROOT_CANDIDATES = ("Pokemon",
                                 r"C:\Users\moral\Documents\Pokemon",
                                 )

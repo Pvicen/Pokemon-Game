@@ -1,21 +1,32 @@
 {
-    "Pikachu": {
-        "Base_attack": 86,
+    "Pichu": {
+        "Base_attack": 40,
         "Element_type": "Electric",
-        "Health": 96,
-        "Defense": 74,
+        "Health": 20,
+        "Defense": 15,
+        "Special_defense": 35,
+        "Speed": 60,
+        "Evolution": "Pikachu",
+        "Current_level": 1,
+        "Evolution_level": 14
+    },
+    "Pikachu": {
+        "Base_attack": 55,
+        "Element_type": "Electric",
+        "Health": 35,
+        "Defense": 40,
+        "Special_defense": 50,
+        "Speed": 90,
         "Evolution": "Raichu",
-        "Current_level": "3",
-        "Evolution_level": 4,
-        "Special_defense": 75,
-        "Speed": 84
+        "Current_level": "14",
+        "Evolution_level": 26
     },
     "Raichu": {
         "Base_attack": 68,
         "Health": 104,
         "Element_type": "Electric",
         "Speed": 68,
-        "Current_level": "Max",
+        "Current_level": "26",
         "Defense": 83,
         "Special_defense": 85
     },
