@@ -1,0 +1,6 @@
+# Runtime dependencies detected in the codebase
+# readchar is used by `map.py` for single-character input
+readchar>=2.0.0
+
+# Standard tooling (optional)
+pytest>=7.0.0
