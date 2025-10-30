@@ -5,3 +5,7 @@ from .models import Pokemon
 from .trainers import Trainer
 from .inventory import Inventory
 from .utils import load_attacks_json
+
+# internal helpers
+
+
