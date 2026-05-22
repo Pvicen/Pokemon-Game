@@ -1,30 +1,104 @@
 from __future__ import annotations
 
-from .data_io import (
-    load_all_data,
-    load_attacks,
-    load_pokemons,
-    load_items,
-    load_type_chart,
-    DataValidationError,
-    DataIOError,
-    DataPathError,
-)
-from .models import Pokemon
-from .trainers import Trainer
-from .combat import pokemon_combat  
-from .controllers import HumanController, IAcontroller
+from .game.setup_game import create_player_trainer, choose_starter
+from .game.save_load import list_saves, load_game, delete_save, restore_player_trainer
+from .map import run_map
+
+
+def _flush_kb() -> None:
+    try:
+        import msvcrt
+        while msvcrt.kbhit():
+            msvcrt.getch()
+    except ImportError:
+        pass
+
+
+def _main_menu() -> tuple[str | None, bool]:
+    """Returns (slot_name, is_new_game). slot_name is None only on error."""
+    saves = list_saves()
+
+    print("\n  ╔══════════════════════════╗")
+    print("  ║      POKEMON  GAME       ║")
+    print("  ╚══════════════════════════╝\n")
+
+    if saves:
+        print("  Saved games:")
+        for i, name in enumerate(saves, 1):
+            print(f"    [{i}] {name}")
+        print()
+        print("  [N] New game")
+        print("  [D] Delete a save")
+        print()
+        _flush_kb()
+        choice = input("  Choose: ").strip().lower()
+
+        if choice == "n":
+            return _ask_save_name(saves), True
+
+        if choice == "d":
+            _flush_kb()
+            name = input("  Save name to delete: ").strip()
+            if name in saves:
+                delete_save(name)
+                print(f"  '{name}' deleted.")
+            else:
+                print("  Save not found.")
+            return _main_menu()
+
+        if choice.isdigit():
+            idx = int(choice) - 1
+            if 0 <= idx < len(saves):
+                return saves[idx], False
+
+        print("  Invalid choice.")
+        return _main_menu()
+
+    else:
+        print("  No saved games found.\n")
+        _flush_kb()
+        input("  Press Enter to start a new game...")
+        return _ask_save_name([]), True
+
+
+def _ask_save_name(existing: list[str]) -> str:
+    _flush_kb()
+    while True:
+        name = input("\n  Enter a name for your save: ").strip()
+        if not name:
+            print("  Name cannot be empty.")
+            continue
+        if name in existing:
+            print(f"  '{name}' already exists. Choose a different name.")
+            continue
+        return name
+
 
 def main():
-    
-    print("🔰 Welcome to the Pokémon Battle Arena 🔰\n")
+    slot_name, is_new = _main_menu()
 
-    
+    player_trainer = None
+    start_pos = None
+    defeated_positions = []
+
+    if not is_new:
+        save_data = load_game(slot_name)
+        if save_data:
+            player_trainer = restore_player_trainer(save_data)
+            pos = save_data.get("position", {})
+            start_pos = (pos.get("x", None), pos.get("y", None))
+            defeated_positions = [tuple(p) for p in save_data.get("defeated_trainers", [])]
+            lead = player_trainer.team[0]
+            print(f"\n  Welcome back! {lead.name} Lv.{lead.current_level} is ready.")
+            _flush_kb()
+            input("  Press Enter to continue...")
+
+    if player_trainer is None:
+        starter_names = choose_starter()
+        player_trainer = create_player_trainer(starter_names)
+
+    run_map(player_trainer, start_pos=start_pos, defeated_positions=defeated_positions, slot_name=slot_name)
+
 
 if __name__ == "__main__":
     main()
-
-# Agregar las siguientes cosas:
-# 1) Agregar el mapa interativo 
-# 4) Unificar como crear los equipos como elegir los pokemons, etc.
-# 5) Hacer que acepte pokemons con mas de un tipo

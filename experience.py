@@ -12,7 +12,7 @@ except Exception:
         return {}
 
 try:
-    from data_io import load_pokemons as io_load_pokemons
+    from .data_io import load_pokemons as io_load_pokemons
 except Exception:
     io_load_pokemons = None
 
@@ -27,7 +27,7 @@ class XPConfig:
     base_hp_weight: float = 0.60
     base_def_weight: float = 0.35
     base_spd_weight: float = 0.25
-    base_level_weight: float = 6.0      # adds XP proportional to defender level
+    base_level_weight: float = 6.0   
 
     # Difficulty multipliers (team size, evolution, level disparity)
     min_team_size_mult: float = 0.75     # ↓ cap if you outnumber the enemy
@@ -168,7 +168,7 @@ def _level_disparity_multiplier(my_team: Iterable, enemy_team: Iterable, *, cfg:
 
 
 def _clamp_mult(x: float, *, cfg: XPConfig) -> float:
-    return clamp(cfg.min_total_multiplier, x, cfg.max_total_multiplier)
+    return clamp(x, cfg.min_total_multiplier, cfg.max_total_multiplier)
 
 # -----------------------------
 # Species lookup & evolution
@@ -325,7 +325,8 @@ class BattleXPTracker:
             target = winners[0] if winners else None
             return [] if target is None else [(target, pool)]
 
-        presences = {p: pr.turns_on_field for p, pr in self.participants.items() if pr.turns_on_field > 0}
+        winner_set = set(winners)
+        presences = {p: pr.turns_on_field for p, pr in self.participants.items() if pr.turns_on_field > 0 and p in winner_set}
         if not presences:
             target = winners[0] if winners else None
             return [] if target is None else [(target, pool)]
@@ -392,6 +393,7 @@ class BattleXPTracker:
             lvl += 1
             setattr(pokemon, "level", lvl)
             setattr(pokemon, "exp", new_xp)
+            pokemon.current_level = lvl
 
             # Check if species should evolve at this level
             evo_key = getattr(pokemon, "evolution", None)
@@ -424,6 +426,7 @@ class BattleXPTracker:
             if not evolved_now:
                 # Normal stat growth when no evolution this tick
                 pokemon.maximun_hp = int(pokemon.maximun_hp + self.cfg.hp_per_level)
+                pokemon.max_hp = pokemon.maximun_hp
                 pokemon.health = min(pokemon.health + self.cfg.hp_per_level, pokemon.maximun_hp)
                 pokemon.defense = int(pokemon.defense + self.cfg.def_per_level)
                 pokemon.special_defense = int(pokemon.special_defense + self.cfg.spdef_per_level)

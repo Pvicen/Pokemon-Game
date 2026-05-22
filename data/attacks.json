@@ -131,6 +131,90 @@
             "damage": 40
         }
     ],
+    "Mankey": [
+        {"name": "Scratch",     "type": "Normal",   "damage": 40},
+        {"name": "Karate Chop", "type": "Fighting",  "damage": 50}
+    ],
+    "Zubat": [
+        {"name": "Leech Life",  "type": "Bug",      "damage": 30},
+        {"name": "Bite",        "type": "Normal",   "damage": 40}
+    ],
+    "Oddish": [
+        {"name": "Absorb",      "type": "Grass",    "damage": 20},
+        {"name": "Acid",        "type": "Poison",   "damage": 40}
+    ],
+    "Meowth": [
+        {"name": "Scratch",     "type": "Normal",   "damage": 40},
+        {"name": "Fury Swipes", "type": "Normal",   "damage": 35}
+    ],
+    "Abra": [
+        {"name": "Confusion",   "type": "Psychic",  "damage": 50},
+        {"name": "Psybeam",     "type": "Psychic",  "damage": 65}
+    ],
+    "Magnemite": [
+        {"name": "Thunder Shock","type": "Electric", "damage": 40},
+        {"name": "Spark",       "type": "Electric", "damage": 50}
+    ],
+    "Horsea": [
+        {"name": "Bubble",      "type": "Water",    "damage": 30},
+        {"name": "Water Gun",   "type": "Water",    "damage": 40}
+    ],
+    "Geodude": [
+        {"name": "Rock Throw",  "type": "Rock",     "damage": 50},
+        {"name": "Magnitude",   "type": "Ground",   "damage": 70}
+    ],
+    "Rhyhorn": [
+        {"name": "Horn Attack", "type": "Normal",   "damage": 65},
+        {"name": "Rock Blast",  "type": "Rock",     "damage": 25}
+    ],
+    "Poliwag": [
+        {"name": "Bubble",      "type": "Water",    "damage": 30},
+        {"name": "Water Gun",   "type": "Water",    "damage": 40}
+    ],
+    "Venonat": [
+        {"name": "Bug Bite",    "type": "Bug",      "damage": 60},
+        {"name": "Acid",        "type": "Poison",   "damage": 40}
+    ],
+    "Bellsprout": [
+        {"name": "Vine Whip",   "type": "Grass",    "damage": 45},
+        {"name": "Acid",        "type": "Poison",   "damage": 40}
+    ],
+    "Ekans": [
+        {"name": "Wrap",        "type": "Normal",   "damage": 15},
+        {"name": "Poison Sting","type": "Poison",   "damage": 15}
+    ],
+    "Koffing": [
+        {"name": "Smog",        "type": "Poison",   "damage": 20},
+        {"name": "Sludge",      "type": "Poison",   "damage": 65}
+    ],
+    "Primeape": [
+        {"name": "Karate Chop", "type": "Fighting",  "damage": 50},
+        {"name": "Cross Chop",  "type": "Fighting",  "damage": 100}
+    ],
+    "Graveler": [
+        {"name": "Rock Throw",  "type": "Rock",     "damage": 50},
+        {"name": "Magnitude",   "type": "Ground",   "damage": 70}
+    ],
+    "Haunter": [
+        {"name": "Lick",        "type": "Ghost",    "damage": 30},
+        {"name": "Shadow Ball", "type": "Ghost",    "damage": 80}
+    ],
+    "Magneton": [
+        {"name": "Thunder Shock","type": "Electric", "damage": 40},
+        {"name": "Thunder",     "type": "Electric", "damage": 110}
+    ],
+    "Arbok": [
+        {"name": "Bite",        "type": "Normal",   "damage": 40},
+        {"name": "Poison Fang", "type": "Poison",   "damage": 50}
+    ],
+    "Weezing": [
+        {"name": "Smog",        "type": "Poison",   "damage": 20},
+        {"name": "Sludge Bomb", "type": "Poison",   "damage": 90}
+    ],
+    "Rhydon": [
+        {"name": "Horn Attack", "type": "Normal",   "damage": 65},
+        {"name": "Earthquake",  "type": "Ground",   "damage": 100}
+    ],
     "Normal_attacks": [
         {
             "name": "Quick Attack",

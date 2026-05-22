@@ -1,0 +1,598 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Tuple
+
+from ..models import Pokemon
+from ..trainers import Trainer
+from ..inventory import Inventory
+
+
+# =============================================================================
+# DATA STRUCTURES
+# =============================================================================
+
+@dataclass
+class WildPokemonEntry:
+    name: str
+    min_level: int = 1
+    max_level: int = 5
+    spawn_chance: float = 1.0
+
+
+@dataclass
+class Zone:
+    id: str
+    name: str
+    description: str
+    min_player_level: int = 1
+    wild_pokemons: List[WildPokemonEntry] = field(default_factory=list)
+    wild_encounter_chance: float = 0.15
+    trainer_count: int = 3
+
+
+@dataclass
+class TrainerSetup:
+    name: str
+    team: List[Tuple[str, int]]   # [(pokemon_name, level), ...]
+    position: Tuple[int, int]     # (x, y) on the map
+    defeat_message: str = "You won!"
+    dialogue: List[str] = field(default_factory=list)
+    reward_pool: list = field(default_factory=list)  # List[Dict] o List[Tuple[Dict, int]] (ponderado)
+    is_friendly: bool = False
+
+
+# =============================================================================
+# WORLD ZONES
+# =============================================================================
+
+ZONES: Dict[str, Zone] = {
+    "pueblo_raiz": Zone(
+        id="pueblo_raiz",
+        name="Pueblo Raiz",
+        description="The starting town. Beginner trainers.",
+        min_player_level=1,
+        wild_pokemons=[
+            WildPokemonEntry(name="Mankey",   min_level=1, max_level=5, spawn_chance=2.0),
+            WildPokemonEntry(name="Oddish",   min_level=1, max_level=5, spawn_chance=2.0),
+            WildPokemonEntry(name="Zubat",    min_level=1, max_level=5, spawn_chance=2.0),
+        ],
+        wild_encounter_chance=0.01,
+        trainer_count=3,
+    ),
+    "pueblo_alto": Zone(
+        id="pueblo_alto",
+        name="Pueblo Alto",
+        description="Second town and routes. Intermediate trainers.",
+        min_player_level=5,
+        wild_pokemons=[
+            WildPokemonEntry(name="Abra",     min_level=5, max_level=10, spawn_chance=2.0),
+            WildPokemonEntry(name="Magnemite", min_level=5, max_level=10, spawn_chance=2.0),
+            WildPokemonEntry(name="Horsea",   min_level=5, max_level=10, spawn_chance=2.0),
+        ],
+        wild_encounter_chance=0.01,
+        trainer_count=4,
+    ),
+    "bosque_umbral": Zone(
+        id="bosque_umbral",
+        name="Bosque Umbral",
+        description="Dense forest with tricky paths. Medium difficulty.",
+        min_player_level=8,
+        wild_pokemons=[
+            WildPokemonEntry(name="Venonat",   min_level=8, max_level=14, spawn_chance=2.5),
+            WildPokemonEntry(name="Bellsprout", min_level=8, max_level=14, spawn_chance=2.0),
+            WildPokemonEntry(name="Ekans",     min_level=8, max_level=14, spawn_chance=2.0),
+        ],
+        wild_encounter_chance=0.02,
+        trainer_count=3,
+    ),
+    "cueva_oscura": Zone(
+        id="cueva_oscura",
+        name="Cueva Oscura",
+        description="Dark cave with strong trainers. High difficulty.",
+        min_player_level=12,
+        wild_pokemons=[
+            WildPokemonEntry(name="Geodude",  min_level=12, max_level=18, spawn_chance=2.5),
+            WildPokemonEntry(name="Gastly",   min_level=12, max_level=18, spawn_chance=2.0),
+            WildPokemonEntry(name="Zubat",    min_level=12, max_level=18, spawn_chance=2.0),
+        ],
+        wild_encounter_chance=0.03,
+        trainer_count=4,
+    ),
+}
+
+ZONE_ORDER: List[str] = ["pueblo_raiz", "pueblo_alto", "bosque_umbral", "cueva_oscura"]
+
+
+# =============================================================================
+# TRAINERS
+# Coordinates match the 120x50 map defined in map/tiles.py
+# =============================================================================
+
+TRAINERS: List[TrainerSetup] = [
+    # --- Pueblo Raiz (easy) --- rows 28-48, cols 1-38
+    TrainerSetup(
+        name="Youngster Tim",
+        team=[("Mankey", 3), ("Zubat", 2)],
+        position=(10, 44),
+        defeat_message="No way! You beat me!",
+        dialogue=[
+            "Hey, you there! You look like a trainer!",
+            "I've been training my Mankey all week for this!",
+            "Get ready, because I never lose!",
+        ],
+        reward_pool=[
+            {"potion": 1},
+            {"potion": 2},
+            {"xdefense": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Lass Ana",
+        team=[("Oddish", 4), ("Meowth", 3)],
+        position=(28, 43),
+        defeat_message="My Pokemon did their best...",
+        dialogue=[
+            "Oh! A challenger!",
+            "My Oddish and Meowth are my best friends.",
+            "We'll show you the power of friendship!",
+        ],
+        reward_pool=[
+            {"potion": 1},
+            {"xdefense": 1},
+            {"potion": 1, "xdefense": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Collector Milo",
+        team=[("Mankey", 3), ("Zubat", 3), ("Oddish", 4)],
+        position=(5, 40),
+        defeat_message="My whole collection, defeated!",
+        dialogue=[
+            "Halt! Do you have any rare Pokemon?",
+            "I've spent years collecting the finest specimens.",
+            "My collection is unbeatable. Prepare yourself!",
+        ],
+        reward_pool=[
+            {"potion": 2},
+            {"potion": 1, "xattack": 1},
+            {"superpotion": 1},
+        ],
+    ),
+
+    # --- Pueblo Alto + Routes (medium-low) ---
+    TrainerSetup(
+        name="Explorer Diego",
+        team=[("Abra", 7), ("Magnemite", 6)],
+        position=(10, 17),
+        defeat_message="I underestimated you...",
+        dialogue=[
+            "I've crossed deserts and climbed mountains!",
+            "My Pokemon have been tested in the harshest conditions.",
+            "A fresh trainer like you doesn't stand a chance!",
+        ],
+        reward_pool=[
+            {"superpotion": 1},
+            {"xattack": 1},
+            {"potion": 2, "xdefense": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Scientist Rosa",
+        team=[("Magnemite", 8), ("Abra", 7)],
+        position=(28, 17),
+        defeat_message="My research... defeated!",
+        dialogue=[
+            "Fascinating. A wild trainer approaches.",
+            "My research confirms that psychic types have a 94.7% win rate in controlled environments.",
+            "Consider this battle... a field test.",
+        ],
+        reward_pool=[
+            {"superpotion": 1, "xspecialattack": 1},
+            {"superpotion": 2},
+            {"xspecialattack": 1, "xspecialdefense": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Hiker Tomas",
+        team=[("Geodude", 8), ("Rhyhorn", 7)],
+        position=(41, 35),
+        defeat_message="The mountains have spoken.",
+        dialogue=[
+            "These mountains are my home, stranger.",
+            "My Pokemon are as tough as the rocks they were born from.",
+            "The mountain does not move for anyone. Neither do I.",
+        ],
+        reward_pool=[
+            {"superpotion": 1, "xdefense": 1},
+            {"superpotion": 2},
+            {"xdefense": 2},
+        ],
+    ),
+    TrainerSetup(
+        name="Camper Leo",
+        team=[("Poliwag", 9), ("Horsea", 8), ("Psyduck", 9)],
+        position=(60, 24),
+        defeat_message="An intense duel!",
+        dialogue=[
+            "Ah, another traveler! Pull up a chair.",
+            "I've been out here for weeks with just my Pokemon and the stars.",
+            "It gets lonely out here... but a battle always livens things up!",
+        ],
+        reward_pool=[
+            {"superpotion": 2},
+            {"superpotion": 1, "xattack": 1},
+            {"superpotion": 1, "xdefense": 1},
+        ],
+    ),
+
+    # --- Bosque Umbral (medium-high) ---
+    TrainerSetup(
+        name="Bug Catcher Roy",
+        team=[("Venonat", 10), ("Bellsprout", 10)],
+        position=(45, 5),
+        defeat_message="My bugs lost?!",
+        dialogue=[
+            "Nobody comes into MY forest without a fight!",
+            "I've raised these bugs since they were eggs.",
+            "They may look weak to you, but don't underestimate them!",
+        ],
+        reward_pool=[
+            {"superpotion": 1, "xattack": 1},
+            {"superpotion": 2, "xdefense": 1},
+            {"xattack": 1, "xspecialattack": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Picnicker Mia",
+        team=[("Oddish", 11), ("Ekans", 10)],
+        position=(61, 10),
+        defeat_message="I'll train harder in the forest!",
+        dialogue=[
+            "This forest is so beautiful, isn't it?",
+            "I come here every week to train with my Pokemon.",
+            "But don't let the scenery distract you — I'm serious about battling!",
+        ],
+        reward_pool=[
+            {"superpotion": 1, "xdefense": 1},
+            {"superpotion": 2},
+            {"xdefense": 1, "xspecialdefense": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Ranger Sam",
+        team=[("Ekans", 12), ("Koffing", 11)],
+        position=(80, 10),
+        defeat_message="The forest's power wasn't enough.",
+        dialogue=[
+            "Stop right there. This is a protected zone.",
+            "I've been patrolling these woods for five years.",
+            "Only the strongest trainers pass through here. Show me what you've got.",
+        ],
+        reward_pool=[
+            {"superpotion": 2, "xspecialdefense": 1},
+            {"maxpotion": 1},
+            {"superpotion": 1, "xattack": 1, "xdefense": 1},
+        ],
+    ),
+
+    # --- Cueva Oscura (hard) ---
+    TrainerSetup(
+        name="Black Belt Ryu",
+        team=[("Primeape", 14), ("Graveler", 13)],
+        position=(89, 32),
+        defeat_message="Your strength is remarkable.",
+        dialogue=[
+            "...",
+            "You have the eyes of a warrior.",
+            "I have trained in this cave for ten years, seeking the perfect battle.",
+            "Perhaps today I will find it.",
+        ],
+        reward_pool=[
+            {"maxpotion": 1, "xattack": 1},
+            {"maxpotion": 1, "xdefense": 1},
+            {"superpotion": 2, "xattack": 2},
+        ],
+    ),
+    TrainerSetup(
+        name="Ace Trainer Sara",
+        team=[("Haunter", 15), ("Magneton", 14)],
+        position=(93, 36),
+        defeat_message="You've mastered the cave's trials!",
+        dialogue=[
+            "I've defeated every trainer who dared enter this cave.",
+            "My Haunter feeds on fear, and my Magneton on arrogance.",
+            "Which one will be your downfall?",
+        ],
+        reward_pool=[
+            {"maxpotion": 1, "xspecialattack": 1},
+            {"maxpotion": 2},
+            {"maxpotion": 1, "xattack": 1, "xspecialattack": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Rocket Grunt",
+        team=[("Arbok", 16), ("Weezing", 15)],
+        position=(110, 38),
+        defeat_message="Team Rocket blasts off again!",
+        dialogue=[
+            "Heh. You've made it this far.",
+            "Team Rocket controls these depths. This cave belongs to us.",
+            "Hand over your Pokemon, or face the consequences!",
+        ],
+        reward_pool=[
+            {"maxpotion": 1, "revive": 1},
+            {"maxpotion": 2, "xattack": 1},
+            {"revive": 1, "xattack": 1, "xdefense": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Cave Champion",
+        team=[("Rhydon", 18), ("Graveler", 17), ("Haunter", 17)],
+        position=(108, 47),
+        defeat_message="Unbelievable! You conquered the deepest cave!",
+        dialogue=[
+            "So. You've made it to the deepest chamber.",
+            "I have waited here for years.",
+            "Trainer after trainer has fallen before me.",
+            "You will be no different... or perhaps you will surprise me.",
+            "Come. Let this be the battle that history remembers.",
+        ],
+        reward_pool=[
+            {"maxpotion": 2, "revive": 1, "xattack": 1},
+            {"maxpotion": 2, "revive": 1, "xspecialattack": 1},
+            {"maxpotion": 3, "revive": 2},
+        ],
+    ),
+
+    # --- Friendly NPCs (no battle) ---
+    TrainerSetup(
+        name="Elder Roy",
+        team=[],
+        position=(20, 38),
+        defeat_message="",
+        dialogue=[
+            "Ah, a young trainer! It's been a long time since I've seen such determination.",
+            "I used to travel these roads myself, many years ago.",
+            "Take these supplies. The road ahead is long, and you'll need them.",
+        ],
+        reward_pool=[
+            ({"potion": 1},       60),
+            ({"potion": 2},       25),
+            ({"superpotion": 1},  14),
+            ({"revive": 1},        1),
+        ],
+        is_friendly=True,
+    ),
+    TrainerSetup(
+        name="Nurse Clara",
+        team=[],
+        position=(35, 22),
+        defeat_message="",
+        dialogue=[
+            "Hello there, traveler! You look like you've been through some tough battles.",
+            "I'm not a full Pokemon Center, but I carry supplies for emergencies.",
+            "Please, take this. Every trainer deserves a fighting chance.",
+        ],
+        reward_pool=[
+            ({"superpotion": 1},             45),
+            ({"potion": 2, "xdefense": 1},   30),
+            ({"superpotion": 2},             20),
+            ({"revive": 1},                   5),
+        ],
+        is_friendly=True,
+    ),
+    TrainerSetup(
+        name="Lost Traveler",
+        team=[],
+        position=(65, 7),
+        defeat_message="",
+        dialogue=[
+            "Oh thank goodness! Another person!",
+            "I've been wandering this forest for hours...",
+            "I don't have much, but here, take some of my supplies. You saved my sanity.",
+        ],
+        reward_pool=[
+            ({"superpotion": 1, "xattack": 1},   40),
+            ({"superpotion": 2, "xdefense": 1},   30),
+            ({"maxpotion": 1},                    25),
+            ({"revive": 1},                        5),
+        ],
+        is_friendly=True,
+    ),
+    TrainerSetup(
+        name="Deserter",
+        team=[],
+        position=(95, 44),
+        defeat_message="",
+        dialogue=[
+            "...",
+            "You're not with Team Rocket, are you?",
+            "Good. I'm done with them. Done with all of it.",
+            "I found these deep in the cave. Take them.",
+            "Get out of here before the Grunt catches you.",
+        ],
+        reward_pool=[
+            ({"maxpotion": 1, "revive": 1},                    40),
+            ({"maxpotion": 2},                                  30),
+            ({"revive": 1, "xattack": 1, "xspecialattack": 1}, 22),
+            ({"maxrevive": 1},                                   8),
+        ],
+        is_friendly=True,
+    ),
+]
+
+
+# =============================================================================
+# STARTER POKEMON OPTIONS
+# =============================================================================
+
+STARTER_POKEMONS: List[Tuple[str, int]] = [
+    ("Pikachu", 5),
+    ("Bulbasaur", 5),
+    ("Squirtle", 5),
+    ("Charmeleon", 5),
+]
+
+
+# =============================================================================
+# FACTORY FUNCTIONS
+# =============================================================================
+
+def _build_pokemon(pokemon_name: str, level: int, pokemon_db: dict, attacks_db: dict) -> Optional[Pokemon]:
+    key = pokemon_name.lower()
+    data = pokemon_db.get(key)
+    if data is None:
+        return None
+    attacks = attacks_db["by_owner"].get(key, [])
+    return Pokemon(
+        name=data["name"],
+        element_type=data["element_type"],
+        health=data["health"],
+        defense=data["defense"],
+        special_defense=data["special_defense"],
+        speed=data["speed"],
+        normal_attacks=attacks,
+        current_level=level,
+        evolution=data.get("evolution"),
+        evolution_level=data.get("evolution_level"),
+    )
+
+
+def create_trainer_instance(trainer_setup: TrainerSetup) -> Optional[Trainer]:
+    from ..data_io import load_pokemons, load_attacks
+    from ..controllers import IAcontroller
+
+    pokemon_db = load_pokemons()
+    attacks_db = load_attacks()
+
+    team = []
+    for pokemon_name, level in trainer_setup.team:
+        p = _build_pokemon(pokemon_name, level, pokemon_db, attacks_db)
+        if p is not None:
+            team.append(p)
+
+    if not team:
+        return None
+
+    return Trainer(
+        name=trainer_setup.name,
+        team=team,
+        controller=IAcontroller(),
+        bag=Inventory({"potion": 2}),
+    )
+
+
+def create_player_trainer(starter_names=None) -> Trainer:
+    from ..data_io import load_pokemons, load_attacks
+    from ..controllers import HumanController
+
+    if starter_names is None:
+        starter_names = ["Pikachu"]
+    if isinstance(starter_names, str):
+        starter_names = [starter_names]
+
+    pokemon_db = load_pokemons()
+    attacks_db = load_attacks()
+
+    team = []
+    for name in starter_names:
+        p = _build_pokemon(name, 5, pokemon_db, attacks_db)
+        if p is not None:
+            team.append(p)
+
+    if not team:
+        raise ValueError(f"None of the starter Pokemon {starter_names} were found in database")
+
+    return Trainer(
+        name="Player",
+        team=team,
+        controller=HumanController(),
+        bag=Inventory({"potion": 2, "xdefense": 1}),
+    )
+
+
+def get_map_objects() -> List[dict]:
+    """Returns trainer list in the format expected by map/ (dicts with x, y keys)."""
+    return [{"x": t.position[0], "y": t.position[1], "setup": t} for t in TRAINERS]
+
+
+# =============================================================================
+# ZONE UTILITIES
+# =============================================================================
+
+def get_zone_by_id(zone_id: str) -> Optional[Zone]:
+    return ZONES.get(zone_id)
+
+
+def get_zone_for_position(x: int, y: int) -> Optional[str]:
+    if x >= 87 and y >= 24:
+        return "cueva_oscura"
+    if x >= 44 and y <= 27:
+        return "bosque_umbral"
+    if y <= 27:
+        return "pueblo_alto"
+    return "pueblo_raiz"
+
+
+def get_next_zone(current_zone_id: str) -> Optional[Zone]:
+    try:
+        idx = ZONE_ORDER.index(current_zone_id)
+        return ZONES.get(ZONE_ORDER[idx + 1])
+    except (ValueError, IndexError):
+        return None
+
+
+def is_zone_unlocked(current_zone_id: str, player_avg_level: int) -> bool:
+    zone = ZONES.get(current_zone_id)
+    if zone is None:
+        return False
+    return player_avg_level >= zone.min_player_level
+
+
+def _starter_display_line(name: str, level: int, pokemon_db: dict, attacks_db: dict) -> List[str]:
+    key = name.lower()
+    data = pokemon_db.get(key, {})
+    element = str(data.get("element_type", "?")).capitalize()
+    hp  = data.get("health", "?")
+    df  = data.get("defense", "?")
+    spd = data.get("speed", "?")
+    atk_list = attacks_db["by_owner"].get(key, [])
+    atk_names = ", ".join(a["name"] for a in atk_list[:3]) or "—"
+    lines = [
+        f"  Type: {element}   HP: {hp}  DEF: {df}  SPD: {spd}",
+        f"  Attacks: {atk_names}",
+    ]
+    return lines
+
+
+def choose_starter() -> List[str]:
+    from ..data_io import load_pokemons, load_attacks
+    pokemon_db = load_pokemons()
+    attacks_db = load_attacks()
+
+    chosen: List[str] = []
+    remaining = list(STARTER_POKEMONS)
+
+    for pick_n in range(1, 3):
+        print(f"\n  === Choose your starter #{pick_n} of 2 ===\n")
+        for i, (name, level) in enumerate(remaining, 1):
+            print(f"  [{i}] {name}  (Lv.{level})")
+            for line in _starter_display_line(name, level, pokemon_db, attacks_db):
+                print(line)
+            print()
+
+        while True:
+            choice = input(f"  Enter number (1-{len(remaining)}): ").strip()
+            if choice.isdigit():
+                idx = int(choice) - 1
+                if 0 <= idx < len(remaining):
+                    name = remaining[idx][0]
+                    chosen.append(name)
+                    remaining.pop(idx)
+                    print(f"\n  {name} added to your team!")
+                    break
+            print(f"  Please enter a number between 1 and {len(remaining)}.")
+
+    print(f"\n  Your team: {chosen[0]} & {chosen[1]}. Good luck!")
+    return chosen

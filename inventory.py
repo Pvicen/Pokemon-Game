@@ -146,7 +146,7 @@ class Inventory:
             healed = int(max(1, pokemon.maximun_hp * float(percent)))
         
         old_health = pokemon.health
-        pokemon.health = clamp(pokemon.maximun_hp, pokemon.health + max(0, healed))
+        pokemon.health = clamp(pokemon.health + max(0, healed), 0, pokemon.maximun_hp)
         gained = pokemon.health - old_health
         print(f"✨ {pokemon.name} healed {gained} HP ({old_health}->{pokemon.health}/{pokemon.maximun_hp}).")
         return True

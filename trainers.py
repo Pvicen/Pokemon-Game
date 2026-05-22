@@ -14,7 +14,7 @@ class Trainer:
         self.controller = controller
         
         #Default items
-        self.bag = bag if bag is not None else Inventory({"Potion": 1, "XDefense": 1})
+        self.bag = bag if bag is not None else Inventory({"potion": 1, "xdefense": 1})
             
     @property
     def ActivePokemon(self) -> Pokemon:

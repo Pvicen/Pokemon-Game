@@ -1,128 +1,611 @@
 {
+    "Mankey": {
+        "Base_attack": 50,
+        "Health": 60,
+        "Defense": 39,
+        "Special_defense": 38,
+        "Speed": 48,
+        "Element_type": "Fighting",
+        "Evolution": "Primeape",
+        "Current_level": 1,
+        "Evolution_level": 28
+    },
+    "Primeape": {
+        "Base_attack": 65,
+        "Health": 75,
+        "Defense": 49,
+        "Special_defense": 49,
+        "Speed": 58,
+        "Element_type": "Fighting",
+        "Current_level": "Max"
+    },
+    "Poliwag": {
+        "Base_attack": 54,
+        "Health": 59,
+        "Defense": 38,
+        "Special_defense": 38,
+        "Speed": 51,
+        "Element_type": "Water",
+        "Evolution": "Poliwhirl",
+        "Current_level": 1,
+        "Evolution_level": 25
+    },
+    "Poliwhirl": {
+        "Base_attack": 70,
+        "Health": 74,
+        "Defense": 48,
+        "Special_defense": 49,
+        "Speed": 61,
+        "Element_type": "Water",
+        "Current_level": "Max"
+    },
+    "Abra": {
+        "Base_attack": 35,
+        "Health": 52,
+        "Defense": 35,
+        "Special_defense": 37,
+        "Speed": 42,
+        "Element_type": "Psychic",
+        "Evolution": "Kadabra",
+        "Current_level": 1,
+        "Evolution_level": 16
+    },
+    "Kadabra": {
+        "Base_attack": 46,
+        "Health": 65,
+        "Defense": 44,
+        "Special_defense": 48,
+        "Speed": 50,
+        "Element_type": "Psychic",
+        "Current_level": "Max"
+    },
+    "Bellsprout": {
+        "Base_attack": 70,
+        "Health": 60,
+        "Defense": 37,
+        "Special_defense": 35,
+        "Speed": 60,
+        "Element_type": "Grass",
+        "Evolution": "Weepinbell",
+        "Current_level": 1,
+        "Evolution_level": 21
+    },
+    "Weepinbell": {
+        "Base_attack": 91,
+        "Health": 75,
+        "Defense": 46,
+        "Special_defense": 46,
+        "Speed": 72,
+        "Element_type": "Grass",
+        "Current_level": "Max"
+    },
+    "Geodude": {
+        "Base_attack": 54,
+        "Health": 59,
+        "Defense": 38,
+        "Special_defense": 38,
+        "Speed": 51,
+        "Element_type": "Rock",
+        "Evolution": "Graveler",
+        "Current_level": 1,
+        "Evolution_level": 25
+    },
+    "Graveler": {
+        "Base_attack": 70,
+        "Health": 74,
+        "Defense": 48,
+        "Special_defense": 49,
+        "Speed": 61,
+        "Element_type": "Rock",
+        "Current_level": "Max"
+    },
+    "Gastly": {
+        "Base_attack": 48,
+        "Health": 58,
+        "Defense": 38,
+        "Special_defense": 37,
+        "Speed": 48,
+        "Element_type": "Ghost",
+        "Evolution": "Haunter",
+        "Current_level": 1,
+        "Evolution_level": 25
+    },
+    "Haunter": {
+        "Base_attack": 62,
+        "Health": 72,
+        "Defense": 48,
+        "Special_defense": 48,
+        "Speed": 58,
+        "Element_type": "Ghost",
+        "Current_level": "Max"
+    },
+    "Magnemite": {
+        "Base_attack": 69,
+        "Health": 64,
+        "Defense": 40,
+        "Special_defense": 42,
+        "Speed": 57,
+        "Element_type": "Electric",
+        "Evolution": "Magneton",
+        "Current_level": 1,
+        "Evolution_level": 30
+    },
+    "Magneton": {
+        "Base_attack": 90,
+        "Health": 80,
+        "Defense": 50,
+        "Special_defense": 55,
+        "Speed": 68,
+        "Element_type": "Electric",
+        "Current_level": "Max"
+    },
+    "Rhyhorn": {
+        "Base_attack": 63,
+        "Health": 68,
+        "Defense": 44,
+        "Special_defense": 44,
+        "Speed": 51,
+        "Element_type": "Ground",
+        "Evolution": "Rhydon",
+        "Current_level": 1,
+        "Evolution_level": 42
+    },
+    "Rhydon": {
+        "Base_attack": 82,
+        "Health": 85,
+        "Defense": 55,
+        "Special_defense": 57,
+        "Speed": 61,
+        "Element_type": "Ground",
+        "Current_level": "Max"
+    },
+    "Horsea": {
+        "Base_attack": 52,
+        "Health": 62,
+        "Defense": 40,
+        "Special_defense": 39,
+        "Speed": 48,
+        "Element_type": "Water",
+        "Evolution": "Seadra",
+        "Current_level": 1,
+        "Evolution_level": 32
+    },
+    "Seadra": {
+        "Base_attack": 68,
+        "Health": 78,
+        "Defense": 50,
+        "Special_defense": 51,
+        "Speed": 58,
+        "Element_type": "Water",
+        "Current_level": "Max"
+    },
+    "Venonat": {
+        "Base_attack": 57,
+        "Health": 62,
+        "Defense": 40,
+        "Special_defense": 40,
+        "Speed": 51,
+        "Element_type": "Bug",
+        "Evolution": "Venomoth",
+        "Current_level": 1,
+        "Evolution_level": 31
+    },
+    "Venomoth": {
+        "Base_attack": 74,
+        "Health": 78,
+        "Defense": 50,
+        "Special_defense": 52,
+        "Speed": 61,
+        "Element_type": "Bug",
+        "Current_level": "Max"
+    },
+    "Ekans": {
+        "Base_attack": 41,
+        "Health": 56,
+        "Defense": 37,
+        "Special_defense": 35,
+        "Speed": 45,
+        "Element_type": "Poison",
+        "Evolution": "Arbok",
+        "Current_level": 1,
+        "Evolution_level": 22
+    },
+    "Arbok": {
+        "Base_attack": 53,
+        "Health": 70,
+        "Defense": 46,
+        "Special_defense": 46,
+        "Speed": 54,
+        "Element_type": "Poison",
+        "Current_level": "Max"
+    },
+    "Sandshrew": {
+        "Base_attack": 65,
+        "Health": 60,
+        "Defense": 37,
+        "Special_defense": 39,
+        "Speed": 57,
+        "Element_type": "Ground",
+        "Evolution": "Sandslash",
+        "Current_level": 1,
+        "Evolution_level": 22
+    },
+    "Sandslash": {
+        "Base_attack": 84,
+        "Health": 75,
+        "Defense": 46,
+        "Special_defense": 51,
+        "Speed": 68,
+        "Element_type": "Ground",
+        "Current_level": "Max"
+    },
+    "Zubat": {
+        "Base_attack": 41,
+        "Health": 56,
+        "Defense": 37,
+        "Special_defense": 35,
+        "Speed": 45,
+        "Element_type": "Poison",
+        "Evolution": "Golbat",
+        "Current_level": 1,
+        "Evolution_level": 22
+    },
+    "Golbat": {
+        "Base_attack": 53,
+        "Health": 70,
+        "Defense": 46,
+        "Special_defense": 46,
+        "Speed": 54,
+        "Element_type": "Poison",
+        "Current_level": "Max"
+    },
+    "Oddish": {
+        "Base_attack": 46,
+        "Health": 56,
+        "Defense": 37,
+        "Special_defense": 36,
+        "Speed": 48,
+        "Element_type": "Grass",
+        "Evolution": "Gloom",
+        "Current_level": 1,
+        "Evolution_level": 21
+    },
+    "Gloom": {
+        "Base_attack": 60,
+        "Health": 70,
+        "Defense": 46,
+        "Special_defense": 47,
+        "Speed": 58,
+        "Element_type": "Grass",
+        "Current_level": "Max"
+    },
+    "Psyduck": {
+        "Base_attack": 58,
+        "Health": 63,
+        "Defense": 41,
+        "Special_defense": 41,
+        "Speed": 51,
+        "Element_type": "Water",
+        "Evolution": "Golduck",
+        "Current_level": 1,
+        "Evolution_level": 33
+    },
+    "Golduck": {
+        "Base_attack": 75,
+        "Health": 79,
+        "Defense": 51,
+        "Special_defense": 53,
+        "Speed": 61,
+        "Element_type": "Water",
+        "Current_level": "Max"
+    },
+    "Meowth": {
+        "Base_attack": 50,
+        "Health": 60,
+        "Defense": 39,
+        "Special_defense": 38,
+        "Speed": 48,
+        "Element_type": "Normal",
+        "Evolution": "Persian",
+        "Current_level": 1,
+        "Evolution_level": 28
+    },
+    "Persian": {
+        "Base_attack": 65,
+        "Health": 75,
+        "Defense": 49,
+        "Special_defense": 49,
+        "Speed": 58,
+        "Element_type": "Normal",
+        "Current_level": "Max"
+    },
+    "Krabby": {
+        "Base_attack": 50,
+        "Health": 60,
+        "Defense": 39,
+        "Special_defense": 38,
+        "Speed": 48,
+        "Element_type": "Water",
+        "Evolution": "Kingler",
+        "Current_level": 1,
+        "Evolution_level": 28
+    },
+    "Kingler": {
+        "Base_attack": 65,
+        "Health": 75,
+        "Defense": 49,
+        "Special_defense": 49,
+        "Speed": 58,
+        "Element_type": "Water",
+        "Current_level": "Max"
+    },
+    "Koffing": {
+        "Base_attack": 59,
+        "Health": 64,
+        "Defense": 41,
+        "Special_defense": 41,
+        "Speed": 51,
+        "Element_type": "Poison",
+        "Evolution": "Weezing",
+        "Current_level": 1,
+        "Evolution_level": 35
+    },
+    "Weezing": {
+        "Base_attack": 77,
+        "Health": 80,
+        "Defense": 51,
+        "Special_defense": 53,
+        "Speed": 61,
+        "Element_type": "Poison",
+        "Current_level": "Max"
+    },
+    "Cubone": {
+        "Base_attack": 50,
+        "Health": 60,
+        "Defense": 39,
+        "Special_defense": 38,
+        "Speed": 48,
+        "Element_type": "Ground",
+        "Evolution": "Marowak",
+        "Current_level": 1,
+        "Evolution_level": 28
+    },
+    "Marowak": {
+        "Base_attack": 65,
+        "Health": 75,
+        "Defense": 49,
+        "Special_defense": 49,
+        "Speed": 58,
+        "Element_type": "Ground",
+        "Current_level": "Max"
+    },
+    "Doduo": {
+        "Base_attack": 45,
+        "Health": 60,
+        "Defense": 40,
+        "Special_defense": 38,
+        "Speed": 45,
+        "Element_type": "Normal",
+        "Evolution": "Dodrio",
+        "Current_level": 1,
+        "Evolution_level": 31
+    },
+    "Dodrio": {
+        "Base_attack": 58,
+        "Health": 75,
+        "Defense": 50,
+        "Special_defense": 49,
+        "Speed": 54,
+        "Element_type": "Normal",
+        "Current_level": "Max"
+    },
+    "Poochyena": {
+        "Base_attack": 63,
+        "Health": 58,
+        "Defense": 36,
+        "Special_defense": 38,
+        "Speed": 57,
+        "Element_type": "Dark",
+        "Evolution": "Mightyena",
+        "Current_level": 1,
+        "Evolution_level": 18
+    },
+    "Mightyena": {
+        "Base_attack": 82,
+        "Health": 72,
+        "Defense": 45,
+        "Special_defense": 49,
+        "Speed": 68,
+        "Element_type": "Dark",
+        "Current_level": "Max"
+    },
+    "Zigzagoon": {
+        "Base_attack": 64,
+        "Health": 59,
+        "Defense": 36,
+        "Special_defense": 38,
+        "Speed": 57,
+        "Element_type": "Normal",
+        "Evolution": "Linoone",
+        "Current_level": 1,
+        "Evolution_level": 20
+    },
+    "Linoone": {
+        "Base_attack": 83,
+        "Health": 74,
+        "Defense": 45,
+        "Special_defense": 49,
+        "Speed": 68,
+        "Element_type": "Normal",
+        "Current_level": "Max"
+    },
+    "Electrike": {
+        "Base_attack": 67,
+        "Health": 62,
+        "Defense": 38,
+        "Special_defense": 40,
+        "Speed": 57,
+        "Element_type": "Electric",
+        "Evolution": "Manectric",
+        "Current_level": 1,
+        "Evolution_level": 26
+    },
+    "Manectric": {
+        "Base_attack": 87,
+        "Health": 78,
+        "Defense": 48,
+        "Special_defense": 52,
+        "Speed": 68,
+        "Element_type": "Electric",
+        "Current_level": "Max"
+    },
+    "Numel": {
+        "Base_attack": 46,
+        "Health": 61,
+        "Defense": 41,
+        "Special_defense": 39,
+        "Speed": 45,
+        "Element_type": "Fire",
+        "Evolution": "Camerupt",
+        "Current_level": 1,
+        "Evolution_level": 33
+    },
+    "Camerupt": {
+        "Base_attack": 60,
+        "Health": 76,
+        "Defense": 51,
+        "Special_defense": 51,
+        "Speed": 54,
+        "Element_type": "Fire",
+        "Current_level": "Max"
+    },
+    "Spoink": {
+        "Base_attack": 52,
+        "Health": 62,
+        "Defense": 40,
+        "Special_defense": 39,
+        "Speed": 48,
+        "Element_type": "Psychic",
+        "Evolution": "Grumpig",
+        "Current_level": 1,
+        "Evolution_level": 32
+    },
+    "Grumpig": {
+        "Base_attack": 68,
+        "Health": 78,
+        "Defense": 50,
+        "Special_defense": 51,
+        "Speed": 58,
+        "Element_type": "Psychic",
+        "Current_level": "Max"
+    },
     "Pichu": {
         "Base_attack": 40,
-        "Element_type": "Electric",
         "Health": 20,
         "Defense": 15,
         "Special_defense": 35,
         "Speed": 60,
+        "Element_type": "Electric",
         "Evolution": "Pikachu",
         "Current_level": 1,
         "Evolution_level": 14
     },
     "Pikachu": {
         "Base_attack": 55,
-        "Element_type": "Electric",
         "Health": 35,
         "Defense": 40,
         "Special_defense": 50,
         "Speed": 90,
+        "Element_type": "Electric",
         "Evolution": "Raichu",
-        "Current_level": "14",
+        "Current_level": 14,
         "Evolution_level": 26
     },
     "Raichu": {
         "Base_attack": 68,
         "Health": 104,
-        "Element_type": "Electric",
-        "Speed": 68,
-        "Current_level": "26",
         "Defense": 83,
-        "Special_defense": 85
+        "Special_defense": 85,
+        "Speed": 68,
+        "Element_type": "Electric",
+        "Current_level": "Max"
     },
     "Bulbasaur": {
         "Base_attack": 87,
         "Health": 88,
-        "Element_type": "Grass",
         "Defense": 79,
-        "Current_level": "1",
-        "Evolution": "Ivysaur",
-        "Evolution_level": 1,
         "Special_defense": 94,
-        "Speed": 94
+        "Speed": 94,
+        "Element_type": "Grass",
+        "Evolution": "Ivysaur",
+        "Current_level": 1,
+        "Evolution_level": 16
     },
     "Ivysaur": {
         "Base_attack": 70,
         "Health": 79,
-        "Element_type": "Grass",
         "Defense": 73,
+        "Special_defense": 54,
         "Speed": 69,
-        "Evolution_level": 1,
-        "Current_level": "Max",
-        "Special_defense": 54
+        "Element_type": "Grass",
+        "Current_level": "Max"
     },
     "Squirtle": {
         "Base_attack": 102,
         "Health": 93,
-        "Element_type": "Water",
         "Defense": 87,
-        "Evolution": "Wartortle",
-        "Evolution_level": 1,
         "Special_defense": 61,
         "Speed": 100,
-        "Current_level": "1"
+        "Element_type": "Water",
+        "Evolution": "Wartortle",
+        "Current_level": 1,
+        "Evolution_level": 16
     },
     "Wartortle": {
         "Base_attack": 102,
         "Health": 96,
-        "Element_type": "Water",
         "Defense": 99,
-        "Evolution_level": 1,
         "Special_defense": 78,
         "Speed": 78,
+        "Element_type": "Water",
         "Current_level": "Max"
     },
     "Charmeleon": {
         "Base_attack": 81,
         "Health": 121,
-        "Element_type": "Fire",
         "Defense": 75,
-        "Evolution": "Charizard",
-        "Evolution_level": 1,
         "Special_defense": 76,
         "Speed": 88,
-        "Current_level": "1"
+        "Element_type": "Fire",
+        "Evolution": "Charizard",
+        "Current_level": 1,
+        "Evolution_level": 36
     },
     "Charizard": {
         "Base_attack": 114,
         "Health": 123,
-        "Element_type": "Fire",
         "Defense": 75,
-        "Evolution_level": 1,
         "Special_defense": 75,
         "Speed": 110,
+        "Element_type": "Fire",
         "Current_level": "Max"
     },
     "Mewtwo": {
         "Base_attack": 98,
         "Health": 91,
-        "Element_type": "Psychic",
         "Defense": 68,
-        "Evolution_level": 1,
         "Special_defense": 105,
         "Speed": 79,
+        "Element_type": "Psychic",
         "Current_level": "Max"
     },
     "Greninja": {
         "Base_attack": 111,
-        "Element_type": "Water",
         "Health": 100,
         "Defense": 78,
-        "Evolution": "",
-        "Evolution_level": 1,
         "Special_defense": 70,
         "Speed": 82,
-        "Current_level": "Max"
-    },
-    "Psyduck": {
-        "Base_attack": 52,
         "Element_type": "Water",
-        "Health": 50,
-        "Defense": 48,
-        "Evolution": "golduck",
-        "Evolution_level": 1,
-        "Special_defense": 50,
-        "Speed": 55,
-        "current_level": 1
+        "Current_level": "Max"
     }
 }

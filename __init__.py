@@ -5,9 +5,6 @@ Top-level public API for the Pokemon package.
 Expose stable entry-points so consumers don't depend on internal structure.
 """
 
-# (Optional) Semantic version (kept here or in a separate _version.py)
-__version__ = "0.1.0"
-
 # 1) Data I/O: loaders, errors, validators (from subpackage facade)
 from .data_io import (
     load_pokemons_json,

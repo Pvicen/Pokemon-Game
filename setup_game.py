@@ -8,4 +8,3 @@ from .utils import load_attacks_json
 
 # internal helpers
 
-

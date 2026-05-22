@@ -19,7 +19,7 @@ CLEAR_CMD = "cls" if os.name == "nt" else "clear"
 def _hp_bar(pokemon: Pokemon, length: int= 20):
     hp = max(0, int(getattr(pokemon, "health", 0)))
     max_hp = max(1, int(getattr(pokemon, "maximun_hp", 1)))
-    units= max(0, min(length, int(hp * length)/ max_hp))
+    units = max(0, min(length, int(hp * length / max_hp)))
     bar = "█" * units + " " * (length - units)
     return f"[{bar}] {hp}/{max_hp}"
 
@@ -174,6 +174,7 @@ def _take_turn(attacker_trainer: Trainer,
         return True
 
     elif atype == "flee":
+        setattr(attacker_trainer, "_fled", True)
         print(f"🏃 {attacker_trainer.name} fled the battle!")
         return False
 
@@ -245,10 +246,14 @@ def pokemon_combat(trainer_a,
                    clear_between_turns: bool=False,
     ):
     
+    for _t in (trainer_a, trainer_b):
+        if hasattr(_t, "_fled"):
+            _t._fled = False
+
     print("⚔️  BATTLE START!")
     _print_status(trainer_a.ActivePokemon, trainer_b.ActivePokemon)
     print()
-    
+
     xp = None
     if ExperienceManager is not None:
         xp = ExperienceManager()
@@ -291,16 +296,18 @@ def pokemon_combat(trainer_a,
 
         # FIRST ACTS
         if not _take_turn(first_trainer, second_trainer, xp_manager=xp):
-            winner_tr = second_trainer if not first_trainer.HasAvaliablePokemon() or getattr(first_trainer, "_fled", False) else second_trainer
-            loser_tr = first_trainer
-            print(f"🏆 Winner: {winner_tr.name}")
+            fled = getattr(first_trainer, "_fled", False) or getattr(second_trainer, "_fled", False)
+            winner_tr = second_trainer if not first_trainer.HasAvaliablePokemon() or getattr(first_trainer, "_fled", False) else first_trainer
+            loser_tr = first_trainer if winner_tr is second_trainer else second_trainer
+            if not fled:
+                print(f"🏆 Winner: {winner_tr.name}")
             try:
-                if xp is not None:
+                if xp is not None and not fled:
                     for line in xp.finalize(winner_tr, loser_tr):
                         print(line)
             finally:
                 _cleanup_battle(trainer_a, trainer_b)
-            return winner_tr.name
+            return None if fled else winner_tr.name
 
         # If second lost after first action, check victory:
         if not second_trainer.HasAvaliablePokemon():
@@ -315,16 +322,18 @@ def pokemon_combat(trainer_a,
 
         # SECOND ACTS
         if not _take_turn(second_trainer, first_trainer, xp_manager=xp):
-            winner_tr = first_trainer
-            loser_tr = second_trainer
-            print(f"🏆 Winner: {winner_tr.name}")
+            fled = getattr(first_trainer, "_fled", False) or getattr(second_trainer, "_fled", False)
+            winner_tr = second_trainer if not first_trainer.HasAvaliablePokemon() or getattr(second_trainer, "_fled", False) else first_trainer
+            loser_tr = first_trainer if winner_tr is second_trainer else second_trainer
+            if not fled:
+                print(f"🏆 Winner: {winner_tr.name}")
             try:
-                if xp is not None:
+                if xp is not None and not fled:
                     for line in xp.finalize(winner_tr, loser_tr):
                         print(line)
             finally:
                 _cleanup_battle(trainer_a, trainer_b)
-            return winner_tr.name
+            return None if fled else winner_tr.name
 
         # Post-round status
         print("\n--- Status ---")

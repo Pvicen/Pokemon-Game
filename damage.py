@@ -4,7 +4,7 @@ from typing import Tuple
 
 from .data_io import load_type_chart
 
-TYPE_CHART = load_type_chart
+TYPE_CHART = load_type_chart()
 
 
 def _stages_value(pokemon, key:str):
@@ -42,7 +42,7 @@ def _lookup_chart(attacker_type: str, defende_type: str):
     if not isinstance(row, dict):
         return 1.0
     
-    return float(row.get(defender_l, row.get(defender_l.title(), 1,0)))
+    return float(row.get(defender_l, row.get(defender_l.title(), 1.0)))
     
 
 def get_effectiveness(attacker_type: str, defender_type: str) -> Tuple[float, str]:
@@ -62,7 +62,7 @@ def calculate_damage(attacker, defender, base_attack, attack_type="special"):
     buff_special = _effectiveness_base_attack(base_attack, attacker, "special_attacks")
     effectiveness, _ = get_effectiveness(attacker.element_type, defender.element_type)
     new_damage = buff_special * effectiveness
-    eff_special_defense = _effectiveness_base_attack(getattr(defender, "special_defense", 0), defender, "special_defense")
+    eff_special_defense = _effectiveness_defense(getattr(defender, "special_defense", 0), defender, "special_defense")
     return max(1, int(new_damage - eff_special_defense * 0.5))
 
 

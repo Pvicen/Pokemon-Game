@@ -34,7 +34,7 @@ class IAcontroller():
         if best_idx is not None:
             best_switch_score = IAcontroller._current_position_score(trainer.team[best_idx], target)
             
-        if best_switch_score is not None and best_switch_score >= 1.30 * current_score:
+        if best_switch_score is not None and best_switch_score >= 2.0 * current_score:
             return {"type": "switch", "index": best_idx}
         
         best_dmg, best_atk = IAcontroller._Calculating_Damages(actor, target)
