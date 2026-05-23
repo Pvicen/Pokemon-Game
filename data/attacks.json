@@ -9,6 +9,11 @@
             "name": "Thunderbolt",
             "type": "Electric",
             "damage": 90
+        },
+        {
+            "name": "Quick Attack",
+            "type": "Normal",
+            "damage": 35
         }
     ],
     "Raichu": [
@@ -33,6 +38,11 @@
             "name": "Razor Leaf",
             "type": "Grass",
             "damage": 55
+        },
+        {
+            "name": "Tackle",
+            "type": "Normal",
+            "damage": 40
         }
     ],
     "Ivysaur": [
@@ -57,6 +67,11 @@
             "name": "Hydro Pump",
             "type": "Water",
             "damage": 110
+        },
+        {
+            "name": "Tackle",
+            "type": "Normal",
+            "damage": 40
         }
     ],
     "Wartortle": [
@@ -93,6 +108,11 @@
             "name": "Flamethrower",
             "type": "Fire",
             "damage": 90
+        },
+        {
+            "name": "Scratch",
+            "type": "Normal",
+            "damage": 40
         }
     ],
     "Charizard": [

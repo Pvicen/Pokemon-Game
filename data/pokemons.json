@@ -512,7 +512,7 @@
     },
     "Pikachu": {
         "Base_attack": 55,
-        "Health": 35,
+        "Health": 45,
         "Defense": 40,
         "Special_defense": 50,
         "Speed": 90,
@@ -532,7 +532,7 @@
     },
     "Bulbasaur": {
         "Base_attack": 87,
-        "Health": 88,
+        "Health": 62,
         "Defense": 79,
         "Special_defense": 94,
         "Speed": 94,
@@ -552,7 +552,7 @@
     },
     "Squirtle": {
         "Base_attack": 102,
-        "Health": 93,
+        "Health": 65,
         "Defense": 87,
         "Special_defense": 61,
         "Speed": 100,
@@ -572,7 +572,7 @@
     },
     "Charmeleon": {
         "Base_attack": 81,
-        "Health": 121,
+        "Health": 68,
         "Defense": 75,
         "Special_defense": 76,
         "Speed": 88,

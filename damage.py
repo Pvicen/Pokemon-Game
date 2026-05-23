@@ -58,27 +58,33 @@ def get_effectiveness(attacker_type: str, defender_type: str) -> Tuple[float, st
     return mult, msg
 
 
+def _level_factor(attacker) -> float:
+    level = max(1, int(getattr(attacker, "current_level", 1) or 1))
+    return 1.0 + (level - 1) * 0.03
+
+
 def calculate_damage(attacker, defender, base_attack, attack_type="special"):
     buff_special = _effectiveness_base_attack(base_attack, attacker, "special_attacks")
     effectiveness, _ = get_effectiveness(attacker.element_type, defender.element_type)
-    new_damage = buff_special * effectiveness
-    eff_special_defense = _effectiveness_defense(getattr(defender, "special_defense", 0), defender, "special_defense")
-    return max(1, int(new_damage - eff_special_defense * 0.5))
+    scaled = buff_special * effectiveness * _level_factor(attacker)
+    eff_def = _effectiveness_defense(getattr(defender, "special_defense", 0), defender, "special_defense")
+    defense_divisor = 1.0 + (eff_def / 100.0)
+    return max(1, int(scaled / defense_divisor))
 
 
 def damage_without_element(attacker, defender, base_attack):
     buff_normal = _effectiveness_base_attack(base_attack, attacker, "normal_attacks")
-    random_bonus = random.randint(-3, 3)
-    eff_normal_defense = _effectiveness_defense(getattr(defender, "defense", 0), defender, "defense")
-    
-    raw_damage = buff_normal + random_bonus
-    damage_after_defense = max(1, int(raw_damage - eff_normal_defense * 0.4))
-    
+    scaled = buff_normal * _level_factor(attacker)
+    eff_def = _effectiveness_defense(getattr(defender, "defense", 0), defender, "defense")
+    defense_divisor = 1.0 + (eff_def / 100.0)
+    base_damage = max(1, int(scaled / defense_divisor))
+
+    random_bonus = random.randint(-1, 1)
     if random_bonus > 0:
-        message = "💥 ¡Critical HITTTT!"
+        message = "Critical Hit!"
     elif random_bonus < 0:
-        message = "💤 Was a weak Hit"
+        message = "Weak Hit"
     else:
-        message = "😐 Normal Hit"
-        
-    return damage_after_defense, message
+        message = "Normal Hit"
+
+    return max(1, base_damage + random_bonus), message
