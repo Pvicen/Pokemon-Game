@@ -13,6 +13,13 @@ from ..inventory import Inventory
 # =============================================================================
 
 @dataclass
+class WildMarker:
+    name: str
+    level: int
+    position: Tuple[int, int]
+
+
+@dataclass
 class WildPokemonEntry:
     name: str
     min_level: int = 1
@@ -102,6 +109,26 @@ ZONES: Dict[str, Zone] = {
 }
 
 ZONE_ORDER: List[str] = ["pueblo_raiz", "pueblo_alto", "bosque_umbral", "cueva_oscura"]
+
+
+# =============================================================================
+# WILD MARKERS — fixed-position Pokémon visible on the map
+# =============================================================================
+
+WILD_MARKERS: List[WildMarker] = [
+    # Pueblo Raiz (y>27, x<87)
+    WildMarker("Meowth",     level=3,  position=(15, 32)),
+    WildMarker("Mankey",     level=4,  position=(30, 36)),
+    # Pueblo Alto (y<=27, x<44)
+    WildMarker("Magnemite",  level=7,  position=(12, 8)),
+    WildMarker("Horsea",     level=7,  position=(25, 14)),
+    # Bosque Umbral (y<=27, x>=44)
+    WildMarker("Bellsprout", level=10, position=(52, 18)),
+    WildMarker("Venonat",    level=11, position=(75, 8)),
+    # Cueva Oscura (x>=87, y>=24)
+    WildMarker("Geodude",    level=13, position=(91, 27)),
+    WildMarker("Gastly",     level=14, position=(105, 34)),
+]
 
 
 # =============================================================================
@@ -346,6 +373,7 @@ TRAINERS: List[TrainerSetup] = [
     ),
 
     # --- Friendly NPCs (no battle) ---
+
     TrainerSetup(
         name="Elder Roy",
         team=[],
@@ -508,13 +536,21 @@ def create_player_trainer(starter_names=None) -> Trainer:
         name="Player",
         team=team,
         controller=HumanController(),
-        bag=Inventory({"potion": 2, "xdefense": 1}),
+        bag=Inventory({"potion": 2, "xdefense": 1, "pokeball": 5}),
     )
 
 
 def get_map_objects() -> List[dict]:
     """Returns trainer list in the format expected by map/ (dicts with x, y keys)."""
-    return [{"x": t.position[0], "y": t.position[1], "setup": t} for t in TRAINERS]
+    return [{"x": t.position[0], "y": t.position[1], "kind": "trainer", "setup": t} for t in TRAINERS]
+
+
+def get_wild_marker_objects() -> List[dict]:
+    """Returns fixed wild Pokémon markers in the format expected by map/."""
+    return [
+        {"x": m.position[0], "y": m.position[1], "kind": "wild", "name": m.name, "level": m.level}
+        for m in WILD_MARKERS
+    ]
 
 
 # =============================================================================

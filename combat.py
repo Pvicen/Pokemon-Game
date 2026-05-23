@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, Tuple
 import os
+import random
 
 from .models import Pokemon
 from .trainers import Trainer 
@@ -67,15 +68,15 @@ def _clear_buffs_of(p: Pokemon) -> None:
 
 # ---------------- Action selection ----------------
     
-def _choose_action(trainer, enemy_trainer) -> Dict[str, Any]:
-    
+def _choose_action(trainer, enemy_trainer, is_wild: bool = False) -> Dict[str, Any]:
+
     controller = getattr(trainer, "controller", None)
-    
+
     if controller and hasattr(controller, "choose_action"):
-        return controller.choose_action(trainer, enemy_trainer) or {"type": "skip"}
-    
+        return controller.choose_action(trainer, enemy_trainer, is_wild=is_wild) or {"type": "skip"}
+
     if controller and hasattr(controller, "IA_turn"):
-        return controller.IA_turn(trainer, enemy_trainer) or {"type": "skip"}
+        return controller.IA_turn(trainer, enemy_trainer, is_wild=is_wild) or {"type": "skip"}
     
     actor = trainer.ActivePokemon
     attacks = []
@@ -120,7 +121,8 @@ def _apply_attack(attacker: Pokemon, defender: Pokemon, attack: Dict[str: Any]) 
 def _take_turn(attacker_trainer: Trainer,
                defender_trainer: Trainer,
                xp_manager: Optional[ExperienceManager] = None,
-    ) -> bool:
+               is_wild: bool = False,
+    ) -> bool | str:
     actor = attacker_trainer.ActivePokemon
     target = defender_trainer.ActivePokemon
 
@@ -130,7 +132,7 @@ def _take_turn(attacker_trainer: Trainer,
             return False
         actor = attacker_trainer.ActivePokemon
 
-    action = _choose_action(attacker_trainer, defender_trainer)
+    action = _choose_action(attacker_trainer, defender_trainer, is_wild=is_wild)
     atype = action.get("type", "skip")
 
     if atype == "attack":
@@ -166,12 +168,50 @@ def _take_turn(attacker_trainer: Trainer,
         if item_key is None:
             print("🎒 No item used.")
             return True
-        ok = attacker_trainer.UseItems(item_key, enemy_trainer=defender_trainer, in_battle=True)
+        target_index = action.get("target_index", None)
+        ok = attacker_trainer.UseItems(item_key, enemy_trainer=defender_trainer, in_battle=True, target_index=target_index)
         if ok:
             print(f"✨ {attacker_trainer.name} used {item_key}.")
         else:
             print(f"❌ {attacker_trainer.name} failed to use {item_key}.")
         return True
+
+    elif atype == "capture":
+        if not is_wild:
+            print("❌ You can only throw Pokéballs in wild battles!")
+            return True
+
+        if len(attacker_trainer.team) >= 6:
+            print("⚠️ Your team is full! You can't carry more than 6 Pokémon.")
+            return True
+
+        ball_key = action.get("ball")
+        bag = getattr(attacker_trainer, "bag", None)
+        if not ball_key or bag is None or not bag.has_item(ball_key):
+            print("❌ You don't have that Pokéball.")
+            return True
+
+        idef = bag.get_definitions(ball_key) or {}
+        catch_rate_mult = float(idef.get("effect", {}).get("catch_rate_mult", 1.0))
+        ball_name = idef.get("name", ball_key)
+
+        # Ball is consumed regardless of success
+        bag.remove_items(ball_key, 1)
+
+        wild_pokemon = defender_trainer.ActivePokemon
+        hp_ratio = wild_pokemon.health / max(1, wild_pokemon.maximun_hp)
+        base_rate = 1.0 - (hp_ratio * 0.75)
+        catch_rate = min(0.95, base_rate * catch_rate_mult)
+
+        print(f"🎯 {attacker_trainer.name} threw a {ball_name}!")
+
+        if random.random() < catch_rate:
+            attacker_trainer.team.append(wild_pokemon)
+            print(f"🎉 Gotcha! {wild_pokemon.name} was caught and added to your team!")
+            return "captured"
+        else:
+            print(f"💨 Oh no! {wild_pokemon.name} broke free!")
+            return True
 
     elif atype == "flee":
         setattr(attacker_trainer, "_fled", True)
@@ -242,8 +282,9 @@ def _handle_faint_and_switch(trainer, enemy_trainer):
 def pokemon_combat(trainer_a,
                    trainer_b,
                    *,
-                   pause_between_turns:bool=False,
-                   clear_between_turns: bool=False,
+                   pause_between_turns: bool = False,
+                   clear_between_turns: bool = False,
+                   wild: bool = False,
     ):
     
     for _t in (trainer_a, trainer_b):
@@ -295,7 +336,12 @@ def pokemon_combat(trainer_a,
         second_trainer = trainer_b if first_trainer is trainer_a else trainer_a
 
         # FIRST ACTS
-        if not _take_turn(first_trainer, second_trainer, xp_manager=xp):
+        first_is_player = (first_trainer is trainer_a)
+        result = _take_turn(first_trainer, second_trainer, xp_manager=xp, is_wild=(wild and first_is_player))
+        if result == "captured":
+            _cleanup_battle(trainer_a, trainer_b)
+            return "captured"
+        if not result:
             fled = getattr(first_trainer, "_fled", False) or getattr(second_trainer, "_fled", False)
             winner_tr = second_trainer if not first_trainer.HasAvaliablePokemon() or getattr(first_trainer, "_fled", False) else first_trainer
             loser_tr = first_trainer if winner_tr is second_trainer else second_trainer
@@ -321,7 +367,7 @@ def pokemon_combat(trainer_a,
             return first_trainer.name
 
         # SECOND ACTS
-        if not _take_turn(second_trainer, first_trainer, xp_manager=xp):
+        if not _take_turn(second_trainer, first_trainer, xp_manager=xp, is_wild=False):
             fled = getattr(first_trainer, "_fled", False) or getattr(second_trainer, "_fled", False)
             winner_tr = second_trainer if not first_trainer.HasAvaliablePokemon() or getattr(second_trainer, "_fled", False) else first_trainer
             loser_tr = first_trainer if winner_tr is second_trainer else second_trainer

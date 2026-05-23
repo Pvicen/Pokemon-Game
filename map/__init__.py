@@ -2,9 +2,10 @@ from .tiles    import OBSTACLE_GRID, MAP_WIDTH, MAP_HEIGHT, PLAYER_START_X, PLAY
 from .player   import PlayerState
 from .renderer import render
 from .events   import check_collision
-from ..game.setup_game import get_map_objects
-from ..game.encounters import trigger_encounter, trigger_wild_encounter
+from ..game.setup_game import get_map_objects, get_wild_marker_objects
+from ..game.encounters import trigger_encounter, trigger_wild_encounter, trigger_wild_marker_encounter
 from ..game.save_load import save_game
+from ..game.ui_menus import open_bag_menu
 
 POKEMON_CENTER_POS = (9, 11)
 
@@ -38,7 +39,7 @@ def run_map(player_trainer, *, start_pos=None, defeated_positions=None, slot_nam
 
     defeated = list(defeated_positions) if defeated_positions else []
     defeated_set = {(x, y) for x, y in defeated}
-    all_objects = get_map_objects()
+    all_objects = get_map_objects() + get_wild_marker_objects()
     objects = [o for o in all_objects if (o["x"], o["y"]) not in defeated_set]
 
     end_game = False
@@ -56,6 +57,10 @@ def run_map(player_trainer, *, start_pos=None, defeated_positions=None, slot_nam
             end_game = True
             continue
 
+        if key in ("e", "E"):
+            open_bag_menu(player_trainer)
+            continue
+
         new_pos = player.get_new_position(key, MAP_WIDTH, MAP_HEIGHT)
         if new_pos is None:
             continue
@@ -67,7 +72,10 @@ def run_map(player_trainer, *, start_pos=None, defeated_positions=None, slot_nam
             else:
                 hit = check_collision(new_pos, objects)
                 if hit:
-                    encountered = trigger_encounter(hit, player_trainer)
+                    if hit.get("kind") == "wild":
+                        encountered = trigger_wild_marker_encounter(hit, player_trainer)
+                    else:
+                        encountered = trigger_encounter(hit, player_trainer)
                     if encountered:
                         objects.remove(hit)
                         defeated.append((hit["x"], hit["y"]))

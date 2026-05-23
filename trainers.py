@@ -41,8 +41,8 @@ class Trainer:
         return False
         
     
-    def UseItems(self, item_key: str, enemy_trainer=None, in_battle: bool = True) -> bool:
+    def UseItems(self, item_key: str, enemy_trainer=None, in_battle: bool = True, target_index: int | None = None) -> bool:
         if self.bag is None:
             print("❌ No inventory available.")
             return False
-        return self.bag.use(item_key, user_trainer=self, target_trainer=enemy_trainer, in_battle=in_battle)
+        return self.bag.use(item_key, user_trainer=self, target_trainer=enemy_trainer, in_battle=in_battle, target_index=target_index)

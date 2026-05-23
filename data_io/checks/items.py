@@ -12,11 +12,11 @@ from ..errors import DataValidationError
 
 
 # Allowed item types and targets
-_ALLOWED_ITEM_TYPES: set[str] = {"healing", "revive", "buff"}
+_ALLOWED_ITEM_TYPES: set[str] = {"healing", "revive", "buff", "capture"}
 _ALLOWED_TARGETS: set[str] = {"ally", "enemy"}
 
 # Effects
-_ALLOWED_EFFECT_KINDS: set[str] = {"heal", "revive", "buff"}
+_ALLOWED_EFFECT_KINDS: set[str] = {"heal", "revive", "buff", "capture"}
 
 # IMPORTANT: include "normal_attacks" because your XAttack uses it.
 _ALLOWED_BUFF_STATS: set[str] = {
@@ -85,6 +85,11 @@ def _validate_buff_effect(effect: dict, *, where: str) -> dict:
     return {"kind": "buff", "stat": stat, "stages": stages}
 
 
+def _validate_capture_effect(effect: dict, *, where: str) -> dict:
+    mult = float(normalize_number(effect.get("catch_rate_mult", 1.0), where=f"{where}.catch_rate_mult", min_value=0.1))
+    return {"kind": "capture", "catch_rate_mult": mult}
+
+
 def _validate_effect(item_type: str, effect: Any, *, where: str) -> dict:
     require_type(effect, dict, where=where)
     kind = normalize_string(effect.get("kind", ""), where=f"{where}.kind", lowercase=True)
@@ -105,6 +110,11 @@ def _validate_effect(item_type: str, effect: Any, *, where: str) -> dict:
         if kind != "buff":
             raise DataValidationError(f"❌ {where}: buff item must use kind='buff'")
         return _validate_buff_effect(effect, where=where)
+
+    if item_type == "capture":
+        if kind != "capture":
+            raise DataValidationError(f"❌ {where}: capture item must use kind='capture'")
+        return _validate_capture_effect(effect, where=where)
 
     # Should not reach here because item_type validated before
     raise DataValidationError(f"❌ {where}: unsupported item type {item_type!r}")

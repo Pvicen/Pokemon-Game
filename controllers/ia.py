@@ -143,6 +143,5 @@ class IAcontroller():
     
     
     @staticmethod
-    def IA_turn(trainer, enemy_trainer):
-        
+    def IA_turn(trainer, enemy_trainer, is_wild: bool = False):
         return IAcontroller.ChooseAction(trainer, enemy_trainer)

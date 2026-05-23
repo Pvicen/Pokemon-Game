@@ -17,7 +17,7 @@ def render(obstacle_grid, player_pos, objects):
     cam_x = max(0, min(player_pos[0] - VIEWPORT_W // 2, map_w - VIEWPORT_W))
     cam_y = max(0, min(player_pos[1] - VIEWPORT_H // 2, map_h - VIEWPORT_H))
 
-    object_positions = {(o["x"], o["y"]) for o in objects}
+    object_map = {(o["x"], o["y"]): o for o in objects}
 
     print(" " + "_" * VIEWPORT_W * 2 + " ")
 
@@ -30,8 +30,8 @@ def render(obstacle_grid, player_pos, objects):
                 char = "##"
             elif player_pos[0] == x and player_pos[1] == y:
                 char = " @"
-            elif (x, y) in object_positions:
-                char = " T"
+            elif (x, y) in object_map:
+                char = " !" if object_map[(x, y)].get("kind") == "wild" else " T"
             else:
                 char = "  "
             print(char, end="")

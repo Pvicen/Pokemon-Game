@@ -123,5 +123,41 @@
     "battle_only": true,
     "reusable": false,
     "description": "Debuffs the enemy's Defense by 1 stage (example enemy-target item)."
+  },
+  "Pokeball": {
+    "name": "Poké Ball",
+    "type": "capture",
+    "target": "enemy",
+    "effect": {
+      "kind": "capture",
+      "catch_rate_mult": 1.0
+    },
+    "battle_only": true,
+    "reusable": false,
+    "description": "A basic ball for catching wild Pokémon."
+  },
+  "Greatball": {
+    "name": "Great Ball",
+    "type": "capture",
+    "target": "enemy",
+    "effect": {
+      "kind": "capture",
+      "catch_rate_mult": 1.5
+    },
+    "battle_only": true,
+    "reusable": false,
+    "description": "A higher-performance ball with a better catch rate."
+  },
+  "Ultraball": {
+    "name": "Ultra Ball",
+    "type": "capture",
+    "target": "enemy",
+    "effect": {
+      "kind": "capture",
+      "catch_rate_mult": 2.0
+    },
+    "battle_only": true,
+    "reusable": false,
+    "description": "An ultra-performance ball with an excellent catch rate."
   }
 }

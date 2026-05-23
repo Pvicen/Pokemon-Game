@@ -5,39 +5,47 @@ from ..inventory import Inventory
 
 class HumanController():
     
-    def choose_action(self, trainer, enemy_trainer):
-        
+    def choose_action(self, trainer, enemy_trainer, is_wild: bool = False):
+
         while True:
             print("\nChoose your action:")
             print("[1] - Attack")
             print("[2] - Switch Pokémon")
             print("[3] - Use Item")
+            if is_wild:
+                print("[4] - Throw Pokéball")
             print("[0] - Flee")
-            
+
             option = input("Enter your choice: ").strip()
             if not option.isdigit():
                 print("❌ Invalid input, please enter a number.")
                 return None
-            
+
             option = int(option)
             if option == 1:
                 atk = self.ChooseAttack(trainer.ActivePokemon)
                 return {"type": "attack", "attack": atk} if atk else {"type": "skip"}
-                    
+
             elif option == 2:
                 idx = self.ChooseSwitchPokemon(trainer)
                 return {"type": "switch", "index": idx} if idx is not None else {"type": "skip"}
-                
-            # This is a placeholder for item usage logic
+
             elif option == 3:
-                item = self.UseItem(trainer)
-                return {"type": "item", "item": item} if item else {"type": "skip"}
-                
+                result = self.UseItem(trainer)
+                if result is None:
+                    return {"type": "skip"}
+                item_key, target_index = result
+                return {"type": "item", "item": item_key, "target_index": target_index}
+
+            elif option == 4 and is_wild:
+                return self._choose_ball(trainer)
+
             elif option == 0:
                 return {"type": "flee"}
-            
+
             else:
-                print("❌ Invalid option, please choose 0-3.")
+                max_opt = 4 if is_wild else 3
+                print(f"❌ Invalid option, please choose 0-{max_opt}.")
                 
     
     def UseItem(self, trainer, enemy_trainer=None, in_battle: bool = True):
@@ -71,7 +79,41 @@ class HumanController():
             if not (0 <= index < len(keys)):
                 print("❌ Input out of range.")
                 continue
-            return keys[index]
+
+            item_key = keys[index]
+            idef = bag.get_definitions(item_key) or {}
+            target_index = None
+
+            if idef.get("type") == "revive":
+                target_index = HumanController._pick_fainted(trainer)
+                if target_index is None:
+                    return None
+
+            return item_key, target_index
+
+    @staticmethod
+    def _pick_fainted(trainer) -> int | None:
+        fainted = [(i, p) for i, p in enumerate(trainer.team) if not p.is_alive()]
+        if not fainted:
+            print("  No fainted Pokémon to revive.")
+            return None
+
+        print("\n  Choose a Pokémon to revive:")
+        for display, (team_idx, p) in enumerate(fainted, start=1):
+            print(f"  [{display}] {p.name} (0/{p.maximun_hp} HP)")
+        print("  [0] Cancel")
+
+        while True:
+            choice = input("  Choose: ").strip()
+            if choice == "0":
+                return None
+            if not choice.isdigit():
+                print("❌ Invalid input.")
+                continue
+            pick = int(choice) - 1
+            if 0 <= pick < len(fainted):
+                return fainted[pick][0]
+            print(f"❌ Enter a number between 0 and {len(fainted)}.")
         
         
     def SelectFirstPokemon(self, trainer, actor):
@@ -178,6 +220,41 @@ class HumanController():
             else:
                 print("❌ Invalid choice. Make sure the Pokémon is alive and not the current active one.")
 
+
+    def _choose_ball(self, trainer) -> dict:
+        bag = getattr(trainer, "bag", None)
+        if bag is None:
+            print("❌ No bag available.")
+            return {"type": "skip"}
+
+        balls = {
+            k: qty
+            for k, qty in bag.counts.items()
+            if qty > 0 and (idef := bag.get_definitions(k)) and idef.get("type") == "capture"
+        }
+
+        if not balls:
+            print("❌ You don't have any Pokéballs!")
+            return {"type": "skip"}
+
+        print("\n⚾ Your Pokéballs:")
+        keys = list(balls.keys())
+        for i, k in enumerate(keys, start=1):
+            idef = bag.get_definitions(k) or {}
+            print(f"  [{i}] {idef.get('name', k)} x{balls[k]}")
+        print("  [0] Cancel")
+
+        while True:
+            choice = input("  Choose ball: ").strip()
+            if choice == "0":
+                return {"type": "skip"}
+            if not choice.isdigit():
+                print("❌ Invalid input.")
+                continue
+            index = int(choice) - 1
+            if 0 <= index < len(keys):
+                return {"type": "capture", "ball": keys[index]}
+            print(f"❌ Enter a number between 0 and {len(keys)}.")
 
     def Human_turn(trainer, enemy_trainer):
         

@@ -81,6 +81,47 @@ def trigger_encounter(map_obj: dict, player_trainer: Trainer) -> bool:
     return True
 
 
+def trigger_wild_marker_encounter(marker_obj: dict, player_trainer: Trainer) -> bool:
+    """Returns True to remove the marker (won or captured), False to keep it (fled or lost)."""
+    name = marker_obj["name"]
+    level = marker_obj["level"]
+
+    if not _player_has_alive_pokemon(player_trainer):
+        print("\n  Your Pokemon are too exhausted to battle!")
+        print("  Find a Pokemon Center to heal your team.")
+        input("  Press Enter to continue...")
+        return False
+
+    from ..data_io import load_pokemons, load_attacks
+    wild_pokemon = _build_pokemon(name, level, load_pokemons(), load_attacks())
+    if wild_pokemon is None:
+        return True
+
+    wild_trainer = Trainer(
+        name=f"Wild {name}",
+        team=[wild_pokemon],
+        controller=IAcontroller(),
+    )
+
+    print(f"\n  A wild {name} (Lv. {level}) is blocking your path!")
+    input("  Press Enter to start...")
+
+    winner = pokemon_combat(player_trainer, wild_trainer, pause_between_turns=True, wild=True)
+
+    if winner == "captured":
+        print(f"\n  {name} was added to your team!")
+    elif winner is None:
+        print(f"\n  You ran away from the wild {name}!")
+    elif winner == player_trainer.name:
+        print(f"\n  You defeated the wild {name}!")
+    else:
+        print(f"\n  You were defeated by the wild {name}...")
+
+    input("  Press Enter to return to map...")
+
+    return winner == "captured" or winner == player_trainer.name
+
+
 def trigger_wild_encounter(x: int, y: int, player_trainer: Trainer) -> None:
     zone_id = get_zone_for_position(x, y)
     if zone_id is None:
@@ -115,9 +156,11 @@ def trigger_wild_encounter(x: int, y: int, player_trainer: Trainer) -> None:
     print(f"\n  A wild {entry.name} (Lv. {level}) appeared!")
     input("  Press Enter to start...")
 
-    winner = pokemon_combat(player_trainer, wild_trainer, pause_between_turns=True)
+    winner = pokemon_combat(player_trainer, wild_trainer, pause_between_turns=True, wild=True)
 
-    if winner is None:
+    if winner == "captured":
+        print(f"\n  {entry.name} was added to your team!")
+    elif winner is None:
         print(f"\n  You ran away from the wild {entry.name}!")
     elif winner == player_trainer.name:
         print(f"\n  You defeated the wild {entry.name}!")

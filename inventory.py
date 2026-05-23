@@ -62,12 +62,13 @@ class Inventory:
     
     def usable_items(self, in_battle: bool = True) -> Dict[str, int]:
         return {
-        k: qty
-        for k, qty in self.counts.items()
-        if qty > 0
-        and (idef := self.get_definitions(k))
-        and (not in_battle or not idef.get("battle_only", False))
-    }
+            k: qty
+            for k, qty in self.counts.items()
+            if qty > 0
+            and (idef := self.get_definitions(k))
+            and (in_battle or not idef.get("battle_only", False))
+            and idef.get("type") != "capture"
+        }
     
     
     def use(
@@ -76,38 +77,45 @@ class Inventory:
         user_trainer,
         in_battle: bool = True,
         target_trainer= None,
+        target_index: int | None = None,
         ) -> bool:
-        
+
         idef = self.get_definitions(item_key)
         if not idef:
             raise ValueError(f"❌ Unknown item '{item_key}'")
-        
+
         if in_battle is False and idef.get("battle_only", False):
             print(f"❌ '{idef['name']}' can only be used in battle.")
             return False
-        
+
         reusable = bool(idef.get("reusable", False))
         if not reusable and not self.has_item(item_key):
             print(f"❌ You don't have '{idef['name']}' in your bag.")
             return False
-        
-        
-        target_kind  = idef.get("target", "ally")
+
+        item_type = idef.get("type", None)
+        target_kind = idef.get("target", "ally")
+
         if target_kind == "ally":
             if user_trainer is None:
                 print("❌ No ally trainer provided.")
                 return False
-            pokemon = user_trainer.ActivePokemon
-            
+            if target_index is not None:
+                if not (0 <= target_index < len(user_trainer.team)):
+                    print("❌ Invalid target index.")
+                    return False
+                pokemon = user_trainer.team[target_index]
+            else:
+                pokemon = user_trainer.ActivePokemon
+
         else:
-            if target_kind is None:
+            if target_trainer is None:
                 print("❌ No enemy trainer provided.")
                 return False
             pokemon = target_trainer.ActivePokemon
         
-        item_type = idef.get("type", None)
         effect_type = idef.get("effect", {})
-        
+
         if item_type == "healing":
             ok = self._apply_heal(pokemon, effect_type)
         elif item_type == "revive":
