@@ -13,7 +13,7 @@
         {
             "name": "Quick Attack",
             "type": "Normal",
-            "damage": 35
+            "damage": 30
         }
     ],
     "Raichu": [
@@ -42,7 +42,7 @@
         {
             "name": "Tackle",
             "type": "Normal",
-            "damage": 40
+            "damage": 45
         }
     ],
     "Ivysaur": [
@@ -71,7 +71,7 @@
         {
             "name": "Tackle",
             "type": "Normal",
-            "damage": 40
+            "damage": 45
         }
     ],
     "Wartortle": [
