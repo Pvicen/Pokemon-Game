@@ -200,6 +200,7 @@ def _handle_faint_and_switch(
     trainer: Trainer,
     enemy_trainer: Trainer,
     log: Optional[Deque] = None,
+    redraw_fn=None,
 ) -> bool:
     active = trainer.ActivePokemon
     if active.is_alive():
@@ -216,6 +217,8 @@ def _handle_faint_and_switch(
     controller = getattr(trainer, "controller", None)
 
     if controller and hasattr(controller, "ChooseSwitchPokemon"):
+        if redraw_fn is not None:
+            redraw_fn()
         idx = controller.ChooseSwitchPokemon(trainer)
         if idx is not None and trainer.SwitchPokemon(idx):
             switch_msg = f"  ↩️  {trainer.name} sends out {trainer.ActivePokemon.name}!"
@@ -262,12 +265,13 @@ def _take_turn(
     xp_manager: Optional[ExperienceManager] = None,
     is_wild: bool = False,
     log: Optional[Deque] = None,
+    redraw_fn=None,
 ) -> bool | str:
     actor  = attacker_trainer.ActivePokemon
     target = defender_trainer.ActivePokemon
 
     if not actor.is_alive():
-        if not _handle_faint_and_switch(attacker_trainer, defender_trainer, log=log):
+        if not _handle_faint_and_switch(attacker_trainer, defender_trainer, log=log, redraw_fn=redraw_fn):
             return False
         actor = attacker_trainer.ActivePokemon
 
@@ -287,7 +291,7 @@ def _take_turn(
                     xp_manager.on_ko(attacker=actor, defender=target)
             except Exception:
                 pass
-            return _handle_faint_and_switch(defender_trainer, attacker_trainer, log=log)
+            return _handle_faint_and_switch(defender_trainer, attacker_trainer, log=log, redraw_fn=redraw_fn)
         return True
 
     elif atype == "switch":
@@ -460,6 +464,7 @@ def pokemon_combat(
             xp_manager=xp,
             is_wild=(wild and first_is_player),
             log=log,
+            redraw_fn=redraw,
         )
 
         if result == "captured":
@@ -509,6 +514,7 @@ def pokemon_combat(
             xp_manager=xp,
             is_wild=(wild and not first_is_player),
             log=log,
+            redraw_fn=redraw,
         )
 
         if result2 == "captured":

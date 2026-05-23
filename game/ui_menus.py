@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ..trainers import Trainer
+from ..data_io import load_pokemons, load_attacks
 
 
 def _switch_pokemon_out_of_battle(player_trainer: Trainer) -> None:
@@ -96,6 +97,77 @@ def _use_item_out_of_battle(player_trainer: Trainer, bag) -> None:
 
     bag.use(item_key, player_trainer, in_battle=False, target_index=target_index)
     input("  Press Enter...")
+
+
+def _pokedex_detail(pokemon_name: str, pokemon_db: dict, attacks_db: dict, captured: bool) -> None:
+    data = pokemon_db.get(pokemon_name, {})
+    star = "★ " if captured else "  "
+    display_name = data.get("name", pokemon_name)
+    type_str = data.get("element_type", "???").capitalize()
+    evo = data.get("evolution")
+    evo_lvl = data.get("evolution_level")
+    hp   = data.get("health", "?")
+    atk  = data.get("base_attack", "?")
+    df   = data.get("defense", "?")
+    spd  = data.get("speed", "?")
+    spdf = data.get("special_defense", "?")
+    print("\n  ╔══════════════════════════════════════════╗")
+    print(f"  ║  {star}{display_name:<16} — {type_str:<22}║")
+    print("  ╠══════════════════════════════════════════╣")
+    print(f"  ║  HP: {hp:<4} ATK: {atk:<4} DEF: {df:<4} SPD: {spd:<4}   ║")
+    print(f"  ║  SP.DEF: {spdf:<4}                              ║")
+    if evo and evo_lvl:
+        evo_display = evo.capitalize()
+        print(f"  ║  Evolves into: {evo_display:<10} (Lv {evo_lvl:<3})          ║")
+    else:
+        print(f"  ║  Does not evolve                          ║")
+    attacks = attacks_db.get("by_owner", {}).get(pokemon_name, [])
+    if attacks:
+        print("  ║  Attacks:                                 ║")
+        for atk_entry in attacks[:4]:
+            aname = atk_entry.get("name", "?")
+            atype = atk_entry.get("type", "?").capitalize()
+            admg  = atk_entry.get("damage", "?")
+            print(f"  ║    {aname:<18} {atype:<10} {admg:>3} dmg  ║")
+    print("  ╚══════════════════════════════════════════╝")
+    input("  Press Enter to go back...")
+
+
+def open_pokedex(player_trainer: Trainer) -> None:
+    pokemon_db = load_pokemons()
+    attacks_db = load_attacks()
+    all_names = list(pokemon_db.keys())
+    seen = {n.lower() for n in getattr(player_trainer, "pokedex_seen", [])}
+    total = len(all_names)
+
+    while True:
+        captured_count = sum(1 for n in all_names if n in seen)
+        print(f"\n  ╔══════════════════════════════════════════╗")
+        print(f"  ║     POKÉDEX  ({captured_count} captured / {total}){'':>15}║")
+        print(f"  ╠══════════════════════════════════════════╣")
+        for i, name in enumerate(all_names, start=1):
+            star = "★" if name in seen else " "
+            data = pokemon_db.get(name, {})
+            display_name = data.get("name", name)
+            ptype = data.get("element_type", "???").capitalize()
+            lvl_val = data.get("current_level")
+            if lvl_val is None:
+                lvl_str = "  ?"
+            elif str(lvl_val).lower() == "max":
+                lvl_str = "Max"
+            else:
+                lvl_str = f"Lv {lvl_val}"
+            print(f"  ║  [{i:>2}] {star} {display_name:<16} {ptype:<12} {lvl_str:<5}  ║")
+        print(f"  ╚══════════════════════════════════════════╝")
+        choice = input("  Enter number for detail, [0] to exit: ").strip()
+        if choice == "0" or not choice.isdigit():
+            return
+        idx = int(choice) - 1
+        if not (0 <= idx < total):
+            print("  Invalid number.")
+            continue
+        name = all_names[idx]
+        _pokedex_detail(name, pokemon_db, attacks_db, captured=(name in seen))
 
 
 def open_bag_menu(player_trainer: Trainer) -> None:

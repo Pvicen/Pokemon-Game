@@ -15,6 +15,7 @@ class Trainer:
         
         #Default items
         self.bag = bag if bag is not None else Inventory({"potion": 1, "xdefense": 1})
+        self.pokedex_seen: list[str] = []
             
     @property
     def ActivePokemon(self) -> Pokemon:

@@ -125,9 +125,6 @@ WILD_MARKERS: List[WildMarker] = [
     # Bosque Umbral (y<=27, x>=44)
     WildMarker("Bellsprout", level=10, position=(52, 18)),
     WildMarker("Venonat",    level=11, position=(75, 8)),
-    # Cueva Oscura (x>=87, y>=24)
-    WildMarker("Geodude",    level=13, position=(91, 27)),
-    WildMarker("Gastly",     level=14, position=(105, 34)),
 ]
 
 
@@ -152,6 +149,7 @@ TRAINERS: List[TrainerSetup] = [
             {"potion": 1},
             {"potion": 2},
             {"xdefense": 1},
+            {"pokeball": 2},
         ],
     ),
     TrainerSetup(
@@ -168,6 +166,7 @@ TRAINERS: List[TrainerSetup] = [
             {"potion": 1},
             {"xdefense": 1},
             {"potion": 1, "xdefense": 1},
+            {"pokeball": 2},
         ],
     ),
     TrainerSetup(
@@ -184,6 +183,7 @@ TRAINERS: List[TrainerSetup] = [
             {"potion": 2},
             {"potion": 1, "xattack": 1},
             {"superpotion": 1},
+            {"pokeball": 3},
         ],
     ),
 
@@ -202,6 +202,7 @@ TRAINERS: List[TrainerSetup] = [
             {"superpotion": 1},
             {"xattack": 1},
             {"potion": 2, "xdefense": 1},
+            {"pokeball": 3},
         ],
     ),
     TrainerSetup(
@@ -218,6 +219,7 @@ TRAINERS: List[TrainerSetup] = [
             {"superpotion": 1, "xspecialattack": 1},
             {"superpotion": 2},
             {"xspecialattack": 1, "xspecialdefense": 1},
+            {"pokeball": 2},
         ],
     ),
     TrainerSetup(
@@ -234,6 +236,7 @@ TRAINERS: List[TrainerSetup] = [
             {"superpotion": 1, "xdefense": 1},
             {"superpotion": 2},
             {"xdefense": 2},
+            {"pokeball": 2},
         ],
     ),
     TrainerSetup(
@@ -250,6 +253,7 @@ TRAINERS: List[TrainerSetup] = [
             {"superpotion": 2},
             {"superpotion": 1, "xattack": 1},
             {"superpotion": 1, "xdefense": 1},
+            {"pokeball": 2, "greatball": 1},
         ],
     ),
 
@@ -268,6 +272,7 @@ TRAINERS: List[TrainerSetup] = [
             {"superpotion": 1, "xattack": 1},
             {"superpotion": 2, "xdefense": 1},
             {"xattack": 1, "xspecialattack": 1},
+            {"greatball": 1},
         ],
     ),
     TrainerSetup(
@@ -284,6 +289,7 @@ TRAINERS: List[TrainerSetup] = [
             {"superpotion": 1, "xdefense": 1},
             {"superpotion": 2},
             {"xdefense": 1, "xspecialdefense": 1},
+            {"greatball": 1},
         ],
     ),
     TrainerSetup(
@@ -300,75 +306,7 @@ TRAINERS: List[TrainerSetup] = [
             {"superpotion": 2, "xspecialdefense": 1},
             {"maxpotion": 1},
             {"superpotion": 1, "xattack": 1, "xdefense": 1},
-        ],
-    ),
-
-    # --- Cueva Oscura (hard) ---
-    TrainerSetup(
-        name="Black Belt Ryu",
-        team=[("Primeape", 14), ("Graveler", 13)],
-        position=(89, 32),
-        defeat_message="Your strength is remarkable.",
-        dialogue=[
-            "...",
-            "You have the eyes of a warrior.",
-            "I have trained in this cave for ten years, seeking the perfect battle.",
-            "Perhaps today I will find it.",
-        ],
-        reward_pool=[
-            {"maxpotion": 1, "xattack": 1},
-            {"maxpotion": 1, "xdefense": 1},
-            {"superpotion": 2, "xattack": 2},
-        ],
-    ),
-    TrainerSetup(
-        name="Ace Trainer Sara",
-        team=[("Haunter", 15), ("Magneton", 14)],
-        position=(93, 36),
-        defeat_message="You've mastered the cave's trials!",
-        dialogue=[
-            "I've defeated every trainer who dared enter this cave.",
-            "My Haunter feeds on fear, and my Magneton on arrogance.",
-            "Which one will be your downfall?",
-        ],
-        reward_pool=[
-            {"maxpotion": 1, "xspecialattack": 1},
-            {"maxpotion": 2},
-            {"maxpotion": 1, "xattack": 1, "xspecialattack": 1},
-        ],
-    ),
-    TrainerSetup(
-        name="Rocket Grunt",
-        team=[("Arbok", 16), ("Weezing", 15)],
-        position=(110, 38),
-        defeat_message="Team Rocket blasts off again!",
-        dialogue=[
-            "Heh. You've made it this far.",
-            "Team Rocket controls these depths. This cave belongs to us.",
-            "Hand over your Pokemon, or face the consequences!",
-        ],
-        reward_pool=[
-            {"maxpotion": 1, "revive": 1},
-            {"maxpotion": 2, "xattack": 1},
-            {"revive": 1, "xattack": 1, "xdefense": 1},
-        ],
-    ),
-    TrainerSetup(
-        name="Cave Champion",
-        team=[("Rhydon", 18), ("Graveler", 17), ("Haunter", 17)],
-        position=(108, 47),
-        defeat_message="Unbelievable! You conquered the deepest cave!",
-        dialogue=[
-            "So. You've made it to the deepest chamber.",
-            "I have waited here for years.",
-            "Trainer after trainer has fallen before me.",
-            "You will be no different... or perhaps you will surprise me.",
-            "Come. Let this be the battle that history remembers.",
-        ],
-        reward_pool=[
-            {"maxpotion": 2, "revive": 1, "xattack": 1},
-            {"maxpotion": 2, "revive": 1, "xspecialattack": 1},
-            {"maxpotion": 3, "revive": 2},
+            {"greatball": 2},
         ],
     ),
 
@@ -385,8 +323,9 @@ TRAINERS: List[TrainerSetup] = [
             "Take these supplies. The road ahead is long, and you'll need them.",
         ],
         reward_pool=[
-            ({"potion": 1},       60),
-            ({"potion": 2},       25),
+            ({"potion": 1},       50),
+            ({"potion": 2},       20),
+            ({"pokeball": 2},     15),
             ({"superpotion": 1},  14),
             ({"revive": 1},        1),
         ],
@@ -403,8 +342,9 @@ TRAINERS: List[TrainerSetup] = [
             "Please, take this. Every trainer deserves a fighting chance.",
         ],
         reward_pool=[
-            ({"superpotion": 1},             45),
-            ({"potion": 2, "xdefense": 1},   30),
+            ({"superpotion": 1},             35),
+            ({"potion": 2, "xdefense": 1},   25),
+            ({"pokeball": 2},                15),
             ({"superpotion": 2},             20),
             ({"revive": 1},                   5),
         ],
@@ -421,17 +361,97 @@ TRAINERS: List[TrainerSetup] = [
             "I don't have much, but here, take some of my supplies. You saved my sanity.",
         ],
         reward_pool=[
-            ({"superpotion": 1, "xattack": 1},   40),
-            ({"superpotion": 2, "xdefense": 1},   30),
-            ({"maxpotion": 1},                    25),
+            ({"superpotion": 1, "xattack": 1},   35),
+            ({"superpotion": 2, "xdefense": 1},   25),
+            ({"pokeball": 2, "greatball": 1},     15),
+            ({"maxpotion": 1},                    20),
             ({"revive": 1},                        5),
         ],
         is_friendly=True,
     ),
+]
+
+
+# =============================================================================
+# DUNGEON CONTENT — Cueva Oscura (local coordinates, 60×30 grid)
+# =============================================================================
+
+DUNGEON_TRAINERS: List[TrainerSetup] = [
+    TrainerSetup(
+        name="Black Belt Ryu",
+        team=[("Primeape", 14), ("Graveler", 13)],
+        position=(15, 8),
+        defeat_message="Your strength is remarkable.",
+        dialogue=[
+            "...",
+            "You have the eyes of a warrior.",
+            "I have trained in this cave for ten years, seeking the perfect battle.",
+            "Perhaps today I will find it.",
+        ],
+        reward_pool=[
+            {"maxpotion": 1, "xattack": 1},
+            {"maxpotion": 1, "xdefense": 1},
+            {"superpotion": 2, "xattack": 2},
+            {"greatball": 2},
+        ],
+    ),
+    TrainerSetup(
+        name="Ace Trainer Sara",
+        team=[("Haunter", 15), ("Magneton", 14)],
+        position=(25, 14),
+        defeat_message="You've mastered the cave's trials!",
+        dialogue=[
+            "I've defeated every trainer who dared enter this cave.",
+            "My Haunter feeds on fear, and my Magneton on arrogance.",
+            "Which one will be your downfall?",
+        ],
+        reward_pool=[
+            {"maxpotion": 1, "xspecialattack": 1},
+            {"maxpotion": 2},
+            {"maxpotion": 1, "xattack": 1, "xspecialattack": 1},
+            {"greatball": 2},
+        ],
+    ),
+    TrainerSetup(
+        name="Rocket Grunt",
+        team=[("Arbok", 16), ("Weezing", 15)],
+        position=(40, 18),
+        defeat_message="Team Rocket blasts off again!",
+        dialogue=[
+            "Heh. You've made it this far.",
+            "Team Rocket controls these depths. This cave belongs to us.",
+            "Hand over your Pokemon, or face the consequences!",
+        ],
+        reward_pool=[
+            {"maxpotion": 1, "revive": 1},
+            {"maxpotion": 2, "xattack": 1},
+            {"revive": 1, "xattack": 1, "xdefense": 1},
+            {"greatball": 2},
+        ],
+    ),
+    TrainerSetup(
+        name="Cave Champion",
+        team=[("Rhydon", 18), ("Graveler", 17), ("Haunter", 17)],
+        position=(45, 26),
+        defeat_message="Unbelievable! You conquered the deepest cave!",
+        dialogue=[
+            "So. You've made it to the deepest chamber.",
+            "I have waited here for years.",
+            "Trainer after trainer has fallen before me.",
+            "You will be no different... or perhaps you will surprise me.",
+            "Come. Let this be the battle that history remembers.",
+        ],
+        reward_pool=[
+            {"maxpotion": 2, "revive": 1, "xattack": 1},
+            {"maxpotion": 2, "revive": 1, "xspecialattack": 1},
+            {"maxpotion": 3, "revive": 2},
+            {"greatball": 3},
+        ],
+    ),
     TrainerSetup(
         name="Deserter",
         team=[],
-        position=(95, 44),
+        position=(20, 22),
         defeat_message="",
         dialogue=[
             "...",
@@ -441,14 +461,30 @@ TRAINERS: List[TrainerSetup] = [
             "Get out of here before the Grunt catches you.",
         ],
         reward_pool=[
-            ({"maxpotion": 1, "revive": 1},                    40),
-            ({"maxpotion": 2},                                  30),
-            ({"revive": 1, "xattack": 1, "xspecialattack": 1}, 22),
+            ({"maxpotion": 1, "revive": 1},                    35),
+            ({"maxpotion": 2},                                  25),
+            ({"greatball": 2},                                  12),
+            ({"revive": 1, "xattack": 1, "xspecialattack": 1}, 20),
             ({"maxrevive": 1},                                   8),
         ],
         is_friendly=True,
     ),
 ]
+
+DUNGEON_WILD_MARKERS: List[WildMarker] = [
+    WildMarker("Geodude", level=13, position=(8,  5)),
+    WildMarker("Gastly",  level=14, position=(35, 12)),
+]
+
+
+def get_dungeon_objects() -> List[dict]:
+    return [{"x": t.position[0], "y": t.position[1], "kind": "trainer", "setup": t}
+            for t in DUNGEON_TRAINERS]
+
+
+def get_dungeon_wild_marker_objects() -> List[dict]:
+    return [{"x": m.position[0], "y": m.position[1], "kind": "wild", "name": m.name, "level": m.level}
+            for m in DUNGEON_WILD_MARKERS]
 
 
 # =============================================================================
@@ -532,12 +568,14 @@ def create_player_trainer(starter_names=None) -> Trainer:
     if not team:
         raise ValueError(f"None of the starter Pokemon {starter_names} were found in database")
 
-    return Trainer(
+    trainer = Trainer(
         name="Player",
         team=team,
         controller=HumanController(),
         bag=Inventory({"potion": 2, "xdefense": 1, "pokeball": 5}),
     )
+    trainer.pokedex_seen = [p.name for p in trainer.team]
+    return trainer
 
 
 def get_map_objects() -> List[dict]:

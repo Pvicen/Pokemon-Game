@@ -35,12 +35,25 @@ def load_game(slot_name: str) -> Optional[Dict[str, Any]]:
         return None
 
 
+def load_defeated_dict(save_data: Dict[str, Any]) -> Dict[str, List]:
+    """Extracts defeated_trainers dict from save. Handles old saves (list format)."""
+    dt = save_data.get("defeated_trainers", {})
+    if isinstance(dt, list):
+        return {"main": [tuple(p) for p in dt], "dungeon": []}
+    return {
+        "main": [tuple(p) for p in dt.get("main", [])],
+        "dungeon": [tuple(p) for p in dt.get("dungeon", [])],
+    }
+
+
 def save_game(
     player_trainer,
     x: int,
     y: int,
-    defeated_positions: List[Tuple[int, int]],
     slot_name: str,
+    *,
+    current_map: str = "main",
+    defeated_dict: Dict[str, List] = None,
 ) -> None:
     SAVES_DIR.mkdir(exist_ok=True)
     team_data = []
@@ -56,12 +69,20 @@ def save_game(
     if getattr(player_trainer, "bag", None) is not None:
         bag_data = dict(player_trainer.bag.counts)
 
+    if defeated_dict is None:
+        defeated_dict = {"main": [], "dungeon": []}
+
     data = {
         "slot_name": slot_name,
+        "current_map": current_map,
         "position": {"x": x, "y": y},
         "team": team_data,
         "bag": bag_data,
-        "defeated_trainers": [[pos[0], pos[1]] for pos in defeated_positions],
+        "defeated_trainers": {
+            "main": [[p[0], p[1]] for p in defeated_dict.get("main", [])],
+            "dungeon": [[p[0], p[1]] for p in defeated_dict.get("dungeon", [])],
+        },
+        "pokedex": list(getattr(player_trainer, "pokedex_seen", [])),
     }
 
     with open(_slot_path(slot_name), "w", encoding="utf-8") as f:
@@ -104,4 +125,9 @@ def restore_player_trainer(save_data: Dict[str, Any]):
     else:
         bag = Inventory({"potion": 2, "xdefense": 1})
 
-    return Trainer(name="Player", team=team, controller=HumanController(), bag=bag)
+    trainer = Trainer(name="Player", team=team, controller=HumanController(), bag=bag)
+    trainer.pokedex_seen = list(save_data.get("pokedex", []))
+    for p in team:
+        if p.name not in trainer.pokedex_seen:
+            trainer.pokedex_seen.append(p.name)
+    return trainer

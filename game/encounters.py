@@ -78,7 +78,7 @@ def trigger_encounter(map_obj: dict, player_trainer: Trainer) -> bool:
         print("\n  You lost... head to a Pokemon Center to heal your team.")
 
     input("  Press Enter to return to map...")
-    return True
+    return winner == player_trainer.name
 
 
 def trigger_wild_marker_encounter(marker_obj: dict, player_trainer: Trainer) -> bool:
@@ -109,6 +109,9 @@ def trigger_wild_marker_encounter(marker_obj: dict, player_trainer: Trainer) -> 
     winner = pokemon_combat(player_trainer, wild_trainer, pause_between_turns=True, wild=True)
 
     if winner == "captured":
+        seen = getattr(player_trainer, "pokedex_seen", None)
+        if seen is not None and name not in seen:
+            seen.append(name)
         print(f"\n  {name} was added to your team!")
     elif winner is None:
         print(f"\n  You ran away from the wild {name}!")
@@ -122,8 +125,9 @@ def trigger_wild_marker_encounter(marker_obj: dict, player_trainer: Trainer) -> 
     return winner == "captured" or winner == player_trainer.name
 
 
-def trigger_wild_encounter(x: int, y: int, player_trainer: Trainer) -> None:
-    zone_id = get_zone_for_position(x, y)
+def trigger_wild_encounter(x: int, y: int, player_trainer: Trainer, zone_id: str = None) -> None:
+    if zone_id is None:
+        zone_id = get_zone_for_position(x, y)
     if zone_id is None:
         return
     zone = get_zone_by_id(zone_id)
@@ -159,6 +163,9 @@ def trigger_wild_encounter(x: int, y: int, player_trainer: Trainer) -> None:
     winner = pokemon_combat(player_trainer, wild_trainer, pause_between_turns=True, wild=True)
 
     if winner == "captured":
+        seen = getattr(player_trainer, "pokedex_seen", None)
+        if seen is not None and entry.name not in seen:
+            seen.append(entry.name)
         print(f"\n  {entry.name} was added to your team!")
     elif winner is None:
         print(f"\n  You ran away from the wild {entry.name}!")
