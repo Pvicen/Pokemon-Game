@@ -607,5 +607,67 @@
         "Speed": 82,
         "Element_type": "Water",
         "Current_level": "Max"
+    },
+    "Eevee": {
+        "Base_attack": 55,
+        "Health": 55,
+        "Defense": 50,
+        "Special_defense": 65,
+        "Speed": 55,
+        "Element_type": "Normal",
+        "Current_level": 1,
+        "Evolution_by_item": {
+            "waterstone": "vaporeon",
+            "firestone": "flareon",
+            "thunderstone": "jolteon"
+        }
+    },
+    "Vaporeon": {
+        "Base_attack": 65,
+        "Health": 130,
+        "Defense": 60,
+        "Special_defense": 95,
+        "Speed": 65,
+        "Element_type": "Water",
+        "Current_level": "Max"
+    },
+    "Flareon": {
+        "Base_attack": 130,
+        "Health": 65,
+        "Defense": 60,
+        "Special_defense": 110,
+        "Speed": 65,
+        "Element_type": "Fire",
+        "Current_level": "Max"
+    },
+    "Jolteon": {
+        "Base_attack": 65,
+        "Health": 65,
+        "Defense": 60,
+        "Special_defense": 95,
+        "Speed": 130,
+        "Element_type": "Electric",
+        "Current_level": "Max"
+    },
+    "Staryu": {
+        "Base_attack": 45,
+        "Health": 40,
+        "Defense": 55,
+        "Special_defense": 70,
+        "Speed": 85,
+        "Element_type": "Water",
+        "Current_level": 1,
+        "Evolution_by_item": {
+            "waterstone": "starmie"
+        }
+    },
+    "Starmie": {
+        "Base_attack": 75,
+        "Health": 60,
+        "Defense": 85,
+        "Special_defense": 100,
+        "Speed": 115,
+        "Element_type": "Water",
+        "Current_level": "Max"
     }
 }

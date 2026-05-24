@@ -56,21 +56,25 @@ class IAcontroller():
         best_dmg = 0
         best_atk = None
         for atk in attacks:
-            if not isinstance(atk, dict) or not all( k in atk for k in ("name", "type", "damage")):
+            if not isinstance(atk, dict) or not all(k in atk for k in ("name", "type", "damage")):
                 continue
-            
+            if actor.get_pp(atk.get("name", "")) <= 0:
+                continue
+
             atk_type = str(atk["type"]).capitalize()
             dmg = atk["damage"]
-            
+
             if atk_type == "Normal":
                 estimated_damage = max(1, int(dmg - target.defense * 0.4))
-                mult = 1.0
             else:
-                estimated_damage = int(calculate_damage(actor, target, dmg, attack_type= atk_type))
+                estimated_damage = int(calculate_damage(actor, target, dmg, attack_type=atk_type))
             if estimated_damage > best_dmg:
                 best_dmg = estimated_damage
                 best_atk = atk
-                
+
+        if best_atk is None:
+            return 50, {"name": "Struggle", "type": "Normal", "damage": 50}
+
         return best_dmg, best_atk
     
     

@@ -1,13 +1,13 @@
 # Pokemon Game — Contexto del Proyecto
 
 ## Descripción
-Juego de Pokémon por terminal (ASCII) en Python. Combate por turnos, dos mapas (overworld 120×50 + dungeon 60×30), entrenadores NPC, Pokémon salvajes, inventario, guardado/cargado de partidas con nombre.
+Juego de Pokémon por terminal (ASCII) en Python. Combate por turnos, overworld 160×65 con 6 zonas, dungeon 60×30 con tránsito bidireccional, entrenadores NPC, Pokémon salvajes, inventario, guardado/cargado de partidas con nombre.
 
 ## Cómo ejecutar
 ```
-python -m Pokemon-Game
+python -m Pokemon_Game
 ```
-Desde el directorio padre de la carpeta `Pokemon-Game/`.
+Desde `c:\Users\moral\Documentos` (directorio padre de la carpeta `Pokemon_Game/`).
 
 ## Reglas de trabajo (OBLIGATORIAS)
 - NO reescribir el proyecto desde cero
@@ -22,35 +22,57 @@ Desde el directorio padre de la carpeta `Pokemon-Game/`.
 ## Arquitectura
 
 ```
-Pokemon-Game/
-├── main.py                  # Menú principal, state machine de mapas (main/dungeon)
-├── combat.py                # Motor de combate por turnos
-├── models.py                # Clase Pokemon, EvolvedPokemon
+Pokemon_Game/
+├── main.py                  # Menú principal, state machine de mapas
+├── combat.py                # Motor de combate por turnos (STRUGGLE, estados alterados, veneno al fin de ronda)
+├── models.py                # Clase Pokemon (PP tracking + status: apply_status, clear_status, status, sleep_turns)
 ├── trainers.py              # Clase Trainer
-├── inventory.py             # Clase Inventory (ítems, efectos)
-├── damage.py                # Cálculo de daño y efectividad
-├── experience.py            # ExperienceManager (XP, level-up, evolución)
+├── inventory.py             # Clase Inventory (healing, revive, buff, evolution, status_cure; _apply_status_cure)
+├── damage.py                # Cálculo de daño y efectividad de tipos
+├── experience.py            # ExperienceManager, _apply_species(), _try_species_lookup()
+├── utils.py                 # clamp(), determine_attack_order() — speed//2 si paralysis
+├── data_io/                 # Módulo de I/O de datos (con caché y normalización)
+│   ├── __init__.py          # load_attacks(), load_pokemons(), load_items(), load_type_chart()
+│   ├── loaders.py           # load_dataset(), read_json_cached()
+│   ├── paths.py             # data_dir()
+│   ├── errors.py            # DataIOError, DataValidationError, DataPathError
+│   └── checks/
+│       ├── pokemons.py      # validate_pokemons(), normalize_pokemons() — normaliza a lowercase
+│       ├── attacks.py       # validate_attacks(), normalize_attacks() — pasa campos "pp" y "effect" al output
+│       ├── items.py         # validate_items(), normalize_items() — soporta tipo "status_cure"
+│       └── type_effectiveness.py
 ├── data/
-│   ├── pokemons.json        # Stats base de cada Pokémon
-│   ├── attacks.json         # Ataques por propietario
-│   └── items.json           # Definiciones de ítems (incluye pokeball/greatball/ultraball)
+│   ├── pokemons.json        # Stats base de cada Pokémon (73 especies)
+│   ├── attacks.json         # Ataques por propietario — campo "pp" en todos + campo "effect" en ataques de estado
+│   ├── items.json           # 26 ítems (healing, revive, buff, capture, evolution, status_cure)
+│   └── type_effectiveness.json
 ├── controllers/
-│   ├── human.py             # HumanController (input del jugador)
-│   └── ia.py                # IAcontroller (IA enemiga)
+│   ├── __init__.py
+│   ├── human.py             # HumanController — ChooseAttack() muestra PP: X/Y, filtra PP=0, auto-Struggle
+│   └── ia.py                # IAcontroller — _Calculating_Damages() filtra PP=0, fallback Struggle
 ├── game/
-│   ├── setup_game.py        # TrainerSetup, WildMarker, Zone + listas TRAINERS/DUNGEON_TRAINERS/ZONES
+│   ├── __init__.py
+│   ├── setup_game.py        # Zone, WildMarker, TrainerSetup, ZONES, TRAINERS, DUNGEON_TRAINERS
+│   │                        # _build_pokemon(), create_trainer_instance(), get_zone_for_position()
 │   ├── encounters.py        # trigger_encounter(), trigger_wild_encounter(), trigger_wild_marker_encounter()
+│   │                        # clear_status() en Pokémon capturado (no entra al equipo con veneno/parálisis)
 │   ├── save_load.py         # save_game(), load_game(), restore_player_trainer(), load_defeated_dict()
-│   └── ui_menus.py          # open_bag_menu(), open_pokedex()
+│   │                        # save incluye "pp", "status", "sleep_turns"; backward-compat para saves viejos
+│   ├── ui_menus.py          # open_bag_menu(), open_pokedex(), show_team_summary()
+│   ├── ui_utils.py          # _hp_bar() — usado por ui_menus y show_team_summary
+│   └── world.py             # (reservado para futura arquitectura multi-mundo)
 ├── map/
-│   ├── tiles.py             # OBSTACLE_GRID, _build_map() — mapa principal 120×50
-│   ├── dungeon.py           # DUNGEON_GRID, run_dungeon() — cueva 60×30
+│   ├── __init__.py          # run_map(); _heal_at_pokemon_center() restaura HP+PP y cura todos los estados
+│   ├── tiles.py             # OBSTACLE_GRID, _build_map() — mapa 160×65
+│   ├── dungeon.py           # DUNGEON_GRID, run_dungeon() — cueva 60×30, tránsito bidireccional
 │   ├── player.py            # PlayerState (posición, movimiento)
-│   ├── renderer.py          # render() — dibuja el mapa principal con colores ANSI por zona
+│   ├── renderer.py          # render() — colores ANSI por zona
 │   ├── events.py            # check_collision()
-│   └── __init__.py          # run_map() — loop principal del mapa overworld
+│   └── saves.py             # (reservado / auxiliar de guardado por mapa)
 └── saves/                   # Partidas guardadas ({nombre}.json)
 ```
+
+---
 
 ## Estado actual — Fases completadas
 
@@ -72,46 +94,60 @@ Pokemon-Game/
 | A | Colores ANSI en el mapa por zona | ✅ |
 | B | UI de combate estilo clásico (caja ╔══╗, barra HP con color, log) | ✅ |
 | C | Balance de stats starters + ataques normales de fallback | ✅ |
-| Bug Fix 1 | `trigger_encounter()` retorna `False` si el jugador pierde (trainer no desaparece) | ✅ |
+| Bug Fix 1 | `trigger_encounter()` retorna `False` si el jugador pierde | ✅ |
 | Bug Fix 2 | Pokéballs agregadas a `reward_pool` de trainers por zona | ✅ |
-| F | Pokédex en juego (tecla `P`) — lista todos los Pokémon, marca capturados con ★ | ✅ |
-| **D** | **Submapa independiente: Cueva Oscura (60×30, renderer oscuro, entidades propias)** | ✅ |
+| F | Pokédex en juego (tecla `P`) — lista todos los Pokémon, ★ capturados | ✅ |
+| D | Submapa independiente: Cueva Oscura (60×30, renderer oscuro, entidades propias) | ✅ |
+| **E** | **Overworld expandido 160×65: Ruta del Mar + Paso Costero + Pueblo Nuevo + PC2** | ✅ |
+| **Tránsito** | **Cueva bidireccional: entrada/salida Oeste y Este independientes** | ✅ |
+| **H** | **UI/UX: HP bars en selector, tecla T equipo, bolsa por categorías** | ✅ |
+| **G** | **Evolución por ítems (Fire/Water/Thunder/Leaf/Moon Stone)** | ✅ |
+| **I** | **Sistema de PP: usos limitados por ataque, Struggle, restauración en PC** | ✅ |
+| **L** | **Pokédex extendida: ◆ visto / ★ capturado + nivel de captura** | ✅ |
+| **M** | **Refactor save: `cleared_wild_markers` separado de `defeated_trainers`** | ✅ |
+| **J** | **Estados alterados: Veneno, Parálisis, Sueño + ítems curativos** | ✅ |
 
-## Fases pendientes
+---
 
-| Prioridad | Fase | Descripción |
-|-----------|------|-------------|
-| 1 | **E** | Expandir mapa principal a 160×65 — Ruta del Mar (Pokémon agua) + Pueblo Nuevo (2° Centro Pokémon) |
-| 2 | **G** | Evolución por ítems — Fire Stone, Water Stone, etc. (`data/items.json`, `inventory.py`) |
-| 3 | **H** | UI/UX — barra HP en selector de cambio, tecla `T` vista rápida del equipo, bolsa por categoría |
+## Roadmap pendiente (Fases K–Q)
 
-### Ideas futuras (post-Fase H)
-- Estados de combate: veneno, parálisis, sueño
-- PP de ataques (usos limitados)
-- Habilidades pasivas por especie
-- Rematches de trainers (equipo más fuerte al subir niveles)
-- Respawn de wild markers (requiere separar `cleared_wild_markers` del save)
-- Pokédex mejorada: guardar nivel de captura por Pokémon (cambiar `pokedex_seen` a `list[dict]`)
+| Fase | Descripción | Riesgo | Depende de |
+|------|-------------|--------|------------|
+| **K** | Habilidades pasivas por especie (Static, Intimidate, Sturdy…) | Medio | J ✓ |
+| **N** | Respawn de wild markers (100 pasos, chequeo IN-LOOP) | Medio | — |
+| **O** | Rematches de trainers (300 pasos, equipo escalado) | Alto | — |
+| **P** | Cueva nueva en Pueblo Nuevo + Cave Champion | Medio | — |
+| **Q** | Capítulo 2 / Mundo Nuevo (save multi-mundo, `current_world`) | Muy Alto | P, M |
 
-## Arquitectura de mapas (Fase D)
+El plan detallado de cada fase está en `C:\Users\moral\.claude\plans\lively-enchanting-spring.md`.
+
+---
+
+## Arquitectura de mapas
 
 `main.py` coordina un `while True` con variable `current_map`:
 - `run_map()` → retorna `"enter_dungeon"` | `"quit"`
-- `run_dungeon()` → retorna `"exit_dungeon"` | `"quit"`
+- `run_dungeon()` → retorna `"exit_west"` | `"exit_east"` | `"quit"`
 - Al cambiar de mapa, `main.py` recarga el save para obtener posición y `defeated_dict` autoritativos.
 
-### Transiciones
+### Transiciones de mapa
+
 | Evento | Qué pasa |
 |--------|----------|
-| Jugador pisa `x≥87, y≥28` en overworld | Guarda con `current_map="dungeon"`, posición `(3,2)`, retorna `"enter_dungeon"` |
-| Jugador pisa `▲` en dungeon `(3,1)` | Guarda con `current_map="main"`, posición `(90,26)`, retorna `"exit_dungeon"` |
+| Pisa cols 87-92, y=28 (Ruta Este→cueva) | Guarda spawn `(3,2)`, `current_map="dungeon"`, retorna `"enter_dungeon"` |
+| Pisa x=118, rows 46-48 (Pueblo Nuevo→cueva) | Guarda spawn `(57,26)`, `current_map="dungeon"`, retorna `"enter_dungeon"` |
+| Pisa ▲ en dungeon `(3,1)` | Guarda pos `(90,26)`, `current_map="main"`, retorna `"exit_west"` |
+| Pisa ▲ en dungeon `(57,27)` | Guarda pos `(119,47)`, `current_map="main"`, retorna `"exit_east"` |
 
-### Dungeon — layout
-60×30 tiles. Viewport 40×20. Posición inicial `(3,2)`, salida `▲` en `(3,1)`.
+**IMPORTANTE:** `main.py` no necesita cambios — lee el `current_map` y `position` del save después de cada transición. El spawn en el dungeon viaja en el save.
+
+### Dungeon — layout (60×30)
+
+Viewport 40×20. Dos entradas/salidas independientes.
 
 | Sección | Carve | Entidades |
 |---------|-------|-----------|
-| Entry room | `(1,1)-(8,4)` | Salida `▲(3,1)`, inicio `(3,2)` |
+| Entry room | `(1,1)-(8,4)` | ▲ oeste `(3,1)`, spawn oeste `(3,2)` |
 | Top corridor | `(5,4)-(25,8)` | Geodude `!` (8,5), Ryu `T` (15,8) |
 | Vertical connector | `(20,5)-(22,15)` | — |
 | Middle section | `(15,10)-(32,15)` | Sara `T` (25,14) |
@@ -119,33 +155,59 @@ Pokemon-Game/
 | Deep vertical | `(38,14)-(42,22)` | Grunt `T` (40,18) |
 | Lower corridor | `(18,18)-(42,22)` | Deserter NPC (20,22) |
 | Deep chamber | `(38,22)-(52,28)` | Champion `T` (45,26) |
+| East exit corridor | `(52,25)-(58,28)` | ▲ este `(57,27)`, spawn este `(57,26)` |
 
-## Zonas del mapa overworld
+### Constantes clave (dungeon.py)
+
+```python
+DUNGEON_START          = (3, 2)     # spawn al entrar por el oeste
+DUNGEON_START_EAST     = (57, 26)   # spawn al entrar por el este
+DUNGEON_EXIT_POS       = (3, 1)     # salida oeste ▲
+DUNGEON_EXIT_EAST_POS  = (57, 27)   # salida este ▲
+MAIN_MAP_RETURN_WEST   = (90, 26)   # retorno overworld salida oeste
+MAIN_MAP_RETURN_EAST   = (119, 47)  # retorno overworld salida este
+```
+
+### Constantes clave (map/__init__.py)
+
+```python
+POKEMON_CENTER_POS   = (9, 11)    # PC1 — Pueblo Alto
+POKEMON_CENTER_2_POS = (129, 46)  # PC2 — Pueblo Nuevo (tile interior; puerta física en y=47)
+# Triggers de cueva (boundary-crossing):
+# Oeste: 87 <= x <= 92 and y == 28
+# Este:  x == 118 and 46 <= y <= 48
+```
+
+---
+
+## Zonas del overworld (160×65)
 
 | Zona | Coordenadas | Dificultad | Encuentro salvaje |
 |------|-------------|------------|-------------------|
 | Pueblo Raiz | rows 28-48, cols 1-38 | Fácil (Lv 1-5) | 1% |
 | Pueblo Alto | rows 1-21, cols 1-38 | Medio-bajo (Lv 5-10) | 1% |
 | Bosque Umbral | rows 1-21, cols 44-118 | Medio-alto (Lv 8-14) | 2% |
-| Cueva Oscura | rows 28-48, cols 87-118 | Difícil (Lv 12-18) | 3% |
-| Cueva (dungeon) | todo `dungeon.py` | Difícil (Lv 12-18) | 3% — usa `zone_id="cueva_oscura"` explícito |
+| Cueva Oscura | rows 24-48, cols 87-118 | Difícil (Lv 12-18) | 3% |
+| Ruta del Mar | rows 1-34, cols 119-158 | Difícil (Lv 12-18) | 2% |
+| Pueblo Nuevo | rows 35-63, cols 119-158 | — | 0% |
+| Cueva (dungeon) | todo `dungeon.py` | Difícil (Lv 12-18) | 3% (zone_id="cueva_oscura") |
 
-## Centro Pokémon
-- Posición: `(9, 11)` — Pueblo Alto
-- Cura HP al máximo y revive Pokémon desmayados
-- Si todos están al 100% de HP: mensaje "already in perfect health"
+**Prioridad de detección** (`get_zone_for_position`): pueblo_nuevo → ruta_del_mar → cueva_oscura → bosque_umbral → pueblo_alto → pueblo_raiz. El chequeo `x >= 119` debe ir ANTES de `x >= 87`.
 
-## NPCs amistosos (overworld)
-| NPC | Posición | Zona |
-|-----|----------|------|
-| Elder Roy | (20, 38) | Pueblo Raiz |
-| Nurse Clara | (35, 22) | Pueblo Alto |
-| Lost Traveler | (65, 7) | Bosque Umbral |
+---
 
-> Deserter fue movido al dungeon local `(20,22)` en Fase D.
+## Centros Pokémon
 
-## Pokémon visibles en mapa (Fase 14)
-Marcadores `!`. Al pisarlos → batalla salvaje inmediata. Solo desaparecen si el jugador gana o captura.
+| Centro | Posición overworld | Puerta física | Zona |
+|--------|--------------------|---------------|------|
+| PC1 | `(9, 11)` | `g[11][9]` | Pueblo Alto |
+| PC2 | `(129, 46)` | `g[47][129]` | Pueblo Nuevo |
+
+Edificio PC2: `wall_box(121, 37, 137, 47)`. Curan HP al máximo, reviven desmayados y **restauran todos los PP al máximo**.
+
+---
+
+## Pokémon visibles en mapa (wild markers)
 
 ### Overworld
 | Pokémon | Nivel | Posición | Zona |
@@ -156,6 +218,9 @@ Marcadores `!`. Al pisarlos → batalla salvaje inmediata. Solo desaparecen si e
 | Horsea | 7 | (25, 14) | Pueblo Alto |
 | Bellsprout | 10 | (52, 18) | Bosque Umbral |
 | Venonat | 11 | (75, 8) | Bosque Umbral |
+| Staryu | 14 | (130, 8) | Ruta del Mar |
+| Tentacool | 13 | (145, 18) | Ruta del Mar |
+| Eevee | 12 | (135, 50) | Pueblo Nuevo |
 
 ### Dungeon (coordenadas locales)
 | Pokémon | Nivel | Posición |
@@ -163,54 +228,238 @@ Marcadores `!`. Al pisarlos → batalla salvaje inmediata. Solo desaparecen si e
 | Geodude | 13 | (8, 5) |
 | Gastly | 14 | (35, 12) |
 
+---
+
+## NPCs amistosos
+
+### Overworld
+| NPC | Posición | Zona |
+|-----|----------|------|
+| Elder Roy | (20, 38) | Pueblo Raiz |
+| Nurse Clara | (35, 22) | Pueblo Alto |
+| Lost Traveler | (65, 7) | Bosque Umbral |
+| Sailor Marco | (128, 54) | Pueblo Nuevo |
+| Swimmer Lucia | (143, 54) | Pueblo Nuevo |
+| Old Fisherman | (152, 57) | Pueblo Nuevo (friendly, da recompensa) |
+
+### Dungeon
+| NPC | Posición |
+|-----|----------|
+| Deserter | (20, 22) |
+
+---
+
 ## Estructura de save (actual)
+
 ```json
 {
   "slot_name": "mi_partida",
   "current_map": "main",
   "position": {"x": 20, "y": 43},
-  "team": [{"name": "Squirtle", "level": 5, "health": 44, "exp": 0}],
+  "team": [
+    {
+      "name": "Charmeleon",
+      "level": 5,
+      "health": 68,
+      "exp": 0,
+      "pp": {"Ember": 20, "Flamethrower": 15, "Scratch": 35},
+      "status": null,
+      "sleep_turns": 0
+    }
+  ],
   "bag": {"potion": 2, "xdefense": 1, "pokeball": 5},
   "defeated_trainers": {
-    "main":   [[10, 44], [28, 43]],
+    "main":    [[10, 44], [28, 43]],
     "dungeon": [[15, 8]]
   },
-  "pokedex": ["Squirtle", "Meowth"]
+  "cleared_wild_markers": {
+    "main":    [[15, 32]],
+    "dungeon": []
+  },
+  "pokedex": [
+    {"name": "Charmeleon", "caught": true,  "level_caught": 5},
+    {"name": "Squirtle",   "caught": true,  "level_caught": 5},
+    {"name": "Zubat",      "caught": false, "level_caught": null}
+  ]
 }
 ```
-> Backwards compatible: `load_defeated_dict()` migra saves viejos (lista plana → `{"main": [...], "dungeon": []}`)
 
-## Captura de Pokémon (Fase 13)
-- Opción `[4] Throw Pokéball` visible solo en batallas salvajes (`wild=True`)
+> `defeated_trainers` — solo entrenadores derrotados (permanente). `cleared_wild_markers` — solo markers de Pokémon salvajes tocados (respawnearán en Fase N).
+> `load_defeated_dict()` migra saves viejos (lista plana → `{"main": [...], "dungeon": []}`). `load_cleared_markers()` devuelve listas vacías para saves anteriores a Fase M (backward-compat transparente: posiciones antiguas ya en `defeated_trainers` siguen ocultas por el set combinado).
+> Saves sin campo `"pp"` son backward-compatible: `restore_player_trainer()` inicializa PP a máximo automáticamente.
+> Saves sin campos `"status"` / `"sleep_turns"` son backward-compatible: se inicializan a `None` / `0` automáticamente.
+> **Migración Pokédex:** saves con `"pokedex": ["Pikachu", ...]` (lista de strings) se migran automáticamente en `restore_player_trainer()` a lista de dicts con `caught: false`. El truco del equipo (`register_caught` para cada Pokémon vivo) recupera el estado capturado.
+
+**Pokémon en save:** `name, level, health, exp, pp, status, sleep_turns`. Al restaurar, `restore_player_trainer()` llama `_build_pokemon(name, level, pokemon_db, attacks_db)` que reconstruye desde `pokemons.json` normalizado, luego aplica los PP y el estado guardados encima.
+
+---
+
+## Sistema de PP (Fase I — implementado)
+
+- **`data/attacks.json`**: todos los ataques tienen campo `"pp"` (valores canónicos Gen 1)
+- **`data_io/checks/attacks.py`**: `_validate_attack_obj()` pasa el campo `"pp"` al output normalizado
+- **`models.py`**: `Pokemon.__init__` inicializa `_pp_max` y `_pp_current` desde los dicts de ataque
+  - `get_pp(name)` → retorna 0 si el ataque es desconocido (a prueba de KeyError)
+  - `use_pp(name)` → decrementa 1, mínimo 0
+  - `restore_all_pp()` → restaura todos a `_pp_max`
+  - `has_any_pp()` → `True` si algún ataque tiene PP > 0
+- **`combat.py`**: `STRUGGLE = {"name": "Struggle", "type": "Normal", "damage": 50}`, decrementado en `_apply_attack()` (Struggle no consume PP)
+- **`controllers/human.py`**: `ChooseAttack()` muestra `PP: X/Y`, filtra ataques con PP=0, auto-retorna Struggle si todos en 0
+- **`controllers/ia.py`**: `_Calculating_Damages()` salta ataques con PP=0, fallback Struggle si todos agotados
+- **`game/save_load.py`**: serializa `_pp_current` en save, restaura en carga con backward-compat
+- **`map/__init__.py`**: `_heal_at_pokemon_center()` llama `p.restore_all_pp()` y `p.clear_status()` junto a HP
+
+---
+
+## Pokédex extendida (Fase L — implementado)
+
+- **`trainers.py`**: `pokedex_seen: list[dict]`. Métodos `register_seen(name)` y `register_caught(name, level)` en `Trainer`.
+  - `register_seen`: añade `{"name": ..., "caught": False, "level_caught": None}` si no existe
+  - `register_caught`: actualiza o crea entrada con `caught: True, level_caught: level`
+- **`game/encounters.py`**:
+  - Wild markers y wild encounters: `register_seen` antes de la batalla, `register_caught` si captura exitosa
+  - NPC trainers: `register_seen` para todos los Pokémon del equipo rival antes del combate
+- **`game/setup_game.py`**: `create_player_trainer()` llama `register_caught` para cada starter
+- **`inventory.py`**: `_apply_evolution(pokemon, item_key, trainer=None)` llama `trainer.register_caught(pokemon.name, level)` tras evolución exitosa con piedra
+- **`game/save_load.py`**: migración backward-compat en `restore_player_trainer()` + truco del equipo
+- **`game/ui_menus.py`**: `open_pokedex()` usa `dex_lookup` con keys en **lowercase** (crítico: `pokemon_db.keys()` es lowercase, `p.name` es capitalizado — mismatch se resuelve con `.lower()`)
+  - Lista: `★` capturado, `◆` visto, ` ` desconocido
+  - Detalle: muestra "Caught at Lv.X" o "Seen (not yet caught)"
+  - Header: `N★ caught  M◆ seen / total`
+
+---
+
+## Normalización de datos (data_io)
+
+`load_pokemons()` aplica `normalize_pokemons()` que:
+- Indexa por nombre en **lowercase** (`"eevee"`, `"squirtle"`)
+- Normaliza todos los campos a lowercase y tipos correctos
+- `Evolution_by_item` → `evolution_by_item` con keys y values en lowercase:
+  `{"waterstone": "vaporeon", "firestone": "flareon", "thunderstone": "jolteon"}`
+
+`load_attacks()` aplica `normalize_attacks()` — indexado por `by_owner[nombre_lowercase]`. Pasa campo `"pp"` al output.
+
+`load_items()` aplica `normalize_items()` — indexado por key en **lowercase** (`"waterstone"`, `"pokeball"`, `"antidote"`). Todas las keys internas al usar ítems deben ser lowercase.
+
+**CRÍTICO:** `evolution_by_item` keys son lowercase (`"waterstone"`), pero el `item_key` que llega a `inventory.py` puede ser PascalCase. `_apply_evolution()` hace lookup con fallback: `evo_by_item.get(item_key) or evo_by_item.get(item_key.lower())`.
+
+---
+
+## Sistema de datos — schemas clave
+
+### attacks.json (por propietario)
+```json
+{"name": "Thunderbolt", "type": "Electric", "damage": 90, "pp": 15}
+```
+El campo `"pp"` es obligatorio en todos los ataques. Fallback en código: `.get("pp", 20)`.
+
+### pokemons.json (normalizado)
+```json
+{
+  "name": "Eevee", "element_type": "normal", "health": 55,
+  "defense": 50, "special_defense": 65, "speed": 55, "base_attack": 55,
+  "evolution": null, "evolution_level": null, "current_level": 1,
+  "evolution_by_item": {"waterstone": "vaporeon", "firestone": "flareon", "thunderstone": "jolteon"}
+}
+```
+
+### items.json
+```json
+{
+  "WaterStone": {"name": "Water Stone", "type": "evolution", "target": "ally",
+                 "effect": {"kind": "evolution"}, "battle_only": false, "reusable": false}
+}
+```
+
+---
+
+## Captura de Pokémon
+
+- Opción `[4] Throw Pokéball` solo en batallas salvajes (`wild=True`)
 - Fórmula: `base_rate = 1.0 - (hp_ratio * 0.75)`, `catch_rate = min(0.95, base_rate * mult)`
-- La Pokéball se consume **antes** de calcular el éxito
+- Pokéball consumida **antes** de calcular éxito
 - Equipo máximo: 6 Pokémon
-- Pokéballs: `pokeball` (×1.0), `greatball` (×1.5), `ultraball` (×2.0)
+- Multiplicadores: `pokeball` ×1.0, `greatball` ×1.5, `ultraball` ×2.0
 
-## Menú de bolsa fuera de batalla (Feature A)
-- Tecla `E` en cualquier punto del mapa (overworld y dungeon)
-- **Usar ítem**: solo muestra Pokémon con HP < máximo
-- **Revivir**: solo muestra Pokémon desmayados
-- **Cambiar Pokémon activo**: no permite seleccionar desmayados
-
-## Pokédex (Fase F)
-- Tecla `P` en cualquier punto del mapa (overworld y dungeon)
-- Lista todos los Pokémon de `data/pokemons.json` con tipo, nivel base, evolución
-- Pokémon del equipo del jugador marcados con ★
-- Detalle individual: stats, ataques disponibles
+---
 
 ## Keys del juego
-- `W/A/S/D` — mover
-- `E` — abrir menú de bolsa (usar ítems, cambiar Pokémon activo)
-- `P` — abrir Pokédex
-- `Q` — guardar y salir
 
-## Starters disponibles
-Pikachu, Bulbasaur, Squirtle, Charmeleon — el jugador elige 2 al inicio de partida nueva.
+| Tecla | Acción |
+|-------|--------|
+| `W/A/S/D` | Mover |
+| `E` | Bolsa (usar ítems, cambiar Pokémon activo) |
+| `P` | Pokédex |
+| `T` | Ver equipo rápido con barras HP |
+| `Q` | Guardar y salir |
 
-## Ítems disponibles (keys en código)
-`potion`, `superpotion`, `maxpotion`, `revive`, `maxrevive`, `xattack`, `xspecialattack`, `xdefense`, `xspecialdefense`, `toughhelmet`, `pokeball`, `greatball`, `ultraball`
+---
+
+## Ítems disponibles (keys en código — todos lowercase)
+
+**Healing:** `potion`, `superpotion`, `maxpotion`
+**Revive:** `revive`, `maxrevive`
+**Buff:** `xattack`, `xspecialattack`, `xdefense`, `xspecialdefense`, `toughhelmet`
+**Capture:** `pokeball`, `greatball`, `ultraball`
+**Evolution:** `firestone`, `waterstone`, `leafstone`, `thunderstone`, `moonstone`
+**Status cure:** `antidote` (veneno), `parlyzheal` (parálisis), `awakening` (sueño), `fullheal` (cualquier estado)
+
+---
+
+## Estados alterados (Fase J — implementado)
+
+### Modelo de datos (`models.py`)
+- `self.status: Optional[str] = None` — `"poison"` | `"paralysis"` | `"sleep"` | `None`
+- `self.sleep_turns: int = 0` — turnos restantes dormido (asignado al aplicar sueño)
+- `apply_status(status) -> bool` — aplica estado si no hay uno activo; asigna `sleep_turns = randint(1,3)` para sueño; devuelve `False` si ya hay estado
+- `clear_status() -> None` — limpia `status` y `sleep_turns` a None/0
+
+### Flujo de combate (`combat.py`)
+- **Pantalla de batalla**: muestra `[PSN]` (morado), `[PAR]` (amarillo), `[SLP]` (azul) junto a la barra HP
+- **Orden de turno** (`utils.py`): Pokémon paralizado usa `speed // 2` para determinar quién va primero
+- **Check pre-ataque** (en `_take_turn()`, dentro de la rama `"attack"`):
+  - Sueño: `sleep_turns -= 1`. Si llega a 0 → despierta y ejecuta el ataque. Si > 0 → skip con mensaje
+  - Parálisis: 25% de probabilidad de skip. El jugador SÍ puede usar ítems o cambiar aunque esté dormido/paralizado
+- **Aplicación de estados** (`_apply_attack()`): si el ataque tiene `"effect": {"kind": "status", "status": "...", "chance": N}`, al final del ataque se tira dado; si pasa y el defensor no tiene estado activo → `defender.apply_status()`
+- **Veneno al fin de ronda** (`pokemon_combat()`): después de que ambos trainers actuaron, para cada Pokémon activo con `status == "poison"`: `take_damage(max(1, maximun_hp // 8))`. **CRÍTICO:** si el Pokémon queda a 0 HP, se llama `_handle_faint_and_switch()` inmediatamente; si no hay sustituto, se declara victoria y se termina el combate sin arrancar otro turno
+
+### Ataques de estado en `data/attacks.json`
+| Ataque | Tipo | Dmg | PP | Efecto | Propietarios |
+|--------|------|-----|----|--------|--------------|
+| Thunder Wave | Electric | 0 | 20 | 100% parálisis | Magnemite, Magneton |
+| Toxic | Poison | 0 | 10 | 100% veneno | Venonat, Koffing, Weezing |
+| Sleep Powder | Grass | 0 | 15 | 75% sueño | Bellsprout |
+| Poison Sting | Poison | 15 | 35 | 30% veneno | Ekans |
+| Poison Fang | Poison | 50 | 15 | 30% veneno | Arbok |
+
+> **IMPORTANTE:** `data_io/checks/attacks.py` → `_validate_attack_obj()` ahora pasa el campo `"effect"` al output normalizado. La IA nunca elige ataques de 0 daño (Phase J simplificación aceptada; mejorará en Fase K).
+
+### Ítems curativos de estado en `data/items.json`
+```json
+"antidote"   → cura veneno
+"parlyzheal" → cura parálisis
+"awakening"  → cura sueño
+"fullheal"   → cura cualquier estado (effect sin campo "status")
+```
+`inventory.py._apply_status_cure()` — cura el estado si coincide con el `"status"` del efecto (o cualquiera si no hay campo "status")
+
+### Normalización de ítems (`data_io/checks/items.py`)
+- `_ALLOWED_ITEM_TYPES` incluye `"status_cure"`
+- `_ALLOWED_EFFECT_KINDS` incluye `"cure_status"`
+- `_validate_status_cure_effect()` valida el campo `"status"` opcional
+
+### PC y captura
+- `_heal_at_pokemon_center()`: llama `p.clear_status()` para todos los Pokémon; `already_healthy` también exige `status == None`
+- `trigger_wild_marker_encounter()` y `trigger_wild_encounter()`: al capturar, llaman `wild_pokemon.clear_status()` antes de añadir al equipo
+
+### Save backward-compat
+- Saves sin `"status"` → restauran a `None` (sin estado)
+- Saves sin `"sleep_turns"` → restauran a `0`
+
+---
 
 ## Bugs conocidos / Deuda técnica
-- `defeated_trainers.main` mezcla entrenadores y wild markers del overworld — para respawn de wild markers habrá que separar `cleared_wild_markers`.
-- El Centro Pokémon cura TODO el equipo. Comportamiento estándar, ajustable si se quiere más dificultad.
+
+- **Deuda técnica:** `defeated_dict` en `main.py` se recarga desde disco en cada transición de mapa (I/O redundante). `cleared_markers_dict` ya usa el patrón correcto (mutación en RAM por referencia). Pendiente refactorizar `defeated_dict` para igualar. Ver TODO en `main.py` línea ~129.
+- El PC cura TODO el equipo (comportamiento estándar).
+- `experience.py._apply_species()` no actualiza `evolution_by_item` tras evolución por nivel (no es problema porque los Pokémon con stone evolutions no tienen level evolutions).

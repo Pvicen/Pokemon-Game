@@ -3,15 +3,18 @@ from __future__ import annotations
 from ..game.setup_game import get_dungeon_objects, get_dungeon_wild_marker_objects
 from ..game.encounters import trigger_encounter, trigger_wild_encounter, trigger_wild_marker_encounter
 from ..game.save_load import save_game
-from ..game.ui_menus import open_bag_menu, open_pokedex
+from ..game.ui_menus import open_bag_menu, open_pokedex, show_team_summary
 from .player import PlayerState
 from .events import check_collision
 
 DUNGEON_WIDTH  = 60
 DUNGEON_HEIGHT = 30
-DUNGEON_START  = (3, 2)
-DUNGEON_EXIT_POS = (3, 1)
-MAIN_MAP_RETURN_POS = (90, 26)
+DUNGEON_START          = (3, 2)
+DUNGEON_START_EAST     = (57, 26)
+DUNGEON_EXIT_POS       = (3, 1)
+DUNGEON_EXIT_EAST_POS  = (57, 27)
+MAIN_MAP_RETURN_WEST   = (90, 26)
+MAIN_MAP_RETURN_EAST   = (119, 47)
 
 # ---------------------------------------------------------------------------
 # Build dungeon grid
@@ -38,6 +41,7 @@ _carve(30, 12, 45, 15) # Right section — Gastly(35,12)
 _carve(38, 14, 42, 22) # Deep vertical — Grunt(40,18)
 _carve(18, 18, 42, 22) # Lower corridor — Deserter(20,22)
 _carve(38, 22, 52, 28) # Deep chamber — Champion(45,26)
+_carve(52, 25, 58, 28) # East exit corridor — DUNGEON_EXIT_EAST_POS(57,27)
 
 DUNGEON_GRID = _G
 
@@ -77,6 +81,8 @@ def _render(player_pos: list, objects: list) -> None:
                 line += f"{_PLAYER}@{_RESET}{_BG}"
             elif (col, row) == DUNGEON_EXIT_POS:
                 line += f"{_EXIT}▲{_RESET}{_BG}"
+            elif (col, row) == DUNGEON_EXIT_EAST_POS:
+                line += f"{_EXIT}▲{_RESET}{_BG}"
             elif (col, row) in obj_map:
                 obj = obj_map[(col, row)]
                 sym = f"{_WILD}!{_RESET}{_BG}" if obj.get("kind") == "wild" else f"{_TRAINER}T{_RESET}{_BG}"
@@ -89,26 +95,35 @@ def _render(player_pos: list, objects: list) -> None:
         print(line)
 
     print(f"  {_BG}╚{border}╝{_RESET}")
-    print(f"  [{px},{py}]  WASD: move | E: bag | P: pokédex | Q: save & quit | ▲({DUNGEON_EXIT_POS[0]},{DUNGEON_EXIT_POS[1]}): exit")
+    print(f"  [{px},{py}]  WASD: move | E: bag | P: pokédex | Q: save & quit | ▲(3,1) exit W  ▲(57,27) exit E")
 
 
 # ---------------------------------------------------------------------------
 # Main loop
 # ---------------------------------------------------------------------------
 
-def run_dungeon(player_trainer, *, start_pos=None, defeated_dict=None, slot_name="default") -> str:
+def run_dungeon(player_trainer, *, start_pos=None, defeated_dict=None,
+                cleared_markers_dict=None, slot_name="default") -> str:
     import readchar
 
     if defeated_dict is None:
         defeated_dict = {"main": [], "dungeon": []}
+    if cleared_markers_dict is None:
+        cleared_markers_dict = {"main": [], "dungeon": []}
 
     sx = start_pos[0] if start_pos else DUNGEON_START[0]
     sy = start_pos[1] if start_pos else DUNGEON_START[1]
     player = PlayerState(start_x=sx, start_y=sy)
 
     defeated_dungeon = list(defeated_dict.get("dungeon", []))
-    defeated_set     = {(x, y) for x, y in defeated_dungeon}
     main_side        = list(defeated_dict.get("main", []))
+    cleared_dungeon  = cleared_markers_dict.setdefault("dungeon", [])
+    cleared_main_ref = cleared_markers_dict.setdefault("main",    [])
+
+    defeated_set = (
+        {(x, y) for x, y in defeated_dungeon} |
+        {(x, y) for x, y in cleared_dungeon}
+    )
 
     all_objects = get_dungeon_objects() + get_dungeon_wild_marker_objects()
     objects = [o for o in all_objects if (o["x"], o["y"]) not in defeated_set]
@@ -125,7 +140,8 @@ def run_dungeon(player_trainer, *, start_pos=None, defeated_dict=None, slot_name
 
         if key == "q":
             save_game(player_trainer, player.pos[0], player.pos[1], slot_name,
-                      current_map="dungeon", defeated_dict=_cur_dict())
+                      current_map="dungeon", defeated_dict=_cur_dict(),
+                      cleared_markers_dict=cleared_markers_dict)
             print("\n  Progress saved. See you!")
             return "quit"
 
@@ -137,35 +153,53 @@ def run_dungeon(player_trainer, *, start_pos=None, defeated_dict=None, slot_name
             open_pokedex(player_trainer)
             continue
 
+        if key in ("t", "T"):
+            show_team_summary(player_trainer)
+            continue
+
         new_pos = player.get_new_position(key, DUNGEON_WIDTH, DUNGEON_HEIGHT)
         if new_pos is None:
             continue
 
         if DUNGEON_GRID[new_pos[1]][new_pos[0]] != "#":
-            # Exit tile — return to overworld
+            # Exit tiles — return to overworld
             if (new_pos[0], new_pos[1]) == DUNGEON_EXIT_POS:
-                save_game(player_trainer, MAIN_MAP_RETURN_POS[0], MAIN_MAP_RETURN_POS[1], slot_name,
-                          current_map="main", defeated_dict=_cur_dict())
-                print("\n  You climb out of the cave...")
+                save_game(player_trainer, MAIN_MAP_RETURN_WEST[0], MAIN_MAP_RETURN_WEST[1], slot_name,
+                          current_map="main", defeated_dict=_cur_dict(),
+                          cleared_markers_dict=cleared_markers_dict)
+                print("\n  You climb out of the cave (west)...")
                 input("  Press Enter to return to the overworld...")
-                return "exit_dungeon"
+                return "exit_west"
+
+            elif (new_pos[0], new_pos[1]) == DUNGEON_EXIT_EAST_POS:
+                save_game(player_trainer, MAIN_MAP_RETURN_EAST[0], MAIN_MAP_RETURN_EAST[1], slot_name,
+                          current_map="main", defeated_dict=_cur_dict(),
+                          cleared_markers_dict=cleared_markers_dict)
+                print("\n  You emerge from the east side of the cave...")
+                input("  Press Enter to continue...")
+                return "exit_east"
 
             else:
                 hit = check_collision(new_pos, objects)
                 if hit:
                     if hit.get("kind") == "wild":
                         encountered = trigger_wild_marker_encounter(hit, player_trainer)
+                        if encountered:
+                            objects.remove(hit)
+                            cleared_dungeon.append((hit["x"], hit["y"]))
                     else:
                         encountered = trigger_encounter(hit, player_trainer)
-                    if encountered:
-                        objects.remove(hit)
-                        defeated_dungeon.append((hit["x"], hit["y"]))
+                        if encountered:
+                            objects.remove(hit)
+                            defeated_dungeon.append((hit["x"], hit["y"]))
                     save_game(player_trainer, new_pos[0], new_pos[1], slot_name,
-                              current_map="dungeon", defeated_dict=_cur_dict())
+                              current_map="dungeon", defeated_dict=_cur_dict(),
+                              cleared_markers_dict=cleared_markers_dict)
                 else:
                     trigger_wild_encounter(new_pos[0], new_pos[1], player_trainer,
                                            zone_id="cueva_oscura")
                     save_game(player_trainer, new_pos[0], new_pos[1], slot_name,
-                              current_map="dungeon", defeated_dict=_cur_dict())
+                              current_map="dungeon", defeated_dict=_cur_dict(),
+                              cleared_markers_dict=cleared_markers_dict)
 
             player.apply_move(new_pos)

@@ -3,8 +3,8 @@ TILE_PLAYER  = "@"
 TILE_TRAINER = "T"
 TILE_EMPTY   = " "
 
-MAP_W = 120
-MAP_H = 50
+MAP_W = 160
+MAP_H = 65
 
 PLAYER_START_X = 20
 PLAYER_START_Y = 43
@@ -55,7 +55,7 @@ def _build_map():
     # Carve explicit navigable paths through the forest
     carve(44, 1, 47, 21)        # West entry path (from Ruta Norte)
     carve(60, 1, 63, 21)        # Forest path 1
-    carve(44, 9, 118, 12)       # Horizontal connector through forest
+    carve(44, 9, 119, 12)       # Horizontal connector through forest (extended to col 119)
     carve(78, 1, 81, 21)        # Forest path 2
     carve(95, 9, 97, 21)        # Forest path 3 (leads toward cave top)
 
@@ -88,6 +88,23 @@ def _build_map():
     # Secret path south from east chamber to deepest area
     carve(109, 42, 112, 48)
     carve(104, 46, 118, 48)     # Deepest chamber
+
+    # ── RUTA DEL MAR ─────────────────────────── rows 1-27, cols 119-158
+    carve(119, 1, 158, 27)
+
+    # ── PASO COSTERO ─────────────────────────── rows 27-35, cols 119-158
+    carve(119, 27, 158, 35)
+
+    # ── PUEBLO NUEVO ─────────────────────────── rows 35-63, cols 119-158
+    carve(119, 35, 158, 63)
+    wall_box(121, 37, 137, 47)  # Pokemon Center 2 building
+    g[47][129] = TILE_EMPTY     # PC2 door (hole in south wall — physical door tile)
+    wall_box(140, 39, 156, 49)  # Gym building
+    g[49][148] = TILE_EMPTY     # Gym door
+
+    # ── EXTENSIÓN SUR ─────────────────────────── rows 49-63, cols 1-42
+    carve(1, 49, 38, 63)        # Pueblo Raíz south extension
+    carve(39, 49, 42, 63)       # Ruta Norte south extension
 
     return "\n".join("".join(row) for row in g)
 

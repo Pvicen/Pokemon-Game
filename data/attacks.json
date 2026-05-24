@@ -3,248 +3,282 @@
         {
             "name": "Thunder Shock",
             "type": "Electric",
-            "damage": 40
+            "damage": 40,
+            "pp": 30
         },
         {
             "name": "Thunderbolt",
             "type": "Electric",
-            "damage": 90
+            "damage": 90,
+            "pp": 15
         },
         {
             "name": "Quick Attack",
             "type": "Normal",
-            "damage": 30
+            "damage": 30,
+            "pp": 30
         }
     ],
     "Raichu": [
         {
             "name": "Thunder Shock",
             "type": "Electric",
-            "damage": 40
+            "damage": 40,
+            "pp": 30
         },
         {
             "name": "Thunderbolt",
             "type": "Electric",
-            "damage": 90
+            "damage": 90,
+            "pp": 15
         }
     ],
     "Bulbasaur": [
         {
             "name": "Vine Whip",
             "type": "Grass",
-            "damage": 45
+            "damage": 45,
+            "pp": 25
         },
         {
             "name": "Razor Leaf",
             "type": "Grass",
-            "damage": 55
+            "damage": 55,
+            "pp": 25
         },
         {
             "name": "Tackle",
             "type": "Normal",
-            "damage": 45
+            "damage": 45,
+            "pp": 35
         }
     ],
     "Ivysaur": [
         {
             "name": "Vine Whip",
             "type": "Grass",
-            "damage": 45
+            "damage": 45,
+            "pp": 25
         },
         {
             "name": "Razor Leaf",
             "type": "Grass",
-            "damage": 55
+            "damage": 55,
+            "pp": 25
         }
     ],
     "Squirtle": [
         {
             "name": "Water Gun",
             "type": "Water",
-            "damage": 40
+            "damage": 40,
+            "pp": 25
         },
         {
             "name": "Hydro Pump",
             "type": "Water",
-            "damage": 110
+            "damage": 110,
+            "pp": 5
         },
         {
             "name": "Tackle",
             "type": "Normal",
-            "damage": 45
+            "damage": 45,
+            "pp": 35
         }
     ],
     "Wartortle": [
         {
             "name": "Water Gun",
             "type": "Water",
-            "damage": 40
+            "damage": 40,
+            "pp": 25
         },
         {
             "name": "Hydro Pump",
             "type": "Water",
-            "damage": 110
+            "damage": 110,
+            "pp": 5
         }
     ],
     "Greninja": [
         {
             "name": "Water Gun",
             "type": "Water",
-            "damage": 40
+            "damage": 40,
+            "pp": 25
         },
         {
             "name": "Hydro Pump",
             "type": "Water",
-            "damage": 110
+            "damage": 110,
+            "pp": 5
         }
     ],
     "Charmeleon": [
         {
             "name": "Ember",
             "type": "Fire",
-            "damage": 40
+            "damage": 40,
+            "pp": 25
         },
         {
             "name": "Flamethrower",
             "type": "Fire",
-            "damage": 90
+            "damage": 90,
+            "pp": 15
         },
         {
             "name": "Scratch",
             "type": "Normal",
-            "damage": 40
+            "damage": 40,
+            "pp": 35
         }
     ],
     "Charizard": [
         {
             "name": "Ember",
             "type": "Fire",
-            "damage": 40
+            "damage": 40,
+            "pp": 25
         },
         {
             "name": "Flamethrower",
             "type": "Fire",
-            "damage": 90
+            "damage": 90,
+            "pp": 15
         }
     ],
     "Mewtwo": [
         {
             "name": "Confusion",
             "type": "Psychic",
-            "damage": 50
+            "damage": 50,
+            "pp": 25
         },
         {
             "name": "Psychic",
             "type": "Psychic",
-            "damage": 90
+            "damage": 90,
+            "pp": 10
         }
     ],
     "psyduck": [
         {
             "name": "Aqua tail",
             "type": "Water",
-            "damage": 90
+            "damage": 90,
+            "pp": 10
         },
         {
             "name": "Water Gun",
             "type": "Water",
-            "damage": 40
+            "damage": 40,
+            "pp": 25
         }
     ],
     "Mankey": [
-        {"name": "Scratch",     "type": "Normal",   "damage": 40},
-        {"name": "Karate Chop", "type": "Fighting",  "damage": 50}
+        {"name": "Scratch",     "type": "Normal",   "damage": 40, "pp": 35},
+        {"name": "Karate Chop", "type": "Fighting",  "damage": 50, "pp": 25}
     ],
     "Zubat": [
-        {"name": "Leech Life",  "type": "Bug",      "damage": 30},
-        {"name": "Bite",        "type": "Normal",   "damage": 40}
+        {"name": "Leech Life",  "type": "Bug",      "damage": 30, "pp": 15},
+        {"name": "Bite",        "type": "Normal",   "damage": 40, "pp": 25}
     ],
     "Oddish": [
-        {"name": "Absorb",      "type": "Grass",    "damage": 20},
-        {"name": "Acid",        "type": "Poison",   "damage": 40}
+        {"name": "Absorb",      "type": "Grass",    "damage": 20, "pp": 25},
+        {"name": "Acid",        "type": "Poison",   "damage": 40, "pp": 30}
     ],
     "Meowth": [
-        {"name": "Scratch",     "type": "Normal",   "damage": 40},
-        {"name": "Fury Swipes", "type": "Normal",   "damage": 35}
+        {"name": "Scratch",     "type": "Normal",   "damage": 40, "pp": 35},
+        {"name": "Fury Swipes", "type": "Normal",   "damage": 35, "pp": 15}
     ],
     "Abra": [
-        {"name": "Confusion",   "type": "Psychic",  "damage": 50},
-        {"name": "Psybeam",     "type": "Psychic",  "damage": 65}
+        {"name": "Confusion",   "type": "Psychic",  "damage": 50, "pp": 25},
+        {"name": "Psybeam",     "type": "Psychic",  "damage": 65, "pp": 20}
     ],
     "Magnemite": [
-        {"name": "Thunder Shock","type": "Electric", "damage": 40},
-        {"name": "Spark",       "type": "Electric", "damage": 50}
+        {"name": "Thunder Shock","type": "Electric", "damage": 40, "pp": 30},
+        {"name": "Spark",       "type": "Electric", "damage": 50, "pp": 20},
+        {"name": "Thunder Wave","type": "Electric", "damage": 0,  "pp": 20, "effect": {"kind": "status", "status": "paralysis", "chance": 100}}
     ],
     "Horsea": [
-        {"name": "Bubble",      "type": "Water",    "damage": 30},
-        {"name": "Water Gun",   "type": "Water",    "damage": 40}
+        {"name": "Bubble",      "type": "Water",    "damage": 30, "pp": 30},
+        {"name": "Water Gun",   "type": "Water",    "damage": 40, "pp": 25}
     ],
     "Geodude": [
-        {"name": "Rock Throw",  "type": "Rock",     "damage": 50},
-        {"name": "Magnitude",   "type": "Ground",   "damage": 70}
+        {"name": "Rock Throw",  "type": "Rock",     "damage": 50, "pp": 15},
+        {"name": "Magnitude",   "type": "Ground",   "damage": 70, "pp": 30}
     ],
     "Rhyhorn": [
-        {"name": "Horn Attack", "type": "Normal",   "damage": 65},
-        {"name": "Rock Blast",  "type": "Rock",     "damage": 25}
+        {"name": "Horn Attack", "type": "Normal",   "damage": 65, "pp": 25},
+        {"name": "Rock Blast",  "type": "Rock",     "damage": 25, "pp": 10}
     ],
     "Poliwag": [
-        {"name": "Bubble",      "type": "Water",    "damage": 30},
-        {"name": "Water Gun",   "type": "Water",    "damage": 40}
+        {"name": "Bubble",      "type": "Water",    "damage": 30, "pp": 30},
+        {"name": "Water Gun",   "type": "Water",    "damage": 40, "pp": 25}
     ],
     "Venonat": [
-        {"name": "Bug Bite",    "type": "Bug",      "damage": 60},
-        {"name": "Acid",        "type": "Poison",   "damage": 40}
+        {"name": "Bug Bite",    "type": "Bug",      "damage": 60, "pp": 20},
+        {"name": "Acid",        "type": "Poison",   "damage": 40, "pp": 30},
+        {"name": "Toxic",       "type": "Poison",   "damage": 0,  "pp": 10, "effect": {"kind": "status", "status": "poison", "chance": 100}}
     ],
     "Bellsprout": [
-        {"name": "Vine Whip",   "type": "Grass",    "damage": 45},
-        {"name": "Acid",        "type": "Poison",   "damage": 40}
+        {"name": "Vine Whip",   "type": "Grass",    "damage": 45, "pp": 25},
+        {"name": "Acid",        "type": "Poison",   "damage": 40, "pp": 30},
+        {"name": "Sleep Powder","type": "Grass",    "damage": 0,  "pp": 15, "effect": {"kind": "status", "status": "sleep", "chance": 75}}
     ],
     "Ekans": [
-        {"name": "Wrap",        "type": "Normal",   "damage": 15},
-        {"name": "Poison Sting","type": "Poison",   "damage": 15}
+        {"name": "Wrap",        "type": "Normal",   "damage": 15, "pp": 20},
+        {"name": "Poison Sting","type": "Poison",   "damage": 15, "pp": 35, "effect": {"kind": "status", "status": "poison", "chance": 30}}
     ],
     "Koffing": [
-        {"name": "Smog",        "type": "Poison",   "damage": 20},
-        {"name": "Sludge",      "type": "Poison",   "damage": 65}
+        {"name": "Smog",        "type": "Poison",   "damage": 20, "pp": 20},
+        {"name": "Sludge",      "type": "Poison",   "damage": 65, "pp": 20},
+        {"name": "Toxic",       "type": "Poison",   "damage": 0,  "pp": 10, "effect": {"kind": "status", "status": "poison", "chance": 100}}
     ],
     "Primeape": [
-        {"name": "Karate Chop", "type": "Fighting",  "damage": 50},
-        {"name": "Cross Chop",  "type": "Fighting",  "damage": 100}
+        {"name": "Karate Chop", "type": "Fighting",  "damage": 50, "pp": 25},
+        {"name": "Cross Chop",  "type": "Fighting",  "damage": 100, "pp": 5}
     ],
     "Graveler": [
-        {"name": "Rock Throw",  "type": "Rock",     "damage": 50},
-        {"name": "Magnitude",   "type": "Ground",   "damage": 70}
+        {"name": "Rock Throw",  "type": "Rock",     "damage": 50, "pp": 15},
+        {"name": "Magnitude",   "type": "Ground",   "damage": 70, "pp": 30}
     ],
     "Haunter": [
-        {"name": "Lick",        "type": "Ghost",    "damage": 30},
-        {"name": "Shadow Ball", "type": "Ghost",    "damage": 80}
+        {"name": "Lick",        "type": "Ghost",    "damage": 30, "pp": 30},
+        {"name": "Shadow Ball", "type": "Ghost",    "damage": 80, "pp": 15}
     ],
     "Magneton": [
-        {"name": "Thunder Shock","type": "Electric", "damage": 40},
-        {"name": "Thunder",     "type": "Electric", "damage": 110}
+        {"name": "Thunder Shock","type": "Electric", "damage": 40, "pp": 30},
+        {"name": "Thunder",     "type": "Electric", "damage": 110, "pp": 10},
+        {"name": "Thunder Wave","type": "Electric", "damage": 0,  "pp": 20, "effect": {"kind": "status", "status": "paralysis", "chance": 100}}
     ],
     "Arbok": [
-        {"name": "Bite",        "type": "Normal",   "damage": 40},
-        {"name": "Poison Fang", "type": "Poison",   "damage": 50}
+        {"name": "Bite",        "type": "Normal",   "damage": 40, "pp": 25},
+        {"name": "Poison Fang", "type": "Poison",   "damage": 50, "pp": 15, "effect": {"kind": "status", "status": "poison", "chance": 30}}
     ],
     "Weezing": [
-        {"name": "Smog",        "type": "Poison",   "damage": 20},
-        {"name": "Sludge Bomb", "type": "Poison",   "damage": 90}
+        {"name": "Smog",        "type": "Poison",   "damage": 20, "pp": 20},
+        {"name": "Sludge Bomb", "type": "Poison",   "damage": 90, "pp": 10},
+        {"name": "Toxic",       "type": "Poison",   "damage": 0,  "pp": 10, "effect": {"kind": "status", "status": "poison", "chance": 100}}
     ],
     "Rhydon": [
-        {"name": "Horn Attack", "type": "Normal",   "damage": 65},
-        {"name": "Earthquake",  "type": "Ground",   "damage": 100}
+        {"name": "Horn Attack", "type": "Normal",   "damage": 65, "pp": 25},
+        {"name": "Earthquake",  "type": "Ground",   "damage": 100, "pp": 10}
     ],
     "Normal_attacks": [
         {
             "name": "Quick Attack",
             "type": "Normal",
-            "damage": 30
+            "damage": 30,
+            "pp": 30
         },
         {
             "name": "Tackle",
             "type": "Normal",
-            "damage": 45
+            "damage": 45,
+            "pp": 35
         }
     ]
 }

@@ -67,6 +67,15 @@ def _validate_attack_obj(atk: dict, *, where: str) -> dict:
             )
         out["category"] = cat
 
+    # optional: pp (Power Points)
+    if "pp" in atk and atk["pp"] is not None:
+        pp_val = int(normalize_number(atk["pp"], where=f"{where}.pp", min_value=1))
+        out["pp"] = pp_val
+
+    # optional: effect (status moves — passed through verbatim; combat validates at runtime)
+    if "effect" in atk and isinstance(atk.get("effect"), dict):
+        out["effect"] = dict(atk["effect"])
+
     return out
 
 

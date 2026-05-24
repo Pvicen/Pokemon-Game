@@ -1,4 +1,5 @@
 from __future__ import annotations
+import random
 from typing import Dict, Any, Optional, List, Union
 
 
@@ -29,6 +30,7 @@ class Pokemon:
         evolution_level: Optional[int] = None,
         current_level: Optional[int | str] = None,
         special_attacks: Optional[List[Dict[str, Any]]] = None,
+        evolution_by_item: Optional[Dict[str, str]] = None,
     ) -> None:
         
         # --- base identity ---
@@ -47,17 +49,31 @@ class Pokemon:
         self.special_attacks: List[Dict[str, Any]] = list(special_attacks) if special_attacks else []
         self.normal_attacks: List[Dict[str, Any]] = list(normal_attacks) if normal_attacks else []
 
+        # --- PP tracking ---
+        self._pp_max: Dict[str, int] = {}
+        self._pp_current: Dict[str, int] = {}
+        for atk in (self.special_attacks + self.normal_attacks):
+            atk_name = atk.get("name", "")
+            if atk_name and atk_name not in self._pp_max:
+                pp = int(atk.get("pp", 20))
+                self._pp_max[atk_name] = pp
+                self._pp_current[atk_name] = pp
+
         # --- evolution info ---
         self.evolution: Optional[str] = (str(evolution).strip().lower() if evolution else None)
         self.evolution_level: Optional[int] = (int(evolution_level) if evolution_level is not None else None)
         self.current_level: Optional[int | str] = current_level
         self.xp: int = 0
         self.xp_to_next: int = 50
-        
-        
+        self.evolution_by_item: Dict[str, str] = evolution_by_item or {}
+
         self._temp_buffs: Dict[str, int] = {}
-        
-        
+
+        # --- status condition ---
+        self.status: Optional[str] = None    # "poison" | "paralysis" | "sleep" | None
+        self.sleep_turns: int = 0
+
+
     # ---------------- XP and levels ----------------
     def gain_xp(self, amount: int) -> None:
         if amount <= 0:
@@ -99,6 +115,21 @@ class Pokemon:
         want = target - self.health
         return self.heal(max(0, want))
 
+    # ---------------- status conditions ----------------
+
+    def apply_status(self, status: str) -> bool:
+        """Apply a status condition. Returns False if already has one."""
+        if self.status is not None:
+            return False
+        self.status = status
+        if status == "sleep":
+            self.sleep_turns = random.randint(1, 3)
+        return True
+
+    def clear_status(self) -> None:
+        self.status = None
+        self.sleep_turns = 0
+
     # ---------------- stages / buffs ----------------
 
     def get_stage(self, stat: str) -> int:
@@ -112,6 +143,22 @@ class Pokemon:
 
     def clear_battle_buffs(self) -> None:
         self._temp_buffs.clear()
+
+    # ---------------- PP management ----------------
+
+    def get_pp(self, attack_name: str) -> int:
+        return self._pp_current.get(attack_name, 0)
+
+    def use_pp(self, attack_name: str) -> None:
+        if attack_name in self._pp_current:
+            self._pp_current[attack_name] = max(0, self._pp_current[attack_name] - 1)
+
+    def restore_all_pp(self) -> None:
+        for name, max_pp in self._pp_max.items():
+            self._pp_current[name] = max_pp
+
+    def has_any_pp(self) -> bool:
+        return any(v > 0 for v in self._pp_current.values())
 
     # ---------------- convenience ----------------
 

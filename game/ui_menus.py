@@ -2,14 +2,26 @@ from __future__ import annotations
 
 from ..trainers import Trainer
 from ..data_io import load_pokemons, load_attacks
+from .ui_utils import _hp_bar
+
+_CATEGORY_ORDER  = ["healing", "revive", "buff", "capture", "evolution"]
+_CATEGORY_LABELS = {
+    "healing":   "Healing",
+    "revive":    "Restore",
+    "buff":      "Battle Items",
+    "capture":   "Poké Balls",
+    "evolution": "Evolution Stones",
+}
 
 
 def _switch_pokemon_out_of_battle(player_trainer: Trainer) -> None:
     print("\n  Choose your active Pokémon:")
     for i, p in enumerate(player_trainer.team, start=1):
-        status = "OK" if p.is_alive() else "K.O."
-        active = " <- active" if i - 1 == player_trainer.active_index else ""
-        print(f"    [{i}] {p.name} ({p.health}/{p.maximun_hp}) — {status}{active}")
+        status = "K.O." if not p.is_alive() else "OK"
+        active = "  <- active" if i - 1 == player_trainer.active_index else ""
+        lv_str = f"Lv.{getattr(p, 'current_level', '?')}"
+        bar    = _hp_bar(p, length=12)
+        print(f"    [{i}] {p.name:<10} {lv_str:<6}  {bar}  {status}{active}")
     print("    [0] Cancel")
 
     choice = input("  Choose: ").strip()
@@ -37,12 +49,26 @@ def _use_item_out_of_battle(player_trainer: Trainer, bag) -> None:
         input("  Press Enter...")
         return
 
-    print("\n  Your items:")
-    keys = list(usable.keys())
-    for i, k in enumerate(keys, start=1):
+    grouped: dict = {}
+    for k in usable.keys():
         idef = bag.get_definitions(k) or {}
-        qty = usable[k]
-        print(f"    [{i}] {idef.get('name', k)} x{qty} — {idef.get('description', '')}")
+        cat  = idef.get("type", "other")
+        grouped.setdefault(cat, []).append(k)
+    cats_sorted = sorted(
+        grouped.keys(),
+        key=lambda c: _CATEGORY_ORDER.index(c) if c in _CATEGORY_ORDER else len(_CATEGORY_ORDER),
+    )
+    print("\n  Your items:")
+    keys: list = []
+    for cat in cats_sorted:
+        label = _CATEGORY_LABELS.get(cat, cat.capitalize())
+        print(f"\n    -- {label} --")
+        for k in grouped[cat]:
+            idef = bag.get_definitions(k) or {}
+            qty  = usable[k]
+            idx  = len(keys) + 1
+            keys.append(k)
+            print(f"    [{idx}] {idef.get('name', k)} x{qty} — {idef.get('description', '')}")
     print("    [0] Cancel")
 
     choice = input("  Choose item: ").strip()
@@ -75,6 +101,25 @@ def _use_item_out_of_battle(player_trainer: Trainer, bag) -> None:
             print("  ❌ Invalid.")
             return
         target_index = fainted[pick][0]
+    elif item_type == "evolution":
+        alive = [(i, p) for i, p in enumerate(player_trainer.team) if p.is_alive()]
+        if not alive:
+            print("  ⚠️ All Pokémon are fainted.")
+            input("  Press Enter...")
+            return
+        print("\n  Choose a Pokémon to use the stone on:")
+        for display, (team_idx, p) in enumerate(alive, start=1):
+            lv_str = f"Lv.{getattr(p, 'current_level', '?')}"
+            print(f"    [{display}] {p.name} {lv_str} ({p.health}/{p.maximun_hp} HP)")
+        print("    [0] Cancel")
+        c = input("  Choose: ").strip()
+        if c == "0" or not c.isdigit():
+            return
+        pick = int(c) - 1
+        if not (0 <= pick < len(alive)):
+            print("  ❌ Invalid.")
+            return
+        target_index = alive[pick][0]
     else:
         healable = [(i, p) for i, p in enumerate(player_trainer.team)
                     if p.is_alive() and p.health < p.maximun_hp]
@@ -99,9 +144,16 @@ def _use_item_out_of_battle(player_trainer: Trainer, bag) -> None:
     input("  Press Enter...")
 
 
-def _pokedex_detail(pokemon_name: str, pokemon_db: dict, attacks_db: dict, captured: bool) -> None:
+def _pokedex_detail(pokemon_name: str, pokemon_db: dict, attacks_db: dict, entry: dict | None = None) -> None:
     data = pokemon_db.get(pokemon_name, {})
-    star = "★ " if captured else "  "
+    caught = entry.get("caught", False) if entry else False
+    level_caught = entry.get("level_caught") if entry else None
+    if caught:
+        star = "★ "
+    elif entry:
+        star = "◆ "
+    else:
+        star = "  "
     display_name = data.get("name", pokemon_name)
     type_str = data.get("element_type", "???").capitalize()
     evo = data.get("evolution")
@@ -116,6 +168,10 @@ def _pokedex_detail(pokemon_name: str, pokemon_db: dict, attacks_db: dict, captu
     print("  ╠══════════════════════════════════════════╣")
     print(f"  ║  HP: {hp:<4} ATK: {atk:<4} DEF: {df:<4} SPD: {spd:<4}   ║")
     print(f"  ║  SP.DEF: {spdf:<4}                              ║")
+    if caught and level_caught is not None:
+        print(f"  ║  Caught at Lv. {level_caught:<4}                         ║")
+    elif entry:
+        print(f"  ║  Seen (not yet caught)                    ║")
     if evo and evo_lvl:
         evo_display = evo.capitalize()
         print(f"  ║  Evolves into: {evo_display:<10} (Lv {evo_lvl:<3})          ║")
@@ -137,27 +193,38 @@ def open_pokedex(player_trainer: Trainer) -> None:
     pokemon_db = load_pokemons()
     attacks_db = load_attacks()
     all_names = list(pokemon_db.keys())
-    seen = {n.lower() for n in getattr(player_trainer, "pokedex_seen", [])}
     total = len(all_names)
 
+    raw_dex = getattr(player_trainer, "pokedex_seen", [])
+    dex_lookup: dict[str, dict] = {}
+    for e in raw_dex:
+        if isinstance(e, dict):
+            dex_lookup[e["name"].lower()] = e
+        else:
+            dex_lookup[str(e).lower()] = {"name": str(e), "caught": False, "level_caught": None}
+
     while True:
-        captured_count = sum(1 for n in all_names if n in seen)
+        caught_count = sum(1 for e in dex_lookup.values() if e.get("caught"))
+        seen_count   = len(dex_lookup)
         print(f"\n  ╔══════════════════════════════════════════╗")
-        print(f"  ║     POKÉDEX  ({captured_count} captured / {total}){'':>15}║")
+        print(f"  ║  POKÉDEX  {caught_count}★ caught  {seen_count}◆ seen / {total}{'':>6}║")
         print(f"  ╠══════════════════════════════════════════╣")
         for i, name in enumerate(all_names, start=1):
-            star = "★" if name in seen else " "
+            entry = dex_lookup.get(name)
+            if entry and entry.get("caught"):
+                symbol = "★"
+            elif entry:
+                symbol = "◆"
+            else:
+                symbol = " "
             data = pokemon_db.get(name, {})
             display_name = data.get("name", name)
             ptype = data.get("element_type", "???").capitalize()
-            lvl_val = data.get("current_level")
-            if lvl_val is None:
-                lvl_str = "  ?"
-            elif str(lvl_val).lower() == "max":
-                lvl_str = "Max"
+            if entry and entry.get("caught") and entry.get("level_caught") is not None:
+                lvl_str = f"Lv{entry['level_caught']}"
             else:
-                lvl_str = f"Lv {lvl_val}"
-            print(f"  ║  [{i:>2}] {star} {display_name:<16} {ptype:<12} {lvl_str:<5}  ║")
+                lvl_str = "  ?"
+            print(f"  ║  [{i:>2}] {symbol} {display_name:<16} {ptype:<12} {lvl_str:<5}  ║")
         print(f"  ╚══════════════════════════════════════════╝")
         choice = input("  Enter number for detail, [0] to exit: ").strip()
         if choice == "0" or not choice.isdigit():
@@ -167,7 +234,20 @@ def open_pokedex(player_trainer: Trainer) -> None:
             print("  Invalid number.")
             continue
         name = all_names[idx]
-        _pokedex_detail(name, pokemon_db, attacks_db, captured=(name in seen))
+        _pokedex_detail(name, pokemon_db, attacks_db, entry=dex_lookup.get(name))
+
+
+def show_team_summary(player_trainer: Trainer) -> None:
+    print("\n  ╔══════════════════════════════╗")
+    print("  ║         YOUR TEAM            ║")
+    print("  ╚══════════════════════════════╝")
+    for i, p in enumerate(player_trainer.team):
+        status = "K.O." if not p.is_alive() else "OK"
+        active = "  <- active" if i == player_trainer.active_index else ""
+        lv_str = f"Lv.{getattr(p, 'current_level', '?')}"
+        bar    = _hp_bar(p, length=12)
+        print(f"  [{i+1}] {p.name:<10} {lv_str:<6}  {bar}  {status}{active}")
+    input("\n  Press Enter to continue...")
 
 
 def open_bag_menu(player_trainer: Trainer) -> None:

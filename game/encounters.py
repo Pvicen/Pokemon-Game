@@ -63,6 +63,9 @@ def trigger_encounter(map_obj: dict, player_trainer: Trainer) -> bool:
     if npc_trainer is None:
         return True
 
+    for p in npc_trainer.team:
+        player_trainer.register_seen(p.name)
+
     _show_dialogue(setup.name, setup.dialogue)
     print(f"\n  {setup.name} wants to battle!")
     input("  Press Enter to start...")
@@ -103,15 +106,15 @@ def trigger_wild_marker_encounter(marker_obj: dict, player_trainer: Trainer) -> 
         controller=IAcontroller(),
     )
 
+    player_trainer.register_seen(name)
     print(f"\n  A wild {name} (Lv. {level}) is blocking your path!")
     input("  Press Enter to start...")
 
     winner = pokemon_combat(player_trainer, wild_trainer, pause_between_turns=True, wild=True)
 
     if winner == "captured":
-        seen = getattr(player_trainer, "pokedex_seen", None)
-        if seen is not None and name not in seen:
-            seen.append(name)
+        wild_pokemon.clear_status()
+        player_trainer.register_caught(name, wild_pokemon.current_level)
         print(f"\n  {name} was added to your team!")
     elif winner is None:
         print(f"\n  You ran away from the wild {name}!")
@@ -157,15 +160,15 @@ def trigger_wild_encounter(x: int, y: int, player_trainer: Trainer, zone_id: str
         controller=IAcontroller(),
     )
 
+    player_trainer.register_seen(entry.name)
     print(f"\n  A wild {entry.name} (Lv. {level}) appeared!")
     input("  Press Enter to start...")
 
     winner = pokemon_combat(player_trainer, wild_trainer, pause_between_turns=True, wild=True)
 
     if winner == "captured":
-        seen = getattr(player_trainer, "pokedex_seen", None)
-        if seen is not None and entry.name not in seen:
-            seen.append(entry.name)
+        wild_pokemon.clear_status()
+        player_trainer.register_caught(entry.name, wild_pokemon.current_level)
         print(f"\n  {entry.name} was added to your team!")
     elif winner is None:
         print(f"\n  You ran away from the wild {entry.name}!")

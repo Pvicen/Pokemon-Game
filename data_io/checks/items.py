@@ -12,11 +12,11 @@ from ..errors import DataValidationError
 
 
 # Allowed item types and targets
-_ALLOWED_ITEM_TYPES: set[str] = {"healing", "revive", "buff", "capture"}
+_ALLOWED_ITEM_TYPES: set[str] = {"healing", "revive", "buff", "capture", "evolution", "status_cure"}
 _ALLOWED_TARGETS: set[str] = {"ally", "enemy"}
 
 # Effects
-_ALLOWED_EFFECT_KINDS: set[str] = {"heal", "revive", "buff", "capture"}
+_ALLOWED_EFFECT_KINDS: set[str] = {"heal", "revive", "buff", "capture", "evolution", "cure_status"}
 
 # IMPORTANT: include "normal_attacks" because your XAttack uses it.
 _ALLOWED_BUFF_STATS: set[str] = {
@@ -90,6 +90,23 @@ def _validate_capture_effect(effect: dict, *, where: str) -> dict:
     return {"kind": "capture", "catch_rate_mult": mult}
 
 
+def _validate_evolution_effect(effect: dict, *, where: str) -> dict:
+    return {"kind": "evolution"}
+
+
+def _validate_status_cure_effect(effect: dict, *, where: str) -> dict:
+    out: dict = {"kind": "cure_status"}
+    status = effect.get("status", None)
+    if status is not None:
+        s = normalize_string(status, where=f"{where}.status", lowercase=True)
+        if s not in {"poison", "paralysis", "sleep"}:
+            raise DataValidationError(
+                f"❌ {where}.status must be one of 'poison','paralysis','sleep', got {s!r}"
+            )
+        out["status"] = s
+    return out
+
+
 def _validate_effect(item_type: str, effect: Any, *, where: str) -> dict:
     require_type(effect, dict, where=where)
     kind = normalize_string(effect.get("kind", ""), where=f"{where}.kind", lowercase=True)
@@ -115,6 +132,16 @@ def _validate_effect(item_type: str, effect: Any, *, where: str) -> dict:
         if kind != "capture":
             raise DataValidationError(f"❌ {where}: capture item must use kind='capture'")
         return _validate_capture_effect(effect, where=where)
+
+    if item_type == "evolution":
+        if kind != "evolution":
+            raise DataValidationError(f"❌ {where}: evolution item must use kind='evolution'")
+        return _validate_evolution_effect(effect, where=where)
+
+    if item_type == "status_cure":
+        if kind != "cure_status":
+            raise DataValidationError(f"❌ {where}: status_cure item must use kind='cure_status'")
+        return _validate_status_cure_effect(effect, where=where)
 
     # Should not reach here because item_type validated before
     raise DataValidationError(f"❌ {where}: unsupported item type {item_type!r}")

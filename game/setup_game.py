@@ -106,9 +106,31 @@ ZONES: Dict[str, Zone] = {
         wild_encounter_chance=0.03,
         trainer_count=4,
     ),
+    "ruta_del_mar": Zone(
+        id="ruta_del_mar",
+        name="Ruta del Mar",
+        description="A coastal water route with aquatic Pokémon.",
+        min_player_level=12,
+        wild_pokemons=[
+            WildPokemonEntry(name="Staryu",    min_level=12, max_level=18, spawn_chance=2.5),
+            WildPokemonEntry(name="Tentacool", min_level=12, max_level=18, spawn_chance=2.0),
+            WildPokemonEntry(name="Horsea",    min_level=12, max_level=18, spawn_chance=2.0),
+        ],
+        wild_encounter_chance=0.02,
+        trainer_count=2,
+    ),
+    "pueblo_nuevo": Zone(
+        id="pueblo_nuevo",
+        name="Pueblo Nuevo",
+        description="A new town on the eastern coast. Has a Pokemon Center.",
+        min_player_level=12,
+        wild_pokemons=[],
+        wild_encounter_chance=0.0,
+        trainer_count=2,
+    ),
 }
 
-ZONE_ORDER: List[str] = ["pueblo_raiz", "pueblo_alto", "bosque_umbral", "cueva_oscura"]
+ZONE_ORDER: List[str] = ["pueblo_raiz", "pueblo_alto", "bosque_umbral", "cueva_oscura", "ruta_del_mar", "pueblo_nuevo"]
 
 
 # =============================================================================
@@ -125,6 +147,11 @@ WILD_MARKERS: List[WildMarker] = [
     # Bosque Umbral (y<=27, x>=44)
     WildMarker("Bellsprout", level=10, position=(52, 18)),
     WildMarker("Venonat",    level=11, position=(75, 8)),
+    # Ruta del Mar (x>=119, y<35)
+    WildMarker("Staryu",    level=14, position=(130, 8)),
+    WildMarker("Tentacool", level=13, position=(145, 18)),
+    # Pueblo Nuevo (x>=119, y>=35)
+    WildMarker("Eevee",     level=12, position=(135, 50)),
 ]
 
 
@@ -310,6 +337,42 @@ TRAINERS: List[TrainerSetup] = [
         ],
     ),
 
+    # --- Ruta del Mar + Pueblo Nuevo (hard) ---
+    TrainerSetup(
+        name="Sailor Marco",
+        team=[("Tentacool", 14), ("Staryu", 13)],
+        position=(128, 54),
+        defeat_message="The sea is unforgiving — and so am I!",
+        dialogue=[
+            "Ho, sailor! You've made it to Pueblo Nuevo.",
+            "These waters are treacherous. My Pokemon are used to rough seas.",
+            "Show me what you've got, landlubber!",
+        ],
+        reward_pool=[
+            {"maxpotion": 1, "xattack": 1},
+            {"maxpotion": 2},
+            {"maxpotion": 1, "xdefense": 1},
+            {"greatball": 2},
+        ],
+    ),
+    TrainerSetup(
+        name="Swimmer Lucia",
+        team=[("Horsea", 15), ("Staryu", 14)],
+        position=(143, 54),
+        defeat_message="The current was against me today!",
+        dialogue=[
+            "The sea route is my training ground.",
+            "Every day I swim with my Pokemon from shore to shore.",
+            "You'll need more than willpower to beat us!",
+        ],
+        reward_pool=[
+            {"maxpotion": 1, "xspecialattack": 1},
+            {"maxpotion": 2},
+            {"maxpotion": 1, "xspecialdefense": 1},
+            {"greatball": 2},
+        ],
+    ),
+
     # --- Friendly NPCs (no battle) ---
 
     TrainerSetup(
@@ -366,6 +429,25 @@ TRAINERS: List[TrainerSetup] = [
             ({"pokeball": 2, "greatball": 1},     15),
             ({"maxpotion": 1},                    20),
             ({"revive": 1},                        5),
+        ],
+        is_friendly=True,
+    ),
+    TrainerSetup(
+        name="Old Fisherman",
+        team=[],
+        position=(152, 57),
+        defeat_message="",
+        dialogue=[
+            "Ahh, a visitor! Haven't seen one of those in a while.",
+            "These waters used to be full of trainers. Now it's just me and the fish.",
+            "Take this — caught more than I can use today.",
+        ],
+        reward_pool=[
+            ({"maxpotion": 1},               35),
+            ({"greatball": 2},               25),
+            ({"maxpotion": 1, "revive": 1},  20),
+            ({"ultraball": 1},               15),
+            ({"maxrevive": 1},                5),
         ],
         is_friendly=True,
     ),
@@ -520,6 +602,7 @@ def _build_pokemon(pokemon_name: str, level: int, pokemon_db: dict, attacks_db: 
         current_level=level,
         evolution=data.get("evolution"),
         evolution_level=data.get("evolution_level"),
+        evolution_by_item=data.get("evolution_by_item", {}),
     )
 
 
@@ -574,7 +657,8 @@ def create_player_trainer(starter_names=None) -> Trainer:
         controller=HumanController(),
         bag=Inventory({"potion": 2, "xdefense": 1, "pokeball": 5}),
     )
-    trainer.pokedex_seen = [p.name for p in trainer.team]
+    for p in trainer.team:
+        trainer.register_caught(p.name, int(getattr(p, "current_level", 5)))
     return trainer
 
 
@@ -600,12 +684,11 @@ def get_zone_by_id(zone_id: str) -> Optional[Zone]:
 
 
 def get_zone_for_position(x: int, y: int) -> Optional[str]:
-    if x >= 87 and y >= 24:
-        return "cueva_oscura"
-    if x >= 44 and y <= 27:
-        return "bosque_umbral"
-    if y <= 27:
-        return "pueblo_alto"
+    if x >= 119 and y >= 35:   return "pueblo_nuevo"
+    if x >= 119:               return "ruta_del_mar"
+    if x >= 87 and y >= 24:    return "cueva_oscura"
+    if x >= 44 and y <= 27:    return "bosque_umbral"
+    if y <= 27:                return "pueblo_alto"
     return "pueblo_raiz"
 
 

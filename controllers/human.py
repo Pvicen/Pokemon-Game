@@ -2,6 +2,7 @@ from ..models import Pokemon, EvolvedPokemon
 from ..utils import load_items, load_pokemons_json
 from ..trainers import Trainer
 from ..inventory import Inventory
+from ..game.ui_utils import _hp_bar
 
 class HumanController():
     
@@ -150,32 +151,36 @@ class HumanController():
                 
     @staticmethod
     def ChooseAttack(actor):
-
         all_attacks = []
-        
         if getattr(actor, "special_attacks", None):
             all_attacks.extend(list(actor.special_attacks))
-            
         if getattr(actor, "normal_attacks", None):
             all_attacks.extend(list(actor.normal_attacks))
-        
+
         if not all_attacks:
-            print(f"🤖 {getattr(actor, 'name', 'Pokémon')} don’t have available attacks.")
-            return None
-        
+            print(f"  {getattr(actor, 'name', 'Pokemon')} has no attacks. Using Struggle!")
+            return {"name": "Struggle", "type": "Normal", "damage": 50}
+
+        available = [a for a in all_attacks if actor.get_pp(a.get("name", "")) > 0]
+
+        if not available:
+            print(f"\n  {actor.name} has no PP left! Using Struggle!")
+            input("  Press Enter...")
+            return {"name": "Struggle", "type": "Normal", "damage": 50}
+
         while True:
-            
             print("\n🌀 Available attacks:")
-            for i, atk in enumerate(all_attacks, start=1):
-                if not isinstance(atk, dict) or not all( k in atk for k in ("name", "type", "damage")):
+            for i, atk in enumerate(available, start=1):
+                if not isinstance(atk, dict) or not all(k in atk for k in ("name", "type", "damage")):
                     print("Invalid attack format")
                     return None
-                
                 atk_type = str(atk["type"]).capitalize()
-                atk_dmg = int(atk["damage"])
-                print(f"[{i}]: {atk['name']} | Type: {atk_type} | Damage: {atk_dmg}")
+                atk_dmg  = int(atk["damage"])
+                pp_cur   = actor.get_pp(atk["name"])
+                pp_max   = actor._pp_max.get(atk["name"], "?")
+                print(f"[{i}]: {atk['name']} | Type: {atk_type} | Dmg: {atk_dmg} | PP: {pp_cur}/{pp_max}")
             print("[0: Cancel] / no attack")
-                
+
             choice = input("Choose your attack (number): ")
             if choice == "0":
                 print("😴 You decided not to attack this turn.")
@@ -183,10 +188,9 @@ class HumanController():
             if not choice.isdigit():
                 print("❌ Invalid input, please enter a number.")
                 continue
-            
             index = int(choice) - 1
-            if 0 <= index < len(all_attacks):
-                return all_attacks[index]  
+            if 0 <= index < len(available):
+                return available[index]
             print("❌ Invalid number, try again.")
     
     
@@ -199,9 +203,11 @@ class HumanController():
         
         print("Choose a Pokémon to switch (alive and different from the current):")
         for i, p in enumerate(trainer.team, start=1):
-            status = "Ok" if p.is_alive() else "K.O"
-            active = " (Active)" if i - 1 == trainer.active_index else ""
-            print(f"[{i}] - {p.name} - {p.health}/{p.maximun_hp} - Status: {status}{active}")
+            status = "K.O" if not p.is_alive() else "OK"
+            active = "  (Active)" if i - 1 == trainer.active_index else ""
+            lv_str = f"Lv.{getattr(p, 'current_level', '?')}"
+            bar    = _hp_bar(p, length=12)
+            print(f"[{i}] {p.name:<10} {lv_str:<6}  {bar}  {status}{active}")
         print("[0] - Cancel switch")
         
         while True:

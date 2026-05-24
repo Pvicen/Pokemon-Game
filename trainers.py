@@ -15,7 +15,7 @@ class Trainer:
         
         #Default items
         self.bag = bag if bag is not None else Inventory({"potion": 1, "xdefense": 1})
-        self.pokedex_seen: list[str] = []
+        self.pokedex_seen: list[dict] = []
             
     @property
     def ActivePokemon(self) -> Pokemon:
@@ -42,6 +42,18 @@ class Trainer:
         return False
         
     
+    def register_seen(self, pokemon_name: str) -> None:
+        if not any(e["name"] == pokemon_name for e in self.pokedex_seen):
+            self.pokedex_seen.append({"name": pokemon_name, "caught": False, "level_caught": None})
+
+    def register_caught(self, pokemon_name: str, level: int) -> None:
+        for e in self.pokedex_seen:
+            if e["name"] == pokemon_name:
+                e["caught"] = True
+                e["level_caught"] = level
+                return
+        self.pokedex_seen.append({"name": pokemon_name, "caught": True, "level_caught": level})
+
     def UseItems(self, item_key: str, enemy_trainer=None, in_battle: bool = True, target_index: int | None = None) -> bool:
         if self.bag is None:
             print("❌ No inventory available.")

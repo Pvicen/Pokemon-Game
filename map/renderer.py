@@ -28,6 +28,8 @@ def _color(x: int, y: int, tile: str) -> str:
 
 
 def _zone_bg(x: int, y: int) -> str:
+    if x >= 119 and y >= 35:          return "\033[43m"    # Pueblo Nuevo: yellow/sand
+    if x >= 119:                      return "\033[104m"   # Ruta del Mar: bright blue
     if x >= 87 and y >= 24:           return "\033[100m"   # Cueva Oscura: dark gray
     if x >= 44 and y <= 27:           return "\033[40m"    # Bosque Umbral: black bg
     if y <= 27:                       return "\033[44m"    # Pueblo Alto: blue bg
@@ -35,6 +37,8 @@ def _zone_bg(x: int, y: int) -> str:
 
 
 def _zone_fg(x: int, y: int) -> str:
+    if x >= 119 and y >= 35:          return "\033[43m"
+    if x >= 119:                      return "\033[104m"
     if x >= 87 and y >= 24:           return "\033[100m"
     if x >= 44 and y <= 27:           return "\033[40m"
     if y <= 27:                       return "\033[44m"

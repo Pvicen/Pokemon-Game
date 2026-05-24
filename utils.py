@@ -20,6 +20,12 @@ def determine_attack_order(pokemon1, pokemon2):
     if s1 is None or s2 is None:
         raise AttributeError("Both participants must have a 'speed' attribute.")
 
+    # Paralysis halves effective speed
+    if getattr(pokemon1, "status", None) == "paralysis":
+        s1 = s1 // 2
+    if getattr(pokemon2, "status", None) == "paralysis":
+        s2 = s2 // 2
+
     if s1 > s2:
         return pokemon1, pokemon2
     if s2 > s1:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .game.setup_game import create_player_trainer, choose_starter
-from .game.save_load import list_saves, load_game, delete_save, restore_player_trainer, load_defeated_dict
+from .game.save_load import list_saves, load_game, delete_save, restore_player_trainer, load_defeated_dict, load_cleared_markers
 from .map import run_map
 from .map.dungeon import run_dungeon
 
@@ -81,7 +81,8 @@ def main():
     player_trainer = None
     start_pos = None
     current_map = "main"
-    defeated_dict = {"main": [], "dungeon": []}
+    defeated_dict        = {"main": [], "dungeon": []}
+    cleared_markers_dict = {"main": [], "dungeon": []}
 
     if not is_new:
         save_data = load_game(slot_name)
@@ -89,7 +90,8 @@ def main():
             player_trainer = restore_player_trainer(save_data)
             pos = save_data.get("position", {})
             start_pos = (pos.get("x", None), pos.get("y", None))
-            defeated_dict = load_defeated_dict(save_data)
+            defeated_dict        = load_defeated_dict(save_data)
+            cleared_markers_dict = load_cleared_markers(save_data)
             current_map = save_data.get("current_map", "main")
             lead = player_trainer.team[0]
             print(f"\n  Welcome back! {lead.name} Lv.{lead.current_level} is ready.")
@@ -103,10 +105,14 @@ def main():
     while True:
         if current_map == "main":
             result = run_map(player_trainer, start_pos=start_pos,
-                             defeated_dict=defeated_dict, slot_name=slot_name)
+                             defeated_dict=defeated_dict,
+                             cleared_markers_dict=cleared_markers_dict,
+                             slot_name=slot_name)
         elif current_map == "dungeon":
             result = run_dungeon(player_trainer, start_pos=start_pos,
-                                 defeated_dict=defeated_dict, slot_name=slot_name)
+                                 defeated_dict=defeated_dict,
+                                 cleared_markers_dict=cleared_markers_dict,
+                                 slot_name=slot_name)
         else:
             break
 
@@ -119,8 +125,11 @@ def main():
             break
         pos = save_data.get("position", {})
         start_pos = (pos.get("x"), pos.get("y"))
+        # TODO (Deuda Técnica): Refactorizar defeated_dict para que pase por referencia (mutación en RAM)
+        # igual que cleared_markers_dict, evitando esta recarga redundante del disco en cada transición.
         defeated_dict = load_defeated_dict(save_data)
         current_map = save_data.get("current_map", "main")
+        # cleared_markers_dict NO se recarga — ya está actualizado en RAM por referencia directa
 
 
 if __name__ == "__main__":

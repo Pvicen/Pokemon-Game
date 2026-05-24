@@ -159,5 +159,86 @@
     "battle_only": true,
     "reusable": false,
     "description": "An ultra-performance ball with an excellent catch rate."
+  },
+  "FireStone": {
+    "name": "Fire Stone",
+    "type": "evolution",
+    "target": "ally",
+    "effect": { "kind": "evolution" },
+    "battle_only": false,
+    "reusable": false,
+    "description": "Evolves certain Fire-type Pokémon."
+  },
+  "WaterStone": {
+    "name": "Water Stone",
+    "type": "evolution",
+    "target": "ally",
+    "effect": { "kind": "evolution" },
+    "battle_only": false,
+    "reusable": false,
+    "description": "Evolves certain Water-type Pokémon."
+  },
+  "LeafStone": {
+    "name": "Leaf Stone",
+    "type": "evolution",
+    "target": "ally",
+    "effect": { "kind": "evolution" },
+    "battle_only": false,
+    "reusable": false,
+    "description": "Evolves certain Grass-type Pokémon."
+  },
+  "ThunderStone": {
+    "name": "Thunder Stone",
+    "type": "evolution",
+    "target": "ally",
+    "effect": { "kind": "evolution" },
+    "battle_only": false,
+    "reusable": false,
+    "description": "Evolves certain Electric-type Pokémon."
+  },
+  "MoonStone": {
+    "name": "Moon Stone",
+    "type": "evolution",
+    "target": "ally",
+    "effect": { "kind": "evolution" },
+    "battle_only": false,
+    "reusable": false,
+    "description": "Evolves certain Pokémon."
+  },
+  "Antidote": {
+    "name": "Antidote",
+    "type": "status_cure",
+    "target": "ally",
+    "effect": { "kind": "cure_status", "status": "poison" },
+    "battle_only": false,
+    "reusable": false,
+    "description": "Cures a Pokémon of poison."
+  },
+  "ParlyzHeal": {
+    "name": "Parlyz Heal",
+    "type": "status_cure",
+    "target": "ally",
+    "effect": { "kind": "cure_status", "status": "paralysis" },
+    "battle_only": false,
+    "reusable": false,
+    "description": "Cures a Pokémon of paralysis."
+  },
+  "Awakening": {
+    "name": "Awakening",
+    "type": "status_cure",
+    "target": "ally",
+    "effect": { "kind": "cure_status", "status": "sleep" },
+    "battle_only": false,
+    "reusable": false,
+    "description": "Wakes up a sleeping Pokémon."
+  },
+  "FullHeal": {
+    "name": "Full Heal",
+    "type": "status_cure",
+    "target": "ally",
+    "effect": { "kind": "cure_status" },
+    "battle_only": false,
+    "reusable": false,
+    "description": "Cures any status condition."
   }
 }

@@ -165,6 +165,12 @@ def normalize_pokemons(raw: Any) -> dict[str, dict]:
         curr_level_val = entry.get("Current_level", entry.get("current_level", None))
         current_level = _coerce_level(curr_level_val, where=f"{where}.Current_level") if curr_level_val is not None else None
 
+        raw_eby = entry.get("Evolution_by_item", {})
+        evolution_by_item = (
+            {k.lower(): v.lower() for k, v in raw_eby.items()}
+            if isinstance(raw_eby, dict) else {}
+        )
+
         norm[key] = {
             "name": raw_name,
             "element_type": element_type,   # minúsculas; tu damage.py capitaliza internamente al consultar tabla
@@ -175,10 +181,8 @@ def normalize_pokemons(raw: Any) -> dict[str, dict]:
             "base_attack": base_attack,
             "evolution": evolution,         # None si vacío
             "evolution_level": evolution_level,
+            "evolution_by_item": evolution_by_item,
             "current_level": current_level,
-            # Hooks para etapas posteriores (no poblamos aquí):
-            # "special_attacks": [],
-            # "normal_attacks": [],
         }
 
     return norm

@@ -46,6 +46,15 @@ def load_defeated_dict(save_data: Dict[str, Any]) -> Dict[str, List]:
     }
 
 
+def load_cleared_markers(save_data: Dict[str, Any]) -> Dict[str, List]:
+    """Extracts cleared_wild_markers dict. Old saves without this key return empty lists."""
+    cm = save_data.get("cleared_wild_markers", {})
+    return {
+        "main":    [tuple(p) for p in cm.get("main",    [])],
+        "dungeon": [tuple(p) for p in cm.get("dungeon", [])],
+    }
+
+
 def save_game(
     player_trainer,
     x: int,
@@ -54,15 +63,19 @@ def save_game(
     *,
     current_map: str = "main",
     defeated_dict: Dict[str, List] = None,
+    cleared_markers_dict: Dict[str, List] = None,
 ) -> None:
     SAVES_DIR.mkdir(exist_ok=True)
     team_data = []
     for p in player_trainer.team:
         team_data.append({
-            "name": p.name,
-            "level": int(getattr(p, "level", getattr(p, "current_level", 1))),
-            "health": int(getattr(p, "health", 0)),
-            "exp": int(getattr(p, "exp", 0)),
+            "name":        p.name,
+            "level":       int(getattr(p, "level", getattr(p, "current_level", 1))),
+            "health":      int(getattr(p, "health", 0)),
+            "exp":         int(getattr(p, "exp", 0)),
+            "pp":          dict(getattr(p, "_pp_current", {})),
+            "status":      getattr(p, "status", None),
+            "sleep_turns": int(getattr(p, "sleep_turns", 0)),
         })
 
     bag_data = {}
@@ -71,6 +84,8 @@ def save_game(
 
     if defeated_dict is None:
         defeated_dict = {"main": [], "dungeon": []}
+    if cleared_markers_dict is None:
+        cleared_markers_dict = {"main": [], "dungeon": []}
 
     data = {
         "slot_name": slot_name,
@@ -79,8 +94,12 @@ def save_game(
         "team": team_data,
         "bag": bag_data,
         "defeated_trainers": {
-            "main": [[p[0], p[1]] for p in defeated_dict.get("main", [])],
+            "main":    [[p[0], p[1]] for p in defeated_dict.get("main",    [])],
             "dungeon": [[p[0], p[1]] for p in defeated_dict.get("dungeon", [])],
+        },
+        "cleared_wild_markers": {
+            "main":    [[p[0], p[1]] for p in cleared_markers_dict.get("main",    [])],
+            "dungeon": [[p[0], p[1]] for p in cleared_markers_dict.get("dungeon", [])],
         },
         "pokedex": list(getattr(player_trainer, "pokedex_seen", [])),
     }
@@ -112,6 +131,13 @@ def restore_player_trainer(save_data: Dict[str, Any]):
             saved_hp = int(p_data.get("health", p.maximun_hp))
             p.health = min(max(0, saved_hp), p.maximun_hp)
             setattr(p, "exp", int(p_data.get("exp", 0)))
+            # Restore PP — old saves without "pp" key keep max PP (safe default)
+            for atk_name, pp_val in p_data.get("pp", {}).items():
+                if atk_name in p._pp_current:
+                    p._pp_current[atk_name] = max(0, min(int(pp_val), p._pp_max.get(atk_name, 20)))
+            # Restore status — old saves without these keys default to no status
+            p.status = p_data.get("status", None)
+            p.sleep_turns = int(p_data.get("sleep_turns", 0))
             team.append(p)
 
     if not team:
@@ -126,8 +152,12 @@ def restore_player_trainer(save_data: Dict[str, Any]):
         bag = Inventory({"potion": 2, "xdefense": 1})
 
     trainer = Trainer(name="Player", team=team, controller=HumanController(), bag=bag)
-    trainer.pokedex_seen = list(save_data.get("pokedex", []))
+    raw_dex = save_data.get("pokedex", [])
+    if raw_dex and isinstance(raw_dex[0], str):
+        # Backward-compat: old saves stored list of strings
+        trainer.pokedex_seen = [{"name": n, "caught": False, "level_caught": None} for n in raw_dex]
+    else:
+        trainer.pokedex_seen = [e for e in raw_dex if isinstance(e, dict)]
     for p in team:
-        if p.name not in trainer.pokedex_seen:
-            trainer.pokedex_seen.append(p.name)
+        trainer.register_caught(p.name, int(getattr(p, "current_level", 1)))
     return trainer

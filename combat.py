@@ -13,6 +13,7 @@ from .inventory import Inventory
 from .controllers import HumanController, IAcontroller
 from .utils import determine_attack_order
 from .experience import ExperienceManager
+from .game.ui_utils import _hp_bar
 
 
 CLEAR_CMD = "cls" if os.name == "nt" else "clear"
@@ -41,11 +42,38 @@ _TYPE_COLORS: Dict[str, str] = {
 
 _BOX_W = 54  # visible inner width between ║ borders
 
+STRUGGLE = {"name": "Struggle", "type": "Normal", "damage": 50}
+
+_STATUS_COLORS: Dict[str, str] = {
+    "poison":    "\033[35m",
+    "paralysis": "\033[93m",
+    "sleep":     "\033[94m",
+}
+_STATUS_TAGS: Dict[str, str] = {
+    "poison":    "[PSN]",
+    "paralysis": "[PAR]",
+    "sleep":     "[SLP]",
+}
+_STATUS_VERBS: Dict[str, str] = {
+    "poison":    "was poisoned",
+    "paralysis": "was paralyzed",
+    "sleep":     "fell asleep",
+}
+
 
 # ─────────────────────── ANSI / color helpers ───────────────────────
 
 def _type_color(element_type: str) -> str:
     return _TYPE_COLORS.get((element_type or "").lower(), "\033[37m")
+
+
+def _status_tag(pokemon) -> str:
+    st = getattr(pokemon, "status", None)
+    if not st:
+        return ""
+    color = _STATUS_COLORS.get(st, "")
+    tag   = _STATUS_TAGS.get(st, f"[{st.upper()[:3]}]")
+    return f"  {color}{_BOLD}{tag}{_R}"
 
 
 def _vlen(s: str) -> int:
@@ -56,21 +84,6 @@ def _vlen(s: str) -> int:
 def _pad(s: str, width: int) -> str:
     """Right-pad s to the given visible width, accounting for ANSI codes."""
     return s + " " * max(0, width - _vlen(s))
-
-
-def _hp_bar(pokemon: Pokemon, length: int = 16) -> str:
-    hp     = max(0, int(getattr(pokemon, "health", 0)))
-    max_hp = max(1, int(getattr(pokemon, "maximun_hp", 1)))
-    units  = max(0, min(length, int(hp * length / max_hp)))
-    ratio  = hp / max_hp
-    if ratio > 0.5:
-        bar_color = "\033[92m"
-    elif ratio > 0.25:
-        bar_color = "\033[93m"
-    else:
-        bar_color = "\033[91m"
-    bar = bar_color + "█" * units + "\033[90m" + "░" * (length - units) + _R
-    return f"[{bar}] {hp}/{max_hp}"
 
 
 # ─────────────────────── Battle screen ───────────────────────
@@ -87,7 +100,7 @@ def _draw_battle_screen(enemy: Pokemon, player: Pokemon, log_lines: list) -> Non
     e_lv     = getattr(enemy, "current_level", 1)
     e_tc     = _type_color(e_type)
     e_header = f"{_BOLD}{enemy.name}{_R}  Lv.{e_lv}  {e_tc}[{e_type}]{_R}"
-    e_hp     = f"HP: {_hp_bar(enemy)}"
+    e_hp     = f"HP: {_hp_bar(enemy)}{_status_tag(enemy)}"
 
     # Player — bottom right, indented
     p_type   = (getattr(player, "element_type", "Normal") or "Normal").capitalize()
@@ -95,7 +108,7 @@ def _draw_battle_screen(enemy: Pokemon, player: Pokemon, log_lines: list) -> Non
     p_tc     = _type_color(p_type)
     indent   = " " * 22
     p_header = f"{indent}{_BOLD}{player.name}{_R}  Lv.{p_lv}  {p_tc}[{p_type}]{_R}"
-    p_hp     = f"{indent}HP: {_hp_bar(player)}"
+    p_hp     = f"{indent}HP: {_hp_bar(player)}{_status_tag(player)}"
 
     print(f"  ╔{'═' * _BOX_W}╗")
     print(box_row(e_header))
@@ -177,6 +190,10 @@ def _apply_attack(attacker: Pokemon, defender: Pokemon, attack: Dict) -> Tuple[i
     atk_type = str(attack.get("type", "Normal")).capitalize()
     base_dmg = int(attack.get("damage", 0))
 
+    # Decrement PP (Struggle has no PP cost)
+    if atk_name != "Struggle":
+        attacker.use_pp(atk_name)
+
     if atk_type == "Normal":
         dmg, hit_msg = damage_without_element(attacker, defender, base_dmg)
         eff_msg = hit_msg
@@ -193,6 +210,21 @@ def _apply_attack(attacker: Pokemon, defender: Pokemon, attack: Dict) -> Tuple[i
         f"    → Damage: {before - after}  |  {eff_msg}",
         f"    → {defender.name} HP: {before} → {after}",
     ]
+
+    # Apply status effect if attack has one and defender has no current status
+    effect = attack.get("effect", {}) if isinstance(attack, dict) else {}
+    if (
+        effect.get("kind") == "status"
+        and getattr(defender, "status", None) is None
+        and not defender.health == 0
+    ):
+        status_to_apply = effect.get("status")
+        chance = float(effect.get("chance", 100)) / 100.0
+        if status_to_apply and random.random() < chance:
+            if defender.apply_status(status_to_apply):
+                verb = _STATUS_VERBS.get(status_to_apply, status_to_apply)
+                lines.append(f"    → {defender.name} {verb}!")
+
     return (before - after), "\n".join(lines)
 
 
@@ -280,6 +312,36 @@ def _take_turn(
 
     if atype == "attack":
         attack = action.get("attack")
+
+        # ── Sleep check: burns a sleep turn; skip attack if still sleeping ──
+        if getattr(actor, "status", None) == "sleep":
+            actor.sleep_turns -= 1
+            if actor.sleep_turns <= 0:
+                actor.clear_status()
+                wake_msg = f"  💤 {actor.name} woke up!"
+                if log is not None:
+                    log.append(wake_msg)
+                else:
+                    print(wake_msg)
+                # fall through — executes the attack this turn
+            else:
+                sleep_msg = f"  💤 {actor.name} is fast asleep!"
+                if log is not None:
+                    log.append(sleep_msg)
+                else:
+                    print(sleep_msg)
+                return True  # skip attack, turn ends
+
+        # ── Paralysis check: 25% chance to skip attack ──
+        elif getattr(actor, "status", None) == "paralysis":
+            if random.random() < 0.25:
+                para_msg = f"  ⚡ {actor.name} is paralyzed and can't move!"
+                if log is not None:
+                    log.append(para_msg)
+                else:
+                    print(para_msg)
+                return True  # skip attack, turn ends
+
         dmg, msg = _apply_attack(actor, target, attack)
         if log is not None:
             log.append(msg)
@@ -542,6 +604,33 @@ def pokemon_combat(
             input("  Press Enter to continue...")
             _cleanup_battle(trainer_a, trainer_b)
             return None if fled else winner_tr.name
+
+        # ── End-of-round poison damage + immediate KO detection ──
+        for affected_trainer in (trainer_a, trainer_b):
+            p = affected_trainer.ActivePokemon
+            if getattr(p, "status", None) == "poison" and p.is_alive():
+                poison_dmg = max(1, p.maximun_hp // 8)
+                p.take_damage(poison_dmg)
+                poison_msg = f"  ☠️  {p.name} is hurt by poison! (-{poison_dmg} HP)"
+                log.append(poison_msg)
+                if not p.is_alive():
+                    other_trainer = trainer_b if affected_trainer is trainer_a else trainer_a
+                    survived = _handle_faint_and_switch(
+                        affected_trainer, other_trainer, log=log, redraw_fn=redraw
+                    )
+                    if not survived:
+                        winner_tr = other_trainer
+                        loser_tr  = affected_trainer
+                        redraw()
+                        print(f"  \U0001f3c6 {winner_tr.name} wins!")
+                        try:
+                            for line in xp.finalize(winner_tr, loser_tr):
+                                print(f"  {line}")
+                        except Exception:
+                            pass
+                        input("  Press Enter to continue...")
+                        _cleanup_battle(trainer_a, trainer_b)
+                        return winner_tr.name
 
         # ── End of round: show result and wait for player ──
         redraw()
