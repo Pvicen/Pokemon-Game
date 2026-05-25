@@ -73,6 +73,9 @@ class Pokemon:
         self.status: Optional[str] = None    # "poison" | "paralysis" | "sleep" | None
         self.sleep_turns: int = 0
 
+        # --- passive ability ---
+        self.ability: Optional[str] = None
+
 
     # ---------------- XP and levels ----------------
     def gain_xp(self, amount: int) -> None:

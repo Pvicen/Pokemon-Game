@@ -14,6 +14,7 @@ from .controllers import HumanController, IAcontroller
 from .utils import determine_attack_order
 from .experience import ExperienceManager
 from .game.ui_utils import _hp_bar
+from .abilities import fire_on_entry, fire_pre_damage, fire_on_hit_received
 
 
 CLEAR_CMD = "cls" if os.name == "nt" else "clear"
@@ -201,6 +202,12 @@ def _apply_attack(attacker: Pokemon, defender: Pokemon, attack: Dict) -> Tuple[i
         dmg = int(calculate_damage(attacker, defender, base_dmg, attack_type=atk_type))
         _, eff_msg = get_effectiveness(attacker.element_type, defender.element_type)
 
+    # ── Ability hook: pre-damage (Levitate immunity, Sturdy) ──
+    dmg, ability_pre_msg = fire_pre_damage(attacker, defender, dmg, atk_type)
+    if ability_pre_msg is not None and dmg == 0:
+        # Immunity short-circuit: skip type messages and status effects entirely
+        return 0, f"  ★ {attacker.name} used {atk_name}!\n{ability_pre_msg}"
+
     before = max(0, defender.health)
     defender.health = max(0, defender.health - max(0, dmg))
     after  = defender.health
@@ -210,6 +217,8 @@ def _apply_attack(attacker: Pokemon, defender: Pokemon, attack: Dict) -> Tuple[i
         f"    → Damage: {before - after}  |  {eff_msg}",
         f"    → {defender.name} HP: {before} → {after}",
     ]
+    if ability_pre_msg:  # Sturdy message (dmg > 0 but capped)
+        lines.append(ability_pre_msg)
 
     # Apply status effect if attack has one and defender has no current status
     effect = attack.get("effect", {}) if isinstance(attack, dict) else {}
@@ -224,6 +233,11 @@ def _apply_attack(attacker: Pokemon, defender: Pokemon, attack: Dict) -> Tuple[i
             if defender.apply_status(status_to_apply):
                 verb = _STATUS_VERBS.get(status_to_apply, status_to_apply)
                 lines.append(f"    → {defender.name} {verb}!")
+
+    # ── Ability hook: on-hit received (Static) ──
+    hit_ability_msg = fire_on_hit_received(attacker, defender, before - after)
+    if hit_ability_msg:
+        lines.append(hit_ability_msg)
 
     return (before - after), "\n".join(lines)
 
@@ -258,6 +272,7 @@ def _handle_faint_and_switch(
                 log.append(switch_msg)
             else:
                 print(switch_msg)
+            fire_on_entry(trainer.ActivePokemon, enemy_trainer.ActivePokemon, log)
             return True
 
     if controller and hasattr(controller, "BestSwitch"):
@@ -269,6 +284,7 @@ def _handle_faint_and_switch(
                     log.append(switch_msg)
                 else:
                     print(switch_msg)
+                fire_on_entry(trainer.ActivePokemon, enemy_trainer.ActivePokemon, log)
                 return True
         except Exception:
             pass
@@ -281,6 +297,7 @@ def _handle_faint_and_switch(
                     log.append(switch_msg)
                 else:
                     print(switch_msg)
+                fire_on_entry(trainer.ActivePokemon, enemy_trainer.ActivePokemon, log)
                 return True
 
     out_msg = f"  \U0001f3f3️  {trainer.name} has no Pokemon left!"
@@ -482,6 +499,9 @@ def pokemon_combat(
     xp.start_battle()
 
     redraw()
+    # ── Fire on_entry for both initial Pokémon (Intimidate, etc.) ──
+    fire_on_entry(trainer_a.ActivePokemon, trainer_b.ActivePokemon, log)
+    fire_on_entry(trainer_b.ActivePokemon, trainer_a.ActivePokemon, log)
     print("  ⚔️  BATTLE START!")
     input("  Press Enter to begin...")
 

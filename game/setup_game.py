@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Tuple
 from ..models import Pokemon
 from ..trainers import Trainer
 from ..inventory import Inventory
+from ..abilities import ABILITY_BY_SPECIES
 
 
 # =============================================================================
@@ -591,7 +592,7 @@ def _build_pokemon(pokemon_name: str, level: int, pokemon_db: dict, attacks_db: 
     if data is None:
         return None
     attacks = attacks_db["by_owner"].get(key, [])
-    return Pokemon(
+    p = Pokemon(
         name=data["name"],
         element_type=data["element_type"],
         health=data["health"],
@@ -604,6 +605,8 @@ def _build_pokemon(pokemon_name: str, level: int, pokemon_db: dict, attacks_db: 
         evolution_level=data.get("evolution_level"),
         evolution_by_item=data.get("evolution_by_item", {}),
     )
+    p.ability = ABILITY_BY_SPECIES.get(key)
+    return p
 
 
 def create_trainer_instance(trainer_setup: TrainerSetup) -> Optional[Trainer]:
