@@ -1,32 +1,56 @@
-# Pokemon-Game (local)
+# Pokemon-Game
 
-Quick start (PowerShell):
+Juego de Pokémon por terminal (ASCII) en Python. Combate por turnos, overworld 160×65 con 6 zonas, cuevas con entrenadores NPC, Pokémon salvajes, inventario, Pokédex y guardado por slots.
 
-1. Create and activate a virtual environment
+## Estado actual
+
+**Fase P completada** — Capítulo 1 completo. Incluye cueva end-game en Pueblo Nuevo con Champion Nexus, cinemática post-victoria y `chapter2_unlocked` en el save.
+
+Siguiente paso: **Fase Q — Capítulo 2 / Mundo Nuevo** (pendiente).
+
+## Cómo ejecutar
+
+### Opción A — Con instalación editable (recomendada)
 
 ```powershell
+# Desde la raíz del proyecto
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-```
-
-2. Install dependencies and the project in editable mode
-
-```powershell
 pip install -r requirements.txt
 pip install -e .
+python -m Pokemon_Game
 ```
 
-3. Run the game (module mode) from the project root
+### Opción B — Sin instalar, desde el directorio padre
 
 ```powershell
-python -m Pokemon-Game.main
+# Subir un nivel por encima de la carpeta Pokemon-Game
+cd "c:\Users\Usuario\OneDrive\Documentos"
+python -m Pokemon-Game
 ```
 
-Notes:
-- The package uses relative imports expecting to be executed as a package. Running `main.py` directly may fail because of relative imports; use `python -m` or install editable (`pip install -e .`).
-- If you prefer not to install, run via `PYTHONPATH`:
+> **Nota**: el guion en el nombre de la carpeta puede causar problemas con la importación del módulo en algunos entornos. La Opción A (`pip install -e .`) es la más robusta.
 
-```powershell
-$env:PYTHONPATH = $PWD
-python -c "from main import main; main()"
+## Dependencias
+
 ```
+readchar>=2.0.0
+```
+
+Instalar con: `pip install -r requirements.txt`
+
+## Controles
+
+| Tecla | Acción |
+|-------|--------|
+| W/A/S/D | Mover |
+| E | Bolsa |
+| P | Pokédex |
+| T | Ver equipo |
+| Q | Guardar y salir |
+
+## Fases completadas
+
+1–14, A–P: combate, mapa ASCII, cuevas, Pokédex, PP, estados alterados, habilidades pasivas, respawn, rematches, cueva end-game.
+
+Ver [AGENTS.md](AGENTS.md) para el detalle completo de arquitectura, fases y roadmap.

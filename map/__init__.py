@@ -1,14 +1,60 @@
+import dataclasses
+
 from .tiles    import OBSTACLE_GRID, MAP_WIDTH, MAP_HEIGHT, PLAYER_START_X, PLAYER_START_Y
 from .player   import PlayerState
 from .renderer import render
 from .events   import check_collision
-from ..game.setup_game import get_map_objects, get_wild_marker_objects
+from ..game.setup_game import get_map_objects, get_wild_marker_objects, WILD_MARKERS, TRAINERS
 from ..game.encounters import trigger_encounter, trigger_wild_encounter, trigger_wild_marker_encounter
 from ..game.save_load import save_game
 from ..game.ui_menus import open_bag_menu, open_pokedex, show_team_summary
 
 POKEMON_CENTER_POS   = (9, 11)
 POKEMON_CENTER_2_POS = (129, 46)
+
+
+def _player_avg_level(player_trainer) -> int:
+    if not player_trainer.team:
+        return 5
+    levels = [int(getattr(p, "current_level", getattr(p, "level", 1)))
+              for p in player_trainer.team]
+    return max(1, round(sum(levels) / len(levels)))
+
+
+def _check_respawn(steps, player_trainer, cleared_main, defeated_main, objects) -> None:
+    """Individual-cooldown respawn: wild markers every 100 steps, trainers every 300."""
+    # Phase N: wild marker respawn — cooldown individual de 100 pasos
+    to_restore = [
+        (e[0], e[1]) for e in cleared_main
+        if steps - (e[2] if len(e) > 2 else 0) >= 100
+    ]
+    for pos in to_restore:
+        cleared_main[:] = [e for e in cleared_main if (e[0], e[1]) != pos]
+        for marker in WILD_MARKERS:
+            if (marker.position[0], marker.position[1]) == pos:
+                objects.append({"x": pos[0], "y": pos[1],
+                                "kind": "wild", "name": marker.name, "level": marker.level})
+                break
+
+    # Phase O: trainer rematches — cooldown individual de 300 pasos
+    to_rematch = [
+        (e[0], e[1]) for e in defeated_main
+        if steps - (e[2] if len(e) > 2 else 0) >= 300
+    ]
+    if to_rematch:
+        avg = _player_avg_level(player_trainer)
+        for pos in to_rematch:
+            defeated_main[:] = [e for e in defeated_main if (e[0], e[1]) != pos]
+            for t in TRAINERS:
+                if t.is_friendly:
+                    continue
+                if (t.position[0], t.position[1]) == pos:
+                    scaled_team = [(name, max(orig_lv + 2, avg))
+                                   for name, orig_lv in t.team]
+                    scaled_setup = dataclasses.replace(t, team=scaled_team)
+                    objects.append({"x": pos[0], "y": pos[1],
+                                    "kind": "trainer", "setup": scaled_setup})
+                    break
 
 # Cave boundary triggers — span the full corridor width
 # West: player crosses y=28 anywhere in cols 87-92 (west entrance corridor)
@@ -41,33 +87,35 @@ def _heal_at_pokemon_center(player_trainer) -> None:
 
 
 def run_map(player_trainer, *, start_pos=None, defeated_dict=None,
-            cleared_markers_dict=None, slot_name="default") -> str:
+            cleared_markers_dict=None, slot_name="default", steps: int = 0) -> str:
     import readchar
 
     if defeated_dict is None:
-        defeated_dict = {"main": [], "dungeon": []}
+        defeated_dict = {"main": [], "dungeon": [], "dungeon_pn": []}
     if cleared_markers_dict is None:
-        cleared_markers_dict = {"main": [], "dungeon": []}
+        cleared_markers_dict = {"main": [], "dungeon": [], "dungeon_pn": []}
 
     sx = start_pos[0] if start_pos else PLAYER_START_X
     sy = start_pos[1] if start_pos else PLAYER_START_Y
     player = PlayerState(start_x=sx, start_y=sy)
 
-    defeated_main = list(defeated_dict.get("main", []))
-    dungeon_side  = list(defeated_dict.get("dungeon", []))
-    cleared_main  = cleared_markers_dict.setdefault("main",    [])
-    dungeon_mkrs  = cleared_markers_dict.setdefault("dungeon", [])
+    defeated_main   = list(defeated_dict.get("main",       []))
+    dungeon_side    = list(defeated_dict.get("dungeon",    []))
+    dungeon_pn_side = list(defeated_dict.get("dungeon_pn", []))
+    cleared_main    = cleared_markers_dict.setdefault("main",       [])
+    dungeon_mkrs    = cleared_markers_dict.setdefault("dungeon",    [])
+    cleared_pn_mkrs = cleared_markers_dict.setdefault("dungeon_pn", [])
 
     defeated_set = (
-        {(x, y) for x, y in defeated_main} |
-        {(x, y) for x, y in cleared_main}
+        {(e[0], e[1]) for e in defeated_main} |
+        {(e[0], e[1]) for e in cleared_main}
     )
 
     all_objects = get_map_objects() + get_wild_marker_objects()
     objects = [o for o in all_objects if (o["x"], o["y"]) not in defeated_set]
 
     def _cur_dict():
-        return {"main": defeated_main, "dungeon": dungeon_side}
+        return {"main": defeated_main, "dungeon": dungeon_side, "dungeon_pn": dungeon_pn_side}
 
     while True:
         render(OBSTACLE_GRID, player.pos, objects)
@@ -79,7 +127,7 @@ def run_map(player_trainer, *, start_pos=None, defeated_dict=None,
         if key == "q":
             save_game(player_trainer, player.pos[0], player.pos[1], slot_name,
                       current_map="main", defeated_dict=_cur_dict(),
-                      cleared_markers_dict=cleared_markers_dict)
+                      cleared_markers_dict=cleared_markers_dict, steps=steps)
             print("\n  Progress saved. See you!")
             return "quit"
 
@@ -104,27 +152,34 @@ def run_map(player_trainer, *, start_pos=None, defeated_dict=None,
             if 87 <= new_pos[0] <= 92 and new_pos[1] == 28:
                 save_game(player_trainer, 3, 2, slot_name,
                           current_map="dungeon", defeated_dict=_cur_dict(),
-                          cleared_markers_dict=cleared_markers_dict)
+                          cleared_markers_dict=cleared_markers_dict, steps=steps)
                 return "enter_dungeon"
 
             # East cave entry: crossing west into cave (x=118, rows 46-48)
             elif new_pos[0] == 118 and 46 <= new_pos[1] <= 48:
                 save_game(player_trainer, 57, 26, slot_name,
                           current_map="dungeon", defeated_dict=_cur_dict(),
-                          cleared_markers_dict=cleared_markers_dict)
+                          cleared_markers_dict=cleared_markers_dict, steps=steps)
                 return "enter_dungeon"
+
+            # Pueblo Nuevo end-game cave entry: crossing north into cave (y=62, cols 152-155)
+            elif 152 <= new_pos[0] <= 155 and new_pos[1] == 62:
+                save_game(player_trainer, 2, 2, slot_name,
+                          current_map="dungeon_pn", defeated_dict=_cur_dict(),
+                          cleared_markers_dict=cleared_markers_dict, steps=steps)
+                return "enter_dungeon_pn"
 
             elif (new_pos[0], new_pos[1]) == POKEMON_CENTER_2_POS:
                 _heal_at_pokemon_center(player_trainer)
                 save_game(player_trainer, new_pos[0], new_pos[1], slot_name,
                           current_map="main", defeated_dict=_cur_dict(),
-                          cleared_markers_dict=cleared_markers_dict)
+                          cleared_markers_dict=cleared_markers_dict, steps=steps)
 
             elif (new_pos[0], new_pos[1]) == POKEMON_CENTER_POS:
                 _heal_at_pokemon_center(player_trainer)
                 save_game(player_trainer, new_pos[0], new_pos[1], slot_name,
                           current_map="main", defeated_dict=_cur_dict(),
-                          cleared_markers_dict=cleared_markers_dict)
+                          cleared_markers_dict=cleared_markers_dict, steps=steps)
 
             else:
                 hit = check_collision(new_pos, objects)
@@ -133,19 +188,21 @@ def run_map(player_trainer, *, start_pos=None, defeated_dict=None,
                         encountered = trigger_wild_marker_encounter(hit, player_trainer)
                         if encountered:
                             objects.remove(hit)
-                            cleared_main.append((hit["x"], hit["y"]))
+                            cleared_main.append((hit["x"], hit["y"], steps))
                     else:
                         encountered = trigger_encounter(hit, player_trainer)
                         if encountered:
                             objects.remove(hit)
-                            defeated_main.append((hit["x"], hit["y"]))
+                            defeated_main.append((hit["x"], hit["y"], steps))
                     save_game(player_trainer, new_pos[0], new_pos[1], slot_name,
                               current_map="main", defeated_dict=_cur_dict(),
-                              cleared_markers_dict=cleared_markers_dict)
+                              cleared_markers_dict=cleared_markers_dict, steps=steps)
                 else:
                     trigger_wild_encounter(new_pos[0], new_pos[1], player_trainer)
                     save_game(player_trainer, new_pos[0], new_pos[1], slot_name,
                               current_map="main", defeated_dict=_cur_dict(),
-                              cleared_markers_dict=cleared_markers_dict)
+                              cleared_markers_dict=cleared_markers_dict, steps=steps)
 
             player.apply_move(new_pos)
+            steps += 1
+            _check_respawn(steps, player_trainer, cleared_main, defeated_main, objects)

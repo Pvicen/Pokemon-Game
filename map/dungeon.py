@@ -103,33 +103,35 @@ def _render(player_pos: list, objects: list) -> None:
 # ---------------------------------------------------------------------------
 
 def run_dungeon(player_trainer, *, start_pos=None, defeated_dict=None,
-                cleared_markers_dict=None, slot_name="default") -> str:
+                cleared_markers_dict=None, slot_name="default", steps: int = 0) -> str:
     import readchar
 
     if defeated_dict is None:
-        defeated_dict = {"main": [], "dungeon": []}
+        defeated_dict = {"main": [], "dungeon": [], "dungeon_pn": []}
     if cleared_markers_dict is None:
-        cleared_markers_dict = {"main": [], "dungeon": []}
+        cleared_markers_dict = {"main": [], "dungeon": [], "dungeon_pn": []}
 
     sx = start_pos[0] if start_pos else DUNGEON_START[0]
     sy = start_pos[1] if start_pos else DUNGEON_START[1]
     player = PlayerState(start_x=sx, start_y=sy)
 
-    defeated_dungeon = list(defeated_dict.get("dungeon", []))
-    main_side        = list(defeated_dict.get("main", []))
-    cleared_dungeon  = cleared_markers_dict.setdefault("dungeon", [])
-    cleared_main_ref = cleared_markers_dict.setdefault("main",    [])
+    defeated_dungeon = list(defeated_dict.get("dungeon",    []))
+    main_side        = list(defeated_dict.get("main",       []))
+    dungeon_pn_side  = list(defeated_dict.get("dungeon_pn", []))
+    cleared_dungeon  = cleared_markers_dict.setdefault("dungeon",    [])
+    cleared_main_ref = cleared_markers_dict.setdefault("main",       [])
+    cleared_pn_ref   = cleared_markers_dict.setdefault("dungeon_pn", [])
 
     defeated_set = (
-        {(x, y) for x, y in defeated_dungeon} |
-        {(x, y) for x, y in cleared_dungeon}
+        {(e[0], e[1]) for e in defeated_dungeon} |
+        {(e[0], e[1]) for e in cleared_dungeon}
     )
 
     all_objects = get_dungeon_objects() + get_dungeon_wild_marker_objects()
     objects = [o for o in all_objects if (o["x"], o["y"]) not in defeated_set]
 
     def _cur_dict():
-        return {"main": main_side, "dungeon": defeated_dungeon}
+        return {"main": main_side, "dungeon": defeated_dungeon, "dungeon_pn": dungeon_pn_side}
 
     while True:
         _render(player.pos, objects)
@@ -141,7 +143,7 @@ def run_dungeon(player_trainer, *, start_pos=None, defeated_dict=None,
         if key == "q":
             save_game(player_trainer, player.pos[0], player.pos[1], slot_name,
                       current_map="dungeon", defeated_dict=_cur_dict(),
-                      cleared_markers_dict=cleared_markers_dict)
+                      cleared_markers_dict=cleared_markers_dict, steps=steps)
             print("\n  Progress saved. See you!")
             return "quit"
 
@@ -166,7 +168,7 @@ def run_dungeon(player_trainer, *, start_pos=None, defeated_dict=None,
             if (new_pos[0], new_pos[1]) == DUNGEON_EXIT_POS:
                 save_game(player_trainer, MAIN_MAP_RETURN_WEST[0], MAIN_MAP_RETURN_WEST[1], slot_name,
                           current_map="main", defeated_dict=_cur_dict(),
-                          cleared_markers_dict=cleared_markers_dict)
+                          cleared_markers_dict=cleared_markers_dict, steps=steps)
                 print("\n  You climb out of the cave (west)...")
                 input("  Press Enter to return to the overworld...")
                 return "exit_west"
@@ -174,7 +176,7 @@ def run_dungeon(player_trainer, *, start_pos=None, defeated_dict=None,
             elif (new_pos[0], new_pos[1]) == DUNGEON_EXIT_EAST_POS:
                 save_game(player_trainer, MAIN_MAP_RETURN_EAST[0], MAIN_MAP_RETURN_EAST[1], slot_name,
                           current_map="main", defeated_dict=_cur_dict(),
-                          cleared_markers_dict=cleared_markers_dict)
+                          cleared_markers_dict=cleared_markers_dict, steps=steps)
                 print("\n  You emerge from the east side of the cave...")
                 input("  Press Enter to continue...")
                 return "exit_east"
@@ -194,12 +196,12 @@ def run_dungeon(player_trainer, *, start_pos=None, defeated_dict=None,
                             defeated_dungeon.append((hit["x"], hit["y"]))
                     save_game(player_trainer, new_pos[0], new_pos[1], slot_name,
                               current_map="dungeon", defeated_dict=_cur_dict(),
-                              cleared_markers_dict=cleared_markers_dict)
+                              cleared_markers_dict=cleared_markers_dict, steps=steps)
                 else:
                     trigger_wild_encounter(new_pos[0], new_pos[1], player_trainer,
                                            zone_id="cueva_oscura")
                     save_game(player_trainer, new_pos[0], new_pos[1], slot_name,
                               current_map="dungeon", defeated_dict=_cur_dict(),
-                              cleared_markers_dict=cleared_markers_dict)
+                              cleared_markers_dict=cleared_markers_dict, steps=steps)
 
             player.apply_move(new_pos)

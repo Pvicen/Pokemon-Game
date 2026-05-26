@@ -39,10 +39,11 @@ def load_defeated_dict(save_data: Dict[str, Any]) -> Dict[str, List]:
     """Extracts defeated_trainers dict from save. Handles old saves (list format)."""
     dt = save_data.get("defeated_trainers", {})
     if isinstance(dt, list):
-        return {"main": [tuple(p) for p in dt], "dungeon": []}
+        return {"main": [tuple(p) for p in dt], "dungeon": [], "dungeon_pn": []}
     return {
-        "main": [tuple(p) for p in dt.get("main", [])],
-        "dungeon": [tuple(p) for p in dt.get("dungeon", [])],
+        "main":       [tuple(p) for p in dt.get("main",       [])],
+        "dungeon":    [tuple(p) for p in dt.get("dungeon",    [])],
+        "dungeon_pn": [tuple(p) for p in dt.get("dungeon_pn", [])],
     }
 
 
@@ -50,8 +51,9 @@ def load_cleared_markers(save_data: Dict[str, Any]) -> Dict[str, List]:
     """Extracts cleared_wild_markers dict. Old saves without this key return empty lists."""
     cm = save_data.get("cleared_wild_markers", {})
     return {
-        "main":    [tuple(p) for p in cm.get("main",    [])],
-        "dungeon": [tuple(p) for p in cm.get("dungeon", [])],
+        "main":       [tuple(p) for p in cm.get("main",       [])],
+        "dungeon":    [tuple(p) for p in cm.get("dungeon",    [])],
+        "dungeon_pn": [tuple(p) for p in cm.get("dungeon_pn", [])],
     }
 
 
@@ -64,6 +66,8 @@ def save_game(
     current_map: str = "main",
     defeated_dict: Dict[str, List] = None,
     cleared_markers_dict: Dict[str, List] = None,
+    steps: int = 0,
+    chapter2_unlocked: bool = False,
 ) -> None:
     SAVES_DIR.mkdir(exist_ok=True)
     team_data = []
@@ -83,23 +87,30 @@ def save_game(
         bag_data = dict(player_trainer.bag.counts)
 
     if defeated_dict is None:
-        defeated_dict = {"main": [], "dungeon": []}
+        defeated_dict = {"main": [], "dungeon": [], "dungeon_pn": []}
     if cleared_markers_dict is None:
-        cleared_markers_dict = {"main": [], "dungeon": []}
+        cleared_markers_dict = {"main": [], "dungeon": [], "dungeon_pn": []}
+
+    def _ser(entry):
+        return [entry[0], entry[1], entry[2] if len(entry) > 2 else 0]
 
     data = {
         "slot_name": slot_name,
         "current_map": current_map,
+        "steps": int(steps),
+        "chapter2_unlocked": bool(chapter2_unlocked),
         "position": {"x": x, "y": y},
         "team": team_data,
         "bag": bag_data,
         "defeated_trainers": {
-            "main":    [[p[0], p[1]] for p in defeated_dict.get("main",    [])],
-            "dungeon": [[p[0], p[1]] for p in defeated_dict.get("dungeon", [])],
+            "main":       [_ser(e) for e in defeated_dict.get("main",       [])],
+            "dungeon":    [_ser(e) for e in defeated_dict.get("dungeon",    [])],
+            "dungeon_pn": [_ser(e) for e in defeated_dict.get("dungeon_pn", [])],
         },
         "cleared_wild_markers": {
-            "main":    [[p[0], p[1]] for p in cleared_markers_dict.get("main",    [])],
-            "dungeon": [[p[0], p[1]] for p in cleared_markers_dict.get("dungeon", [])],
+            "main":       [_ser(e) for e in cleared_markers_dict.get("main",       [])],
+            "dungeon":    [_ser(e) for e in cleared_markers_dict.get("dungeon",    [])],
+            "dungeon_pn": [_ser(e) for e in cleared_markers_dict.get("dungeon_pn", [])],
         },
         "pokedex": list(getattr(player_trainer, "pokedex_seen", [])),
     }

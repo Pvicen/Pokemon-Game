@@ -571,6 +571,77 @@ def get_dungeon_wild_marker_objects() -> List[dict]:
 
 
 # =============================================================================
+# DUNGEON_PN CONTENT — Cueva End-Game en Pueblo Nuevo (local coordinates, 40×20 grid)
+# =============================================================================
+
+DUNGEON_PN_TRAINERS: List[TrainerSetup] = [
+    TrainerSetup(
+        name="Battle Girl Nadia",
+        team=[("Machoke", 20), ("Graveler", 21)],
+        position=(14, 3),
+        defeat_message="Impressive... but the worst is yet to come.",
+        dialogue=[
+            "You actually made it inside the cave.",
+            "Nobody gets past me. Nobody.",
+            "Prove me wrong.",
+        ],
+        reward_pool=[
+            {"maxpotion": 2, "xattack": 1},
+            {"maxpotion": 1, "revive": 1},
+            {"ultraball": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Veteran Kyle",
+        team=[("Haunter", 22), ("Rhydon", 23), ("Magneton", 22)],
+        position=(25, 10),
+        defeat_message="You are... different from the others.",
+        dialogue=[
+            "I have stood in this corridor for years.",
+            "Trainer after trainer falls here.",
+            "Let's see if you're the exception.",
+        ],
+        reward_pool=[
+            {"maxpotion": 2, "revive": 1},
+            {"maxpotion": 3},
+            {"ultraball": 1, "maxpotion": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Champion Nexus",
+        team=[("Gengar", 27), ("Rhydon", 26), ("Alakazam", 27), ("Arcanine", 26)],
+        position=(35, 16),
+        defeat_message="...The legend ends here. A new chapter awaits.",
+        dialogue=[
+            "...",
+            "You have crossed the deepest dark.",
+            "I have waited in this chamber for a challenger worthy of this moment.",
+            "Many came. None remained standing.",
+            "Come. Let history remember this battle.",
+        ],
+        reward_pool=[
+            {"maxrevive": 2, "ultraball": 2, "maxpotion": 3},
+        ],
+    ),
+]
+
+DUNGEON_PN_WILD_MARKERS: List[WildMarker] = [
+    WildMarker("Onix",   level=20, position=(8,  3)),
+    WildMarker("Gengar", level=22, position=(20, 11)),
+]
+
+
+def get_dungeon_pn_objects() -> List[dict]:
+    return [{"x": t.position[0], "y": t.position[1], "kind": "trainer", "setup": t}
+            for t in DUNGEON_PN_TRAINERS]
+
+
+def get_dungeon_pn_wild_marker_objects() -> List[dict]:
+    return [{"x": m.position[0], "y": m.position[1], "kind": "wild", "name": m.name, "level": m.level}
+            for m in DUNGEON_PN_WILD_MARKERS]
+
+
+# =============================================================================
 # STARTER POKEMON OPTIONS
 # =============================================================================
 

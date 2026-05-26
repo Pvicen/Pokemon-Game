@@ -2,5 +2,31 @@
 __pycache__/
 **/__pycache__/
 *.pyc
+*.pyo
 
-test.py/
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE / editor
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Save files (player data — not part of source)
+saves/
+save_game.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing / cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Scripts de prueba sueltos
+test.py
