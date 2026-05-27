@@ -11,6 +11,7 @@ from ..game.ui_menus import open_bag_menu, open_pokedex, show_team_summary
 
 POKEMON_CENTER_POS   = (9, 11)
 POKEMON_CENTER_2_POS = (129, 46)
+WORLD2_PORTAL_POS    = (140, 55)  # Fase Q1: portal a Mundo 2 (sólo activo si chapter2_unlocked=True)
 
 
 def _player_avg_level(player_trainer) -> int:
@@ -87,7 +88,8 @@ def _heal_at_pokemon_center(player_trainer) -> None:
 
 
 def run_map(player_trainer, *, start_pos=None, defeated_dict=None,
-            cleared_markers_dict=None, slot_name="default", steps: int = 0) -> str:
+            cleared_markers_dict=None, slot_name="default", steps: int = 0,
+            chapter2_unlocked: bool = False) -> str:
     import readchar
 
     if defeated_dict is None:
@@ -168,6 +170,16 @@ def run_map(player_trainer, *, start_pos=None, defeated_dict=None,
                           current_map="dungeon_pn", defeated_dict=_cur_dict(),
                           cleared_markers_dict=cleared_markers_dict, steps=steps)
                 return "enter_dungeon_pn"
+
+            # Fase Q1: portal a Mundo 2, sólo si chapter2_unlocked
+            elif (new_pos[0], new_pos[1]) == WORLD2_PORTAL_POS and chapter2_unlocked:
+                save_game(player_trainer, new_pos[0], new_pos[1], slot_name,
+                          current_map="main", defeated_dict=_cur_dict(),
+                          cleared_markers_dict=cleared_markers_dict, steps=steps,
+                          chapter2_unlocked=True)
+                print("\n  A strange portal hums beneath your feet...")
+                input("  Press Enter to step through into the new world...")
+                return "travel_to_world2"
 
             elif (new_pos[0], new_pos[1]) == POKEMON_CENTER_2_POS:
                 _heal_at_pokemon_center(player_trainer)
