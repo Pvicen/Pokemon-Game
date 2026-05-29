@@ -10,40 +10,21 @@ from .tiles import (
     WORLD2_PLAYER_START,
     WORLD2_RETURN_PORTAL,
 )
-
-_RESET   = "\033[0m"
-_BG      = "\033[40m"
-_WALL    = "\033[90m"
-_FLOOR   = "\033[47m"
-_PLAYER  = "\033[1;93m"
-_EXIT    = "\033[1;96m"
-
-_VP_W = WORLD2_MAP_WIDTH
-_VP_H = WORLD2_MAP_HEIGHT
+from .renderer import render_world2
 
 
-def _render_world2(player_pos: list) -> None:
-    px, py = player_pos
-    print("\033[2J\033[H", end="")
-    border = "═" * (_VP_W + 2)
-    print(f"  {_BG}╔{border}╗{_RESET}")
+def _safe_start(start_pos) -> tuple[int, int]:
+    """Validates start_pos against the new 120×50 map. Falls back to spawn if invalid.
 
-    for row in range(_VP_H):
-        line = f"  {_BG}║ "
-        for col in range(_VP_W):
-            if [col, row] == player_pos:
-                line += f"{_PLAYER}@{_RESET}{_BG}"
-            elif (col, row) == WORLD2_RETURN_PORTAL:
-                line += f"{_EXIT}▲{_RESET}{_BG}"
-            elif WORLD2_OBSTACLE_GRID[row][col] == "#":
-                line += f"{_WALL}#{_RESET}{_BG}"
-            else:
-                line += f"{_FLOOR} {_RESET}{_BG}"
-        line += f" ║{_RESET}"
-        print(line)
-
-    print(f"  {_BG}╚{border}╝{_RESET}")
-    print(f"  [WORLD 2 — STUB]  [{px},{py}]  WASD: move | E: bag | P: pokédex | T: team | Q: save & quit | ▲(2,2) return")
+    Why: pre-Q2 saves may carry a position (e.g. (3,3)) that lands on a wall in the
+    new map. Without this guard the player would spawn stuck inside a wall.
+    """
+    if start_pos and start_pos[0] is not None and start_pos[1] is not None:
+        sx, sy = int(start_pos[0]), int(start_pos[1])
+        if 0 <= sx < WORLD2_MAP_WIDTH and 0 <= sy < WORLD2_MAP_HEIGHT \
+                and WORLD2_OBSTACLE_GRID[sy][sx] != "#":
+            return sx, sy
+    return WORLD2_PLAYER_START
 
 
 def run_world2_map(player_trainer, *, start_pos=None, defeated_dict=None,
@@ -57,12 +38,11 @@ def run_world2_map(player_trainer, *, start_pos=None, defeated_dict=None,
     if cleared_markers_dict is None:
         cleared_markers_dict = {"world2_main": []}
 
-    sx = start_pos[0] if start_pos and start_pos[0] is not None else WORLD2_PLAYER_START[0]
-    sy = start_pos[1] if start_pos and start_pos[1] is not None else WORLD2_PLAYER_START[1]
+    sx, sy = _safe_start(start_pos)
     player = PlayerState(start_x=sx, start_y=sy)
 
     while True:
-        _render_world2(player.pos)
+        render_world2(player.pos)
 
         key = readchar.readchar()
         if isinstance(key, bytes):
