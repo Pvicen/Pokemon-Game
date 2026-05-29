@@ -1,7 +1,7 @@
 # Pokemon Game — Contexto del Proyecto
 
 ## Descripción
-Juego de Pokémon por terminal (ASCII) en Python. Combate por turnos, overworld 160×65 con 6 zonas, dungeon 60×30 con tránsito bidireccional, entrenadores NPC, Pokémon salvajes, inventario, guardado/cargado de partidas con nombre.
+Juego de Pokémon por terminal (ASCII) en Python. Combate por turnos, overworld 160×65 con 6 zonas, dungeon 60×30 con tránsito bidireccional, entrenadores NPC, Pokémon salvajes, inventario, guardado/cargado de partidas con nombre. **Capítulo 2 (Fase Q) completo**: segundo mundo (overworld 120×50, 5 zonas) con portal bidireccional World1↔World2, save multi-mundo v2 (`current_world`), y jefe final Echo Guardian.
 
 ## Cómo ejecutar
 ```
@@ -43,7 +43,7 @@ Pokemon_Game/
 │       ├── items.py         # validate_items(), normalize_items() — soporta tipo "status_cure"
 │       └── type_effectiveness.py
 ├── data/
-│   ├── pokemons.json        # Stats base de cada Pokémon (73 especies)
+│   ├── pokemons.json        # Stats base de cada Pokémon (67 especies; 32 con ataques en attacks.json)
 │   ├── attacks.json         # Ataques por propietario — campo "pp" en todos + campo "effect" en ataques de estado
 │   ├── items.json           # 26 ítems (healing, revive, buff, capture, evolution, status_cure)
 │   └── type_effectiveness.json
@@ -63,18 +63,29 @@ Pokemon_Game/
 │   │                        # defeated/cleared son tuplas [x, y, step]; backward-compat para saves viejos
 │   ├── ui_menus.py          # open_bag_menu(), open_pokedex(), show_team_summary()
 │   ├── ui_utils.py          # _hp_bar() — usado por ui_menus y show_team_summary
-│   └── world.py             # (reservado para futura arquitectura multi-mundo)
+│   ├── world.py             # (reservado)
+│   └── setup_game.py        # + Fase Q: ZONES_WORLD_2, WORLD2_FRIENDLY_NPCS, WORLD2_TRAINERS,
+│                            #   WORLD2_BOSS (Echo Guardian, is_boss), WORLD2_WILD_MARKERS,
+│                            #   get_world2_objects(), get_world2_wild_marker_objects()
+│                            #   get_zone_for_position(x,y,world_id), get_zone_by_id(id,world_id)
 ├── map/
-│   ├── __init__.py          # run_map(); _heal_at_pokemon_center() restaura HP+PP y cura todos los estados
-│   │                        # _check_respawn(): wild markers cada 100 pasos, rematches cada 300 pasos
+│   ├── __init__.py          # run_map(); _heal_at_pokemon_center() restaura HP+PP y cura estados
+│   │                        # _check_respawn(): wild markers 100 pasos, rematches 300 pasos
+│   │                        # WORLD2_PORTAL_POS=(140,55) → "travel_to_world2" si chapter2_unlocked
 │   ├── tiles.py             # OBSTACLE_GRID, _build_map() — mapa 160×65
 │   ├── dungeon.py           # DUNGEON_GRID, run_dungeon() — cueva 60×30, tránsito bidireccional
 │   ├── dungeon_pn.py        # DUNGEON_PN_GRID, run_dungeon_pn() — cueva end-game 40×20, Champion Nexus
 │   ├── player.py            # PlayerState (posición, movimiento)
-│   ├── renderer.py          # render() — colores ANSI por zona
+│   ├── renderer.py          # render() — colores ANSI por zona (NO tocar: es del Mundo 1)
 │   ├── events.py            # check_collision()
-│   └── saves.py             # (reservado / auxiliar de guardado por mapa)
-└── saves/                   # Partidas guardadas ({nombre}.json)
+│   ├── saves.py             # (reservado / auxiliar de guardado por mapa)
+│   └── world2/              # Fase Q — Mundo 2 / Capítulo 2 (motor independiente del Mundo 1)
+│       ├── __init__.py      # re-exporta run_world2_map y constantes
+│       ├── tiles.py         # WORLD2_OBSTACLE_GRID 120×50, _build_world2_map(), 5 zonas,
+│       │                    #   WORLD2_PLAYER_START=(15,8), WORLD2_RETURN_PORTAL=(14,8), WORLD2_PC_POS=(22,8)
+│       ├── renderer.py      # render_world2(pos, objects) — colores propios; ! wild, N npc, ★ jefe
+│       └── main.py          # run_world2_map(), _check_respawn_world2(), _chapter2_complete_cinematic()
+└── saves/                   # Partidas guardadas ({nombre}.json) — save v2 multi-mundo
 ```
 
 ---
@@ -115,27 +126,34 @@ Pokemon_Game/
 | **N** | **Respawn de wild markers (100 pasos, cooldown individual, `_check_respawn()` in-loop)** | ✅ |
 | **O** | **Rematches de trainers (300 pasos, equipo escalado con `dataclasses.replace()`)** | ✅ |
 | **P** | **Cueva dungeon_pn (40×20) + Champion Nexus → `chapter2_unlocked=True` + retorno (153,61)** | ✅ |
+| **Q1** | **Arquitectura multi-mundo: save v2 (`worlds.*`), `current_world`, migración v1→v2, portal World1↔World2 (140,55)** | ✅ |
+| **Q2** | **Overworld World 2 (120×50): 5 zonas + renderer independiente (`map/world2/`)** | ✅ |
+| **Q3** | **NPCs narrativos World 2 (5) + Centro Pokémon (22,8) + `world_id` en `get_zone_for_position`/`trigger_wild_encounter`** | ✅ |
+| **Q4** | **8 entrenadores + 8 wild markers + salvajes por zona + jefe Echo Guardian → `world2_completed=True` + rematches** | ✅ |
 
 ---
 
-## Roadmap pendiente
+## Roadmap
 
-| Fase | Descripción | Riesgo | Depende de |
-|------|-------------|--------|------------|
-| **Q** | Capítulo 2 / Mundo Nuevo (save multi-mundo, `current_world`) | Muy Alto | P ✓, M ✓ |
+**Capítulo 1 (Fases 1–P) y Capítulo 2 (Fase Q: Q1–Q4) COMPLETOS y verificados en ejecución.** No hay fases pendientes.
 
-El plan detallado de cada fase está en `C:\Users\moral\.claude\plans\lively-enchanting-spring.md`.
+Líneas futuras posibles (no planificadas): Capítulo 3 (`world3`, el patrón multi-mundo ya lo soporta), respawn/rematch en dungeons, IA que use ataques de estado.
 
 ---
 
 ## Arquitectura de mapas
 
-`main.py` coordina un `while True` con variable `current_map`:
-- `run_map()` → retorna `"enter_dungeon"` | `"enter_dungeon_pn"` | `"quit"`
-- `run_dungeon()` → retorna `"exit_west"` | `"exit_east"` | `"quit"`
-- `run_dungeon_pn()` → retorna `"exit_pn"` | `"quit"`
-- Al cambiar de mapa, `main.py` recarga el save para obtener posición y `defeated_dict` autoritativos.
-- `cleared_markers_dict` NO se recarga del disco en cada transición — se pasa por referencia en RAM.
+`main.py` coordina un `while True` despachando por **`(current_world, current_map)`** (Fase Q1):
+- **World 1** (`current_world="world1"`): `run_map()` / `run_dungeon()` / `run_dungeon_pn()`
+  - `run_map()` → `"enter_dungeon"` | `"enter_dungeon_pn"` | `"travel_to_world2"` | `"quit"`
+  - `run_dungeon()` → `"exit_west"` | `"exit_east"` | `"quit"`
+  - `run_dungeon_pn()` → `"exit_pn"` | `"quit"`
+- **World 2** (`current_world="world2"`): `run_world2_map()` → `"travel_to_world1"` | `"quit"`
+- `_load_runtime_state(save_data)` devuelve `(worlds_state, steps_dict, current_world, chapter2_unlocked, world2_completed)`.
+- Al cambiar de mapa/mundo, `main.py` recarga el save (`load_game`) para obtener posición y estado autoritativos por mundo.
+- `cleared_markers_dict` se pasa por referencia en RAM; `defeated_dict` se recarga del disco (deuda técnica heredada).
+- **Portal World1→World2**: pisar `(140,55)` en Pueblo Nuevo con `chapter2_unlocked=True` → `"travel_to_world2"`.
+- **Portal World2→World1**: pisar ▲ `(14,8)` en Aldea Aurora → `"travel_to_world1"`.
 
 ### Transiciones de mapa
 
@@ -148,6 +166,9 @@ El plan detallado de cada fase está en `C:\Users\moral\.claude\plans\lively-enc
 | Pisa cols 152-155, y=62 (Pueblo Nuevo→cueva PN) | Guarda spawn `(2,2)`, `current_map="dungeon_pn"`, retorna `"enter_dungeon_pn"` |
 | Pisa ▲ en dungeon_pn `(2,1)` | Guarda pos `(153,61)`, `current_map="main"`, retorna `"exit_pn"` |
 | Derrota Champion Nexus en dungeon_pn `(35,16)` | Guarda `chapter2_unlocked=True`, pos `(153,61)`, `current_map="main"`, retorna `"exit_pn"` |
+| Pisa `(140,55)` en Pueblo Nuevo (con `chapter2_unlocked`) | `current_world="world2"`, spawn `(15,8)`, retorna `"travel_to_world2"` |
+| Pisa ▲ `(14,8)` en Aldea Aurora (World 2) | `current_world="world1"`, retorna `"travel_to_world1"` |
+| Derrota Echo Guardian en World 2 `(105,15)` | Guarda `world2_completed=True`, sigue en World 2 (cinemática de cierre Cap.2) |
 
 **IMPORTANTE:** `main.py` no necesita cambios — lee el `current_map` y `position` del save después de cada transición. El spawn en el dungeon viaja en el save.
 
@@ -285,54 +306,51 @@ Edificio PC2: `wall_box(121, 37, 137, 47)`. Curan HP al máximo, reviven desmaya
 
 ---
 
-## Estructura de save (actual)
+## Estructura de save (v2 multi-mundo — Fase Q1)
+
+`SAVE_VERSION = 2`. **Globales** (compartidos entre mundos): `team`, `bag`, `pokedex`, `chapter2_unlocked`, `world2_completed`. **Per-world** (anidados en `worlds.<id>`): `current_map`, `position`, `defeated_trainers`, `cleared_wild_markers`. `steps` es independiente por mundo.
 
 ```json
 {
   "slot_name": "mi_partida",
-  "current_map": "main",
-  "steps": 450,
-  "chapter2_unlocked": false,
-  "position": {"x": 20, "y": 43},
+  "save_version": 2,
+  "current_world": "world1",
+  "chapter2_unlocked": true,
+  "world2_completed": false,
+  "steps": {"world1": 336, "world2": 37},
   "team": [
-    {
-      "name": "Charmeleon",
-      "level": 5,
-      "health": 68,
-      "exp": 0,
-      "pp": {"Ember": 20, "Flamethrower": 15, "Scratch": 35},
-      "status": null,
-      "sleep_turns": 0
-    }
+    {"name": "Charmeleon", "level": 5, "health": 68, "exp": 0,
+     "pp": {"Ember": 20, "Scratch": 35}, "status": null, "sleep_turns": 0}
   ],
   "bag": {"potion": 2, "xdefense": 1, "pokeball": 5},
-  "defeated_trainers": {
-    "main":       [[10, 44, 120], [28, 43, 350]],
-    "dungeon":    [[15, 8, 0]],
-    "dungeon_pn": []
-  },
-  "cleared_wild_markers": {
-    "main":       [[15, 32, 200]],
-    "dungeon":    [],
-    "dungeon_pn": []
-  },
   "pokedex": [
-    {"name": "Charmeleon", "caught": true,  "level_caught": 5},
-    {"name": "Squirtle",   "caught": true,  "level_caught": 5},
-    {"name": "Zubat",      "caught": false, "level_caught": null}
-  ]
+    {"name": "Charmeleon", "caught": true, "level_caught": 5}
+  ],
+  "worlds": {
+    "world1": {
+      "current_map": "main",
+      "position": {"x": 139, "y": 54},
+      "defeated_trainers":    {"main": [[10,44,120]], "dungeon": [], "dungeon_pn": []},
+      "cleared_wild_markers": {"main": [[15,32,200]], "dungeon": [], "dungeon_pn": []}
+    },
+    "world2": {
+      "current_map": "world2_main",
+      "position": {"x": 15, "y": 8},
+      "defeated_trainers":    {"world2_main": [[40,6,12]]},
+      "cleared_wild_markers": {"world2_main": [[35,22,5]]}
+    }
+  }
 }
 ```
 
-> Entradas de `defeated_trainers` y `cleared_wild_markers` son tuplas de 3 elementos `[x, y, step]` — el tercer elemento es el valor de `steps` en el momento del evento, usado para calcular cooldown de respawn/rematch.
-> `defeated_trainers` — entrenadores derrotados (respawnean a los 300 pasos con equipo escalado). `cleared_wild_markers` — markers tocados (respawnean a los 100 pasos).
-> `chapter2_unlocked: true` se activa al derrotar al Champion Nexus en dungeon_pn.
-> `load_defeated_dict()` migra saves viejos (lista plana → `{"main": [...], "dungeon": [], "dungeon_pn": []}`). `load_cleared_markers()` devuelve listas vacías para saves anteriores a Fase M.
-> Saves sin campo `"pp"` son backward-compatible: `restore_player_trainer()` inicializa PP a máximo automáticamente.
-> Saves sin campos `"status"` / `"sleep_turns"` / `"steps"` / `"chapter2_unlocked"` son backward-compatible con defaults seguros.
-> **Migración Pokédex:** saves con `"pokedex": ["Pikachu", ...]` (lista de strings) se migran automáticamente en `restore_player_trainer()` a lista de dicts con `caught: false`.
+> **WORLD_MAPS**: `world1` → `("main","dungeon","dungeon_pn")`; `world2` → `("world2_main",)`.
+> Entradas de `defeated_trainers`/`cleared_wild_markers` son tuplas `[x, y, step]` para el cooldown de respawn (markers 100 pasos) / rematch (trainers 300 pasos).
+> `chapter2_unlocked: true` al derrotar al Champion Nexus (dungeon_pn). `world2_completed: true` al derrotar al Echo Guardian (World 2).
+> **Migración v1→v2** (`_migrate_v1_to_v2()` en `save_load.py`): saves sin `save_version>=2` se migran en memoria — `current_map`/`position`/`defeated_trainers`/`cleared_wild_markers` del root pasan a `worlds.world1`; `steps` (int) → `{"world1": N, "world2": 0}`. No persiste hasta el siguiente `save_game()`.
+> **Merge no-destructivo**: `save_game()` lee el save en disco antes de escribir, para preservar intacto el mundo inactivo. `load_defeated_dict(save_data, world_id)` y `load_cleared_markers(save_data, world_id)` aceptan `world_id`.
+> Backward-compat de equipo/pokédex sin cambios (PP a máximo si falta, pokédex string→dict, etc.).
 
-**Pokémon en save:** `name, level, health, exp, pp, status, sleep_turns`. Al restaurar, `restore_player_trainer()` llama `_build_pokemon(name, level, pokemon_db, attacks_db)` que reconstruye desde `pokemons.json` normalizado, luego aplica los PP y el estado guardados encima.
+**Pokémon en save:** `name, level, health, exp, pp, status, sleep_turns`. Al restaurar, `restore_player_trainer()` llama `_build_pokemon(name, level, pokemon_db, attacks_db)` desde `pokemons.json` normalizado, luego aplica PP y estado guardados encima.
 
 ---
 
@@ -556,10 +574,51 @@ Archivo: `map/dungeon_pn.py`. Cueva end-game de 40×20 accesible desde Pueblo Nu
 
 ---
 
+## Mundo 2 / Capítulo 2 (Fase Q — implementado)
+
+Overworld independiente de 120×50 accesible por portal desde Pueblo Nuevo `(140,55)` (requiere `chapter2_unlocked`). Motor gráfico propio en `map/world2/renderer.py` — **prohibido tocar `map/renderer.py` del Mundo 1**.
+
+### Constantes clave (`map/world2/tiles.py`)
+```python
+WORLD2_MAP_WIDTH  = 120
+WORLD2_MAP_HEIGHT = 50
+WORLD2_PLAYER_START  = (15, 8)   # spawn al entrar (Aldea Aurora)
+WORLD2_RETURN_PORTAL = (14, 8)   # ▲ retorno a World 1
+WORLD2_PC_POS        = (22, 8)   # Centro Pokémon (cura HP+PP+estados)
+```
+
+### Zonas (`ZONES_WORLD_2` en setup_game.py + coords de color en tiles.py)
+| Zona | Cols | Rows | Color ANSI | Salvajes |
+|------|------|------|-----------|----------|
+| aldea_aurora | 1-30 | 1-15 | cyan `106` | 0.0 (safe zone, PC) |
+| bosque_milenario | 31-70 | 1-25 | verde `42` | 0.04 |
+| meseta_ventosa | 1-50 | 26-49 | amarillo `43` | 0.04 |
+| lago_cristal | 51-90 | 26-49 | azul `44` | 0.04 |
+| templo_eco | 91-119 | 1-49 | gris `100` | 0.04 |
+
+`get_zone_for_position(x, y, world_id="world2")` mapea coords→zona; corredores/voids → `None` (sin encuentros). `get_zone_by_id(id, world_id)` busca en `ZONES_WORLD_2`. Salvajes nivel 25-32, solo especies con ataques.
+
+### Entidades (símbolos render: `N` npc/entrenador, `!` salvaje, `★` jefe, `+` PC, `▲` portal)
+- **5 NPCs friendly** (`WORLD2_FRIENDLY_NPCS`, one-shot): Sage Lyra (15,5), Lost Researcher (50,12), Builder Aren (25,38), Fisher Old Tom (70,38), Pilgrim Eli (105,25)
+- **8 entrenadores** (`WORLD2_TRAINERS`, Lv29-34, rematcheables): Forager Wren, Bug Catcher Theo, Plateau Nomad Kael, Wind Rider Sora, Angler Miren, Tide Sage Doran, Echo Acolyte Vesna, Temple Guard Bron
+- **8 wild markers** (`WORLD2_WILD_MARKERS`, Lv31-34): Arbok, Rhydon, Primeape, Greninja, Wartortle, Haunter, Magneton, Charizard
+- **Jefe `WORLD2_BOSS`** (`is_boss=True`): **Echo Guardian** `(105,15)` — Magneton 36, Arbok 37, Rhydon 38, Charizard 39, Mewtwo 40
+
+### Flujo post-victoria Echo Guardian
+Al derrotarlo: `world2_completed=True` + `_chapter2_complete_cinematic()`. El jugador **permanece en World 2** (puede seguir explorando/grindeando). El jefe desaparece y no reaparece.
+
+### Rematches (`_check_respawn_world2` en `map/world2/main.py`)
+Réplica del patrón del World 1 (markers 100 pasos, trainers 300 pasos, equipo escalado con `dataclasses.replace()`). **Diferencia:** el rematch se filtra a posiciones de `WORLD2_TRAINERS` — así el jefe (`is_boss`) y los NPCs (`is_friendly`) nunca reaparecen (sin el filtro, el Echo Guardian volvería tras 300 pasos al recargar).
+
+### CRÍTICO — especies en World 2
+Solo se usan las **32 especies con ataques** en `attacks.json`. Las 35 especies `NOATK` pelearían solo con Struggle (sin ataques propios → `_build_pokemon` les deja `normal_attacks=[]`). Nunca añadir a equipos/markers/zonas una especie que no exista en `pokemons.json` (crash del normalizador) ni una `NOATK` (combate degradado).
+
+---
+
 ## Bugs conocidos / Deuda técnica
 
 - **Deuda técnica:** `defeated_dict` en `main.py` se recarga desde disco en cada transición de mapa (I/O redundante). `cleared_markers_dict` usa el patrón correcto (mutación en RAM por referencia). Pendiente refactorizar `defeated_dict` para igualar.
-- **Respawn/rematch en dungeon y dungeon_pn:** `_check_respawn()` solo opera sobre `main`. Dungeon y dungeon_pn no tienen respawn/rematch (no crítico por ahora).
+- **Respawn/rematch en dungeon y dungeon_pn:** `_check_respawn()` solo opera sobre `main` (World 1). World 2 tiene su propio `_check_respawn_world2()`. Las dungeons (`dungeon`, `dungeon_pn`) no tienen respawn/rematch (no crítico).
 - La IA nunca elige ataques de estado (0 daño); simplificación aceptada en Fase J.
 - El PC cura TODO el equipo (comportamiento estándar).
 - `experience.py._apply_species()` no actualiza `evolution_by_item` tras evolución por nivel (no es problema porque los Pokémon con stone evolutions no tienen level evolutions).

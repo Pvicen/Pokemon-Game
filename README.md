@@ -4,9 +4,9 @@ Juego de Pokémon por terminal (ASCII) en Python. Combate por turnos, overworld 
 
 ## Estado actual
 
-**Fase P completada** — Capítulo 1 completo. Incluye cueva end-game en Pueblo Nuevo con Champion Nexus, cinemática post-victoria y `chapter2_unlocked` en el save.
+**Capítulo 2 completo (Fase Q).** El juego tiene dos mundos: el overworld original (160×65) y el Mundo 2 (120×50), accesible por un portal en Pueblo Nuevo tras derrotar al Champion Nexus. Incluye save multi-mundo v2, 5 zonas nuevas, NPCs narrativos, 8 entrenadores, encuentros salvajes, rematches y el jefe final **Echo Guardian**.
 
-Siguiente paso: **Fase Q — Capítulo 2 / Mundo Nuevo** (pendiente).
+No hay fases pendientes planificadas. Ver [AGENTS.md](AGENTS.md) y [CLAUDE.md](CLAUDE.md) para detalle y posibles líneas futuras.
 
 ## Cómo ejecutar
 
@@ -51,6 +51,6 @@ Instalar con: `pip install -r requirements.txt`
 
 ## Fases completadas
 
-1–14, A–P: combate, mapa ASCII, cuevas, Pokédex, PP, estados alterados, habilidades pasivas, respawn, rematches, cueva end-game.
+1–14, A–P (Capítulo 1) y Q1–Q4 (Capítulo 2): combate, mapa ASCII, cuevas, Pokédex, PP, estados alterados, habilidades pasivas, respawn, rematches, cueva end-game, arquitectura multi-mundo y Mundo 2 con jefe final.
 
-Ver [AGENTS.md](AGENTS.md) para el detalle completo de arquitectura, fases y roadmap.
+Ver [AGENTS.md](AGENTS.md) y [CLAUDE.md](CLAUDE.md) para el detalle completo de arquitectura, fases y save format.

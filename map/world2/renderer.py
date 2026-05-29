@@ -34,7 +34,9 @@ _FG_WALL   = "\033[30m"      # negro — buena legibilidad sobre los 5 fondos
 _FG_PLAYER = "\033[1;97m"    # blanco brillante
 _FG_PORTAL = "\033[1;91m"    # rojo brillante
 _FG_PC     = "\033[1;92m"    # verde brillante — Centro Pokémon (contrasta con fondo cyan)
-_FG_NPC    = "\033[1;93m"    # amarillo brillante — NPC amistoso
+_FG_NPC    = "\033[1;93m"    # amarillo brillante — NPC amistoso / entrenador
+_FG_WILD   = "\033[1;95m"    # magenta brillante — wild marker
+_FG_BOSS   = "\033[1;96m"    # cyan brillante — jefe final (Echo Guardian)
 
 # Viewport
 _VP_W = 40
@@ -66,7 +68,13 @@ def render_world2(player_pos: list, objects: list | None = None) -> None:
             elif (col, row) == WORLD2_PC_POS:
                 line += f"{bg}{_FG_PC}+{_RESET}"
             elif (col, row) in obj_map:
-                line += f"{bg}{_FG_NPC}N{_RESET}"
+                o = obj_map[(col, row)]
+                if o.get("kind") == "wild":
+                    line += f"{bg}{_FG_WILD}!{_RESET}"
+                elif o.get("setup") is not None and getattr(o["setup"], "is_boss", False):
+                    line += f"{bg}{_FG_BOSS}★{_RESET}"
+                else:
+                    line += f"{bg}{_FG_NPC}N{_RESET}"
             elif WORLD2_OBSTACLE_GRID[row][col] == "#":
                 line += f"{bg}{_FG_WALL}#{_RESET}"
             else:
@@ -79,4 +87,4 @@ def render_world2(player_pos: list, objects: list | None = None) -> None:
     current_zone = get_zone_for_world2(px, py)
     zone_label = ZONE_NAMES.get(current_zone, "Sendero") if current_zone else "Sendero"
     print(f"  [WORLD 2 — {zone_label}]  [{px},{py}]  "
-          f"WASD | E: bag | P: pokédex | T: team | Q: save | + centro | N npc | ▲ portal")
+          f"WASD | E | P | T | Q | + centro | N npc/entren. | ! salvaje | ★ jefe | ▲ portal")

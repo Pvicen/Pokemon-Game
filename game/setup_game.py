@@ -48,6 +48,7 @@ class TrainerSetup:
     dialogue: List[str] = field(default_factory=list)
     reward_pool: list = field(default_factory=list)  # List[Dict] o List[Tuple[Dict, int]] (ponderado)
     is_friendly: bool = False
+    is_boss: bool = False
 
 
 # =============================================================================
@@ -663,36 +664,61 @@ ZONES_WORLD_2: Dict[str, Zone] = {
         name="Bosque Milenario",
         description="An ancient forest older than recorded history.",
         min_player_level=26,
-        wild_pokemons=[],
-        wild_encounter_chance=0.0,
-        trainer_count=0,
+        wild_pokemons=[
+            WildPokemonEntry(name="Oddish",     min_level=25, max_level=30, spawn_chance=2.0),
+            WildPokemonEntry(name="Bellsprout", min_level=25, max_level=30, spawn_chance=2.0),
+            WildPokemonEntry(name="Venonat",    min_level=26, max_level=31, spawn_chance=2.0),
+            WildPokemonEntry(name="Zubat",      min_level=25, max_level=29, spawn_chance=1.5),
+            WildPokemonEntry(name="Ekans",      min_level=26, max_level=30, spawn_chance=1.5),
+            WildPokemonEntry(name="Ivysaur",    min_level=28, max_level=32, spawn_chance=1.0),
+        ],
+        wild_encounter_chance=0.04,
+        trainer_count=2,
     ),
     "meseta_ventosa": Zone(
         id="meseta_ventosa",
         name="Meseta Ventosa",
         description="A windswept plateau where a new town is rising.",
         min_player_level=27,
-        wild_pokemons=[],
-        wild_encounter_chance=0.0,
-        trainer_count=0,
+        wild_pokemons=[
+            WildPokemonEntry(name="Rhyhorn",  min_level=26, max_level=31, spawn_chance=2.0),
+            WildPokemonEntry(name="Geodude",  min_level=25, max_level=30, spawn_chance=2.0),
+            WildPokemonEntry(name="Mankey",   min_level=26, max_level=31, spawn_chance=2.0),
+            WildPokemonEntry(name="Meowth",   min_level=25, max_level=29, spawn_chance=1.5),
+            WildPokemonEntry(name="Graveler", min_level=29, max_level=32, spawn_chance=1.0),
+        ],
+        wild_encounter_chance=0.04,
+        trainer_count=2,
     ),
     "lago_cristal": Zone(
         id="lago_cristal",
         name="Lago Cristal",
         description="A vast crystal lake whose fish glow at dusk.",
         min_player_level=27,
-        wild_pokemons=[],
-        wild_encounter_chance=0.0,
-        trainer_count=0,
+        wild_pokemons=[
+            WildPokemonEntry(name="Horsea",    min_level=25, max_level=30, spawn_chance=2.0),
+            WildPokemonEntry(name="Poliwag",   min_level=25, max_level=30, spawn_chance=2.0),
+            WildPokemonEntry(name="Psyduck",   min_level=26, max_level=31, spawn_chance=2.0),
+            WildPokemonEntry(name="Squirtle",  min_level=26, max_level=30, spawn_chance=1.5),
+            WildPokemonEntry(name="Wartortle", min_level=29, max_level=32, spawn_chance=1.0),
+        ],
+        wild_encounter_chance=0.04,
+        trainer_count=2,
     ),
     "templo_eco": Zone(
         id="templo_eco",
         name="Templo Eco",
         description="Ancient ruins that echo with every trainer who came before.",
         min_player_level=28,
-        wild_pokemons=[],
-        wild_encounter_chance=0.0,
-        trainer_count=0,
+        wild_pokemons=[
+            WildPokemonEntry(name="Abra",       min_level=26, max_level=31, spawn_chance=2.0),
+            WildPokemonEntry(name="Haunter",    min_level=28, max_level=32, spawn_chance=1.5),
+            WildPokemonEntry(name="Koffing",    min_level=27, max_level=31, spawn_chance=2.0),
+            WildPokemonEntry(name="Charmeleon", min_level=28, max_level=32, spawn_chance=1.0),
+            WildPokemonEntry(name="Zubat",      min_level=25, max_level=29, spawn_chance=1.5),
+        ],
+        wild_encounter_chance=0.04,
+        trainer_count=2,
     ),
 }
 
@@ -795,9 +821,172 @@ WORLD2_FRIENDLY_NPCS: List[TrainerSetup] = [
 ]
 
 
+# --- Q4: entrenadores regulares (rematcheables), jefe final y wild markers ---
+
+WORLD2_TRAINERS: List[TrainerSetup] = [
+    TrainerSetup(
+        name="Forager Wren",
+        team=[("Ivysaur", 30), ("Oddish", 29), ("Bellsprout", 29)],
+        position=(40, 6),
+        defeat_message="The forest tests everyone. You passed.",
+        dialogue=[
+            "These woods have fed my family for generations.",
+            "Show me you respect their strength!",
+        ],
+        reward_pool=[
+            {"maxpotion": 1, "greatball": 2},
+            {"superpotion": 2, "xattack": 1},
+            {"ultraball": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Bug Catcher Theo",
+        team=[("Venonat", 29), ("Zubat", 30), ("Ekans", 29)],
+        position=(60, 20),
+        defeat_message="My bugs weren't fast enough...",
+        dialogue=[
+            "You won't believe the creatures that crawl this deep!",
+            "Mine will poison you before you blink!",
+        ],
+        reward_pool=[
+            {"greatball": 2},
+            {"superpotion": 2, "antidote": 2},
+            {"ultraball": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Plateau Nomad Kael",
+        team=[("Rhyhorn", 30), ("Geodude", 30), ("Mankey", 31)],
+        position=(15, 32),
+        defeat_message="The wind carries my defeat...",
+        dialogue=[
+            "I roam this plateau with nothing but my Pokemon.",
+            "Out here, only the strong keep walking.",
+        ],
+        reward_pool=[
+            {"maxpotion": 1, "xdefense": 1},
+            {"revive": 1},
+            {"ultraball": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Wind Rider Sora",
+        team=[("Graveler", 31), ("Primeape", 32)],
+        position=(40, 45),
+        defeat_message="You ride the wind better than I do.",
+        dialogue=[
+            "I've raced every gust across this meseta.",
+            "Catch me if you can!",
+        ],
+        reward_pool=[
+            {"maxpotion": 2},
+            {"xattack": 1, "xspecialattack": 1},
+            {"ultraball": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Angler Miren",
+        team=[("Poliwag", 29), ("Horsea", 30), ("Psyduck", 30)],
+        position=(60, 30),
+        defeat_message="The lake's blessing is yours today.",
+        dialogue=[
+            "The crystal lake hides more than fish.",
+            "Let's see if you can reel in a victory!",
+        ],
+        reward_pool=[
+            {"maxpotion": 1, "greatball": 2},
+            {"superpotion": 2},
+            {"ultraball": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Tide Sage Doran",
+        team=[("Wartortle", 32), ("Greninja", 33)],
+        position=(82, 45),
+        defeat_message="The tide turns in your favor.",
+        dialogue=[
+            "I have studied these waters for decades.",
+            "My Greninja moves like the current itself!",
+        ],
+        reward_pool=[
+            {"maxpotion": 2, "revive": 1},
+            {"ultraball": 1},
+            {"maxrevive": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Echo Acolyte Vesna",
+        team=[("Haunter", 32), ("Koffing", 31), ("Abra", 32)],
+        position=(100, 40),
+        defeat_message="The temple's echoes accept you...",
+        dialogue=[
+            "You stand at the threshold of the Echo Temple.",
+            "Only those who silence their fear may pass.",
+        ],
+        reward_pool=[
+            {"maxpotion": 1, "xspecialattack": 1},
+            {"revive": 1},
+            {"ultraball": 1},
+        ],
+    ),
+    TrainerSetup(
+        name="Temple Guard Bron",
+        team=[("Weezing", 33), ("Arbok", 33), ("Magneton", 34)],
+        position=(112, 10),
+        defeat_message="...Go. The Guardian awaits you.",
+        dialogue=[
+            "I am the last gate before the Guardian.",
+            "Many have come this far. None went further.",
+            "Prove you are the exception.",
+        ],
+        reward_pool=[
+            {"maxpotion": 2, "revive": 1},
+            {"ultraball": 1, "maxpotion": 1},
+            {"maxrevive": 1},
+        ],
+    ),
+]
+
+WORLD2_BOSS: TrainerSetup = TrainerSetup(
+    name="Echo Guardian",
+    team=[("Magneton", 36), ("Arbok", 37), ("Rhydon", 38), ("Charizard", 39), ("Mewtwo", 40)],
+    position=(105, 15),
+    defeat_message="...So the Echo has found its heir. The chapter closes.",
+    dialogue=[
+        "...",
+        "You have walked through forest, plateau, lake and ruin to reach me.",
+        "I am the Echo Guardian — the memory of every champion this world has known.",
+        "Defeat me, and the echo of your name will join them for all time.",
+        "Come. Let this be the battle that ends the chapter.",
+    ],
+    reward_pool=[
+        {"maxrevive": 2, "ultraball": 3, "maxpotion": 3, "moonstone": 1},
+    ],
+    is_boss=True,
+)
+
+WORLD2_WILD_MARKERS: List[WildMarker] = [
+    WildMarker("Arbok",     level=31, position=(35, 22)),
+    WildMarker("Rhydon",    level=33, position=(10, 45)),
+    WildMarker("Primeape",  level=32, position=(45, 30)),
+    WildMarker("Greninja",  level=33, position=(55, 45)),
+    WildMarker("Wartortle", level=31, position=(85, 30)),
+    WildMarker("Haunter",   level=32, position=(95, 8)),
+    WildMarker("Magneton",  level=33, position=(115, 30)),
+    WildMarker("Charizard", level=34, position=(110, 45)),
+]
+
+
 def get_world2_objects() -> List[dict]:
+    trainers = WORLD2_FRIENDLY_NPCS + WORLD2_TRAINERS + [WORLD2_BOSS]
     return [{"x": t.position[0], "y": t.position[1], "kind": "trainer", "setup": t}
-            for t in WORLD2_FRIENDLY_NPCS]
+            for t in trainers]
+
+
+def get_world2_wild_marker_objects() -> List[dict]:
+    return [{"x": m.position[0], "y": m.position[1], "kind": "wild",
+             "name": m.name, "level": m.level}
+            for m in WORLD2_WILD_MARKERS]
 
 
 # =============================================================================
