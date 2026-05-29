@@ -5,6 +5,7 @@ from .tiles import (
     WORLD2_MAP_WIDTH,
     WORLD2_MAP_HEIGHT,
     WORLD2_RETURN_PORTAL,
+    WORLD2_PC_POS,
     ZONE_NAMES,
     get_zone_for_world2,
 )
@@ -32,14 +33,17 @@ _BG_BY_ZONE = {
 _FG_WALL   = "\033[30m"      # negro — buena legibilidad sobre los 5 fondos
 _FG_PLAYER = "\033[1;97m"    # blanco brillante
 _FG_PORTAL = "\033[1;91m"    # rojo brillante
+_FG_PC     = "\033[1;92m"    # verde brillante — Centro Pokémon (contrasta con fondo cyan)
+_FG_NPC    = "\033[1;93m"    # amarillo brillante — NPC amistoso
 
 # Viewport
 _VP_W = 40
 _VP_H = 20
 
 
-def render_world2(player_pos: list) -> None:
+def render_world2(player_pos: list, objects: list | None = None) -> None:
     px, py = player_pos
+    obj_map = {(o["x"], o["y"]): o for o in (objects or [])}
     x0 = max(0, min(px - _VP_W // 2, WORLD2_MAP_WIDTH  - _VP_W))
     y0 = max(0, min(py - _VP_H // 2, WORLD2_MAP_HEIGHT - _VP_H))
 
@@ -59,6 +63,10 @@ def render_world2(player_pos: list) -> None:
                 line += f"{bg}{_FG_PLAYER}@{_RESET}"
             elif (col, row) == WORLD2_RETURN_PORTAL:
                 line += f"{bg}{_FG_PORTAL}▲{_RESET}"
+            elif (col, row) == WORLD2_PC_POS:
+                line += f"{bg}{_FG_PC}+{_RESET}"
+            elif (col, row) in obj_map:
+                line += f"{bg}{_FG_NPC}N{_RESET}"
             elif WORLD2_OBSTACLE_GRID[row][col] == "#":
                 line += f"{bg}{_FG_WALL}#{_RESET}"
             else:
@@ -71,4 +79,4 @@ def render_world2(player_pos: list) -> None:
     current_zone = get_zone_for_world2(px, py)
     zone_label = ZONE_NAMES.get(current_zone, "Sendero") if current_zone else "Sendero"
     print(f"  [WORLD 2 — {zone_label}]  [{px},{py}]  "
-          f"WASD: move | E: bag | P: pokédex | T: team | Q: save & quit | ▲ portal a World 1")
+          f"WASD | E: bag | P: pokédex | T: team | Q: save | + centro | N npc | ▲ portal")

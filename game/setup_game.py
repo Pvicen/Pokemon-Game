@@ -642,6 +642,165 @@ def get_dungeon_pn_wild_marker_objects() -> List[dict]:
 
 
 # =============================================================================
+# WORLD 2 CONTENT — Capítulo 2 / Mundo Nuevo (overworld 120×50)
+# =============================================================================
+# Zonas de juego (dificultad / encuentros salvajes). Las coordenadas de COLOR
+# viven aparte en map/world2/tiles.py (capa de render). wild_pokemons queda
+# vacío hasta Fase Q4 — por ahora estas zonas no generan encuentros.
+
+ZONES_WORLD_2: Dict[str, Zone] = {
+    "aldea_aurora": Zone(
+        id="aldea_aurora",
+        name="Aldea Aurora",
+        description="Gateway village of the new world. Has a Pokemon Center.",
+        min_player_level=25,
+        wild_pokemons=[],
+        wild_encounter_chance=0.0,
+        trainer_count=0,
+    ),
+    "bosque_milenario": Zone(
+        id="bosque_milenario",
+        name="Bosque Milenario",
+        description="An ancient forest older than recorded history.",
+        min_player_level=26,
+        wild_pokemons=[],
+        wild_encounter_chance=0.0,
+        trainer_count=0,
+    ),
+    "meseta_ventosa": Zone(
+        id="meseta_ventosa",
+        name="Meseta Ventosa",
+        description="A windswept plateau where a new town is rising.",
+        min_player_level=27,
+        wild_pokemons=[],
+        wild_encounter_chance=0.0,
+        trainer_count=0,
+    ),
+    "lago_cristal": Zone(
+        id="lago_cristal",
+        name="Lago Cristal",
+        description="A vast crystal lake whose fish glow at dusk.",
+        min_player_level=27,
+        wild_pokemons=[],
+        wild_encounter_chance=0.0,
+        trainer_count=0,
+    ),
+    "templo_eco": Zone(
+        id="templo_eco",
+        name="Templo Eco",
+        description="Ancient ruins that echo with every trainer who came before.",
+        min_player_level=28,
+        wild_pokemons=[],
+        wild_encounter_chance=0.0,
+        trainer_count=0,
+    ),
+}
+
+ZONE_ORDER_WORLD_2: List[str] = [
+    "aldea_aurora", "bosque_milenario", "meseta_ventosa", "lago_cristal", "templo_eco",
+]
+
+WORLD2_FRIENDLY_NPCS: List[TrainerSetup] = [
+    TrainerSetup(
+        name="Sage Lyra",
+        team=[],
+        position=(15, 5),
+        defeat_message="",
+        dialogue=[
+            "So... the portal has finally chosen a traveler worthy of crossing. Welcome to Aurora.",
+            "This world drifted apart from yours long ago, when the Champion of the old cave sealed the way.",
+            "You broke that seal. Whether that was wisdom or folly, only time will tell.",
+            "Take this. You'll need your strength whole if you mean to reach the Echo Temple.",
+        ],
+        reward_pool=[
+            ({"maxpotion": 2},                 40),
+            ({"fullheal": 1, "maxpotion": 1},  30),
+            ({"revive": 1},                    20),
+            ({"maxrevive": 1},                 10),
+        ],
+        is_friendly=True,
+    ),
+    TrainerSetup(
+        name="Lost Researcher",
+        team=[],
+        position=(50, 12),
+        defeat_message="",
+        dialogue=[
+            "Don't move — you'll trample the spore samples! ...Oh. You're not from here either, are you?",
+            "I've been charting this forest for months. These trees are older than recorded history.",
+            "If you're heading deeper, take my spare gear. I clearly won't be leaving any time soon.",
+        ],
+        reward_pool=[
+            ({"ultraball": 2},                    40),
+            ({"greatball": 3},                    30),
+            ({"superpotion": 2, "ultraball": 1},  20),
+            ({"thunderstone": 1},                 10),
+        ],
+        is_friendly=True,
+    ),
+    TrainerSetup(
+        name="Builder Aren",
+        team=[],
+        position=(25, 38),
+        defeat_message="",
+        dialogue=[
+            "Careful with the wind up here — it'll knock you flat if you're not braced.",
+            "I'm raising a waystation for travelers. Someday this plateau will have a real town.",
+            "You've come a long way, I can tell. Here, supplies for the road ahead.",
+        ],
+        reward_pool=[
+            ({"maxpotion": 2, "xattack": 1},         35),
+            ({"xdefense": 1, "xspecialdefense": 1},  25),
+            ({"toughhelmet": 1},                     20),
+            ({"maxpotion": 3},                       20),
+        ],
+        is_friendly=True,
+    ),
+    TrainerSetup(
+        name="Fisher Old Tom",
+        team=[],
+        position=(70, 38),
+        defeat_message="",
+        dialogue=[
+            "Shhh. The water-types here spook easy. Been fishing this crystal lake forty years.",
+            "Strangest thing — the fish glow faintly at dusk. Never saw the like in your world, I'd wager.",
+            "Here, take some of my catch-gear. A lake this big has room for one more angler.",
+        ],
+        reward_pool=[
+            ({"ultraball": 2},               35),
+            ({"maxpotion": 2, "revive": 1},  25),
+            ({"waterstone": 1},              20),
+            ({"maxrevive": 1},               20),
+        ],
+        is_friendly=True,
+    ),
+    TrainerSetup(
+        name="Pilgrim Eli",
+        team=[],
+        position=(105, 25),
+        defeat_message="",
+        dialogue=[
+            "You feel it too, don't you? The temple... it remembers. Echoes of every trainer who came before.",
+            "I walked a thousand miles to stand here. Yet I dare not step inside. Not yet.",
+            "But you — you have the look of someone the Echo has been waiting for. Take this blessing.",
+        ],
+        reward_pool=[
+            ({"maxrevive": 1, "fullheal": 1},   35),
+            ({"ultraball": 3},                  25),
+            ({"moonstone": 1},                  20),
+            ({"maxpotion": 3, "maxrevive": 1},  20),
+        ],
+        is_friendly=True,
+    ),
+]
+
+
+def get_world2_objects() -> List[dict]:
+    return [{"x": t.position[0], "y": t.position[1], "kind": "trainer", "setup": t}
+            for t in WORLD2_FRIENDLY_NPCS]
+
+
+# =============================================================================
 # STARTER POKEMON OPTIONS
 # =============================================================================
 
@@ -753,11 +912,23 @@ def get_wild_marker_objects() -> List[dict]:
 # ZONE UTILITIES
 # =============================================================================
 
-def get_zone_by_id(zone_id: str) -> Optional[Zone]:
+def get_zone_by_id(zone_id: str, world_id: str = "world1") -> Optional[Zone]:
+    if world_id == "world2":
+        return ZONES_WORLD_2.get(zone_id)
     return ZONES.get(zone_id)
 
 
-def get_zone_for_position(x: int, y: int) -> Optional[str]:
+def get_zone_for_position(x: int, y: int, world_id: str = "world1") -> Optional[str]:
+    if world_id == "world2":
+        # Zonas del overworld de World 2 (120×50). Rangos = bounding boxes de
+        # map/world2/tiles.py. Corredores / voids → None (sin encuentros).
+        if x <= 30 and y <= 15:   return "aldea_aurora"
+        if x <= 70 and y <= 25:   return "bosque_milenario"
+        if x >= 91:               return "templo_eco"
+        if x <= 50 and y >= 26:   return "meseta_ventosa"
+        if y >= 26:               return "lago_cristal"
+        return None
+    # World 1 (lógica original — sin cambios)
     if x >= 119 and y >= 35:   return "pueblo_nuevo"
     if x >= 119:               return "ruta_del_mar"
     if x >= 87 and y >= 24:    return "cueva_oscura"

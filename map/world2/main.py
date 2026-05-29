@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 from ...game.save_load import save_game
+from ...game.setup_game import get_world2_objects
+from ...game.encounters import trigger_encounter, trigger_wild_encounter
 from ...game.ui_menus import open_bag_menu, open_pokedex, show_team_summary
+from .. import _heal_at_pokemon_center
 from ..player import PlayerState
+from ..events import check_collision
 from .tiles import (
     WORLD2_OBSTACLE_GRID,
     WORLD2_MAP_WIDTH,
     WORLD2_MAP_HEIGHT,
     WORLD2_PLAYER_START,
     WORLD2_RETURN_PORTAL,
+    WORLD2_PC_POS,
 )
 from .renderer import render_world2
 
@@ -41,20 +46,31 @@ def run_world2_map(player_trainer, *, start_pos=None, defeated_dict=None,
     sx, sy = _safe_start(start_pos)
     player = PlayerState(start_x=sx, start_y=sy)
 
+    # NPCs ya visitados desaparecen (one-shot, igual que los friendly del World 1)
+    defeated_world2 = list(defeated_dict.get("world2_main", []))
+    defeated_set = {(e[0], e[1]) for e in defeated_world2}
+    objects = [o for o in get_world2_objects() if (o["x"], o["y"]) not in defeated_set]
+
+    def _cur_dict():
+        return {"world2_main": defeated_world2}
+
+    def _save(px: int, py: int) -> None:
+        save_game(player_trainer, px, py, slot_name,
+                  current_map="world2_main", defeated_dict=_cur_dict(),
+                  cleared_markers_dict=cleared_markers_dict, steps=steps,
+                  chapter2_unlocked=chapter2_unlocked,
+                  world2_completed=world2_completed,
+                  current_world="world2")
+
     while True:
-        render_world2(player.pos)
+        render_world2(player.pos, objects)
 
         key = readchar.readchar()
         if isinstance(key, bytes):
             key = key.decode("utf-8", errors="ignore")
 
         if key == "q":
-            save_game(player_trainer, player.pos[0], player.pos[1], slot_name,
-                      current_map="world2_main", defeated_dict=defeated_dict,
-                      cleared_markers_dict=cleared_markers_dict, steps=steps,
-                      chapter2_unlocked=chapter2_unlocked,
-                      world2_completed=world2_completed,
-                      current_world="world2")
+            _save(player.pos[0], player.pos[1])
             print("\n  Progress saved. See you!")
             return "quit"
 
@@ -74,21 +90,29 @@ def run_world2_map(player_trainer, *, start_pos=None, defeated_dict=None,
 
         if WORLD2_OBSTACLE_GRID[new_pos[1]][new_pos[0]] != "#":
             if (new_pos[0], new_pos[1]) == WORLD2_RETURN_PORTAL:
-                save_game(player_trainer, new_pos[0], new_pos[1], slot_name,
-                          current_map="world2_main", defeated_dict=defeated_dict,
-                          cleared_markers_dict=cleared_markers_dict, steps=steps,
-                          chapter2_unlocked=chapter2_unlocked,
-                          world2_completed=world2_completed,
-                          current_world="world2")
+                _save(new_pos[0], new_pos[1])
                 print("\n  The portal hums and the air shimmers...")
                 input("  Press Enter to return to your home world...")
                 return "travel_to_world1"
 
+            elif (new_pos[0], new_pos[1]) == WORLD2_PC_POS:
+                _heal_at_pokemon_center(player_trainer)
+                _save(new_pos[0], new_pos[1])
+
+            else:
+                hit = check_collision(new_pos, objects)
+                if hit:
+                    # Q3: todos los NPCs de World 2 son amistosos (diálogo + regalo, one-shot)
+                    encountered = trigger_encounter(hit, player_trainer)
+                    if encountered:
+                        objects.remove(hit)
+                        defeated_world2.append((hit["x"], hit["y"], steps))
+                    _save(new_pos[0], new_pos[1])
+                else:
+                    # Q3 scaffolding: las zonas aún no tienen wild_pokemons → inerte hasta Q4
+                    trigger_wild_encounter(new_pos[0], new_pos[1], player_trainer,
+                                           world_id="world2")
+                    _save(new_pos[0], new_pos[1])
+
             player.apply_move(new_pos)
             steps += 1
-            save_game(player_trainer, player.pos[0], player.pos[1], slot_name,
-                      current_map="world2_main", defeated_dict=defeated_dict,
-                      cleared_markers_dict=cleared_markers_dict, steps=steps,
-                      chapter2_unlocked=chapter2_unlocked,
-                      world2_completed=world2_completed,
-                      current_world="world2")

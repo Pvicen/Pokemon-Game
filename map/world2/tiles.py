@@ -5,6 +5,7 @@ WORLD2_MAP_HEIGHT = 50
 
 WORLD2_PLAYER_START  = (15, 8)
 WORLD2_RETURN_PORTAL = (14, 8)
+WORLD2_PC_POS        = (22, 8)   # Centro Pokémon (Aldea Aurora, plaza central)
 
 # Zone bounding rectangles: (x_min, y_min, x_max, y_max), inclusive
 ZONE_AURORA = (1,  1,  30, 15)

@@ -128,12 +128,13 @@ def trigger_wild_marker_encounter(marker_obj: dict, player_trainer: Trainer) -> 
     return winner == "captured" or winner == player_trainer.name
 
 
-def trigger_wild_encounter(x: int, y: int, player_trainer: Trainer, zone_id: str = None) -> None:
+def trigger_wild_encounter(x: int, y: int, player_trainer: Trainer, zone_id: str = None,
+                           world_id: str = "world1") -> None:
     if zone_id is None:
-        zone_id = get_zone_for_position(x, y)
+        zone_id = get_zone_for_position(x, y, world_id)
     if zone_id is None:
         return
-    zone = get_zone_by_id(zone_id)
+    zone = get_zone_by_id(zone_id, world_id)
     if not zone or not zone.wild_pokemons:
         return
 
