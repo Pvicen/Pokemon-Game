@@ -97,8 +97,10 @@ def run_map(player_trainer, *, start_pos=None, defeated_dict=None,
     if cleared_markers_dict is None:
         cleared_markers_dict = {"main": [], "dungeon": [], "dungeon_pn": []}
 
-    sx = start_pos[0] if start_pos else PLAYER_START_X
-    sy = start_pos[1] if start_pos else PLAYER_START_Y
+    # New games pass position (None, None) — a truthy tuple — so guard against
+    # None coords, not just a falsy start_pos, before falling back to the spawn.
+    sx = start_pos[0] if start_pos and start_pos[0] is not None else PLAYER_START_X
+    sy = start_pos[1] if start_pos and start_pos[1] is not None else PLAYER_START_Y
     player = PlayerState(start_x=sx, start_y=sy)
 
     defeated_main   = list(defeated_dict.get("main",       []))
