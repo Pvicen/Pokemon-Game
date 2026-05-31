@@ -1,22 +1,47 @@
+import random
+
 from ..models import Pokemon
 from ..damage import get_effectiveness, damage_without_element, calculate_damage
 from ..trainers import Trainer
 
 class IAcontroller():
-    
-    
+
+
     @staticmethod
     def _all_attacks_of(pokemon):
-        
+
         all_attacks = []
-        
+
         if getattr(pokemon, "special_attacks", None):
             all_attacks.extend(list(pokemon.special_attacks))
-            
+
         if getattr(pokemon, "normal_attacks", None):
             all_attacks.extend(list(pokemon.normal_attacks))
-        
+
         return (all_attacks if all_attacks else None)
+
+
+    @staticmethod
+    def _status_attacks_of(pokemon):
+        """Pure status moves with PP left (Toxic / Thunder Wave / Sleep Powder).
+
+        Restricted to 0-damage moves so the IA only reaches for these when it
+        wouldn't otherwise pick them by raw damage — damaging moves that also
+        inflict status (Poison Sting/Fang) keep their normal damage path.
+        """
+        out = []
+        for atk in (IAcontroller._all_attacks_of(pokemon) or []):
+            if not isinstance(atk, dict):
+                continue
+            effect = atk.get("effect")
+            if not (isinstance(effect, dict) and effect.get("kind") == "status"):
+                continue
+            if int(atk.get("damage", 0)) != 0:
+                continue
+            if pokemon.get_pp(atk.get("name", "")) <= 0:
+                continue
+            out.append(atk)
+        return out
     
     
     @staticmethod
@@ -36,7 +61,21 @@ class IAcontroller():
             
         if best_switch_score is not None and best_switch_score >= 2.0 * current_score:
             return {"type": "switch", "index": best_idx}
-        
+
+        # ── Q1: tactical status move ──
+        # If the target has no status yet, roll the difficulty-scaled chance to
+        # land a pure status move (Toxic / Thunder Wave / Sleep Powder).
+        if getattr(target, "status", None) is None:
+            status_atks = IAcontroller._status_attacks_of(actor)
+            if status_atks:
+                try:
+                    from ..game.difficulty import ai_status_chance
+                    chance = ai_status_chance()
+                except Exception:
+                    chance = 0.0
+                if random.random() < chance:
+                    return {"type": "attack", "attack": random.choice(status_atks)}
+
         best_dmg, best_atk = IAcontroller._Calculating_Damages(actor, target)
         if best_atk:
             return {"type": "attack", "attack": best_atk}

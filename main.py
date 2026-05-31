@@ -11,6 +11,7 @@ from .map.dungeon import run_dungeon
 from .map.dungeon_pn import run_dungeon_pn
 from .map.world2 import run_world2_map
 from .map.terminal import clear_once, hide_cursor
+from .game.difficulty import set_difficulty
 
 
 def _flush_kb() -> None:
@@ -77,6 +78,24 @@ def _ask_save_name(existing: list[str]) -> str:
         return name
 
 
+def _ask_difficulty() -> str:
+    """Prompt the difficulty for a new game. Empty/invalid → normal."""
+    print("\n  Choose difficulty:")
+    print("    [1] Easy   — enemies hit softer, +25% XP")
+    print("    [2] Normal — balanced")
+    print("    [3] Hard   — enemies hit harder, -15% XP, smarter AI")
+    _flush_kb()
+    while True:
+        choice = input("  Choose [1-3] (default 2): ").strip()
+        if choice == "1":
+            return "easy"
+        if choice in ("2", ""):
+            return "normal"
+        if choice == "3":
+            return "hard"
+        print("  Invalid choice.")
+
+
 def _empty_runtime_world_state(world_id: str) -> dict:
     if world_id == "world1":
         return {
@@ -132,6 +151,8 @@ def main():
             player_trainer = restore_player_trainer(save_data)
             worlds_state, steps_dict, current_world, chapter2_unlocked, world2_completed = \
                 _load_runtime_state(save_data)
+            # Difficulty is a global session setting; set once from the save.
+            set_difficulty(save_data.get("difficulty", "normal"))
             lead = player_trainer.team[0]
             print(f"\n  Welcome back! {lead.name} Lv.{lead.current_level} is ready.")
             _flush_kb()
@@ -140,6 +161,8 @@ def main():
     if player_trainer is None:
         starter_names = choose_starter()
         player_trainer = create_player_trainer(starter_names)
+        # New game: ask difficulty once; save_game() persists it from the module.
+        set_difficulty(_ask_difficulty())
 
     # Flicker-free rendering: clear once on entry and hide the cursor for the
     # whole session (auto-restored on exit via atexit in map/terminal.py).

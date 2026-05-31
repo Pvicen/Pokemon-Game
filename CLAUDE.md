@@ -1,7 +1,7 @@
 # Pokemon Game — Contexto del Proyecto
 
 ## Descripción
-Juego de Pokémon por terminal (ASCII) en Python. Combate por turnos, overworld 160×65 con 6 zonas, dungeon 60×30 con tránsito bidireccional, entrenadores NPC, Pokémon salvajes, inventario, guardado/cargado de partidas con nombre. **Capítulo 2 (Fase Q) completo**: segundo mundo (overworld 120×50, 5 zonas) con portal bidireccional World1↔World2, save multi-mundo v2 (`current_world`), y jefe final Echo Guardian.
+Juego de Pokémon por terminal (ASCII) en Python. Combate por turnos, overworld 160×65 con 6 zonas, dungeon 60×30 con tránsito bidireccional, entrenadores NPC, Pokémon salvajes, inventario, guardado/cargado de partidas con nombre. **Capítulo 2 (Fase Q) completo**: segundo mundo (overworld 120×50, 5 zonas) con portal bidireccional World1↔World2, save multi-mundo v2 (`current_world`), y jefe final Echo Guardian. **Pulido (Paquetes 1–2)**: renderizado anti-flicker, y **sistema de dificultad** (Fácil/Normal/Difícil) con daño enemigo asimétrico, XP escalada e IA táctica que usa ataques de estado.
 
 ## Cómo ejecutar
 ```
@@ -63,6 +63,8 @@ Pokemon_Game/
 │   │                        # defeated/cleared son tuplas [x, y, step]; backward-compat para saves viejos
 │   ├── ui_menus.py          # open_bag_menu(), open_pokedex(), show_team_summary()
 │   ├── ui_utils.py          # _hp_bar() — usado por ui_menus y show_team_summary
+│   ├── difficulty.py        # Paquete 2: estado global de dificultad (presets easy/normal/hard;
+│   │                        #   enemy_damage_multiplier(), xp_multiplier(), ai_status_chance())
 │   ├── world.py             # (reservado)
 │   └── setup_game.py        # + Fase Q: ZONES_WORLD_2, WORLD2_FRIENDLY_NPCS, WORLD2_TRAINERS,
 │                            #   WORLD2_BOSS (Echo Guardian, is_boss), WORLD2_WILD_MARKERS,
@@ -72,6 +74,9 @@ Pokemon_Game/
 │   ├── __init__.py          # run_map(); _heal_at_pokemon_center() restaura HP+PP y cura estados
 │   │                        # _check_respawn(): wild markers 100 pasos, rematches 300 pasos
 │   │                        # WORLD2_PORTAL_POS=(140,55) → "travel_to_world2" si chapter2_unlocked
+│   │                        # spawn guard: (None,None) en partida nueva → PLAYER_START (20,43)
+│   ├── terminal.py          # Paquete 1: anti-flicker + constantes ANSI compartidas
+│   │                        #   (render_frame(), clear_once(), hide_cursor(), RESET, VIEWPORT_W/H)
 │   ├── tiles.py             # OBSTACLE_GRID, _build_map() — mapa 160×65
 │   ├── dungeon.py           # DUNGEON_GRID, run_dungeon() — cueva 60×30, tránsito bidireccional
 │   ├── dungeon_pn.py        # DUNGEON_PN_GRID, run_dungeon_pn() — cueva end-game 40×20, Champion Nexus
@@ -130,14 +135,16 @@ Pokemon_Game/
 | **Q2** | **Overworld World 2 (120×50): 5 zonas + renderer independiente (`map/world2/`)** | ✅ |
 | **Q3** | **NPCs narrativos World 2 (5) + Centro Pokémon (22,8) + `world_id` en `get_zone_for_position`/`trigger_wild_encounter`** | ✅ |
 | **Q4** | **8 entrenadores + 8 wild markers + salvajes por zona + jefe Echo Guardian → `world2_completed=True` + rematches** | ✅ |
+| **Pkg 1** | **Anti-flicker (redibujado in-place, `map/terminal.py`) + consolidación ANSI (R4) + fixes de daño B1/B3 + limpieza de código muerto** | ✅ |
+| **Pkg 2** | **Sistema de Dificultad (easy/normal/hard: daño enemigo asimétrico + XP) + IA táctica Q1 (ataques de estado) + fix spawn partida nueva** | ✅ |
 
 ---
 
 ## Roadmap
 
-**Capítulo 1 (Fases 1–P) y Capítulo 2 (Fase Q: Q1–Q4) COMPLETOS y verificados en ejecución.** No hay fases pendientes.
+**Capítulo 1 (Fases 1–P), Capítulo 2 (Fase Q: Q1–Q4) y pulido (Paquetes 1–2) COMPLETOS y verificados en ejecución.** No hay fases pendientes.
 
-Líneas futuras posibles (no planificadas): Capítulo 3 (`world3`, el patrón multi-mundo ya lo soporta), respawn/rematch en dungeons, IA que use ataques de estado.
+Líneas futuras posibles (no planificadas): Capítulo 3 (`world3`, el patrón multi-mundo ya lo soporta), respawn/rematch en dungeons, IA de estado más táctica (priorizar daño+estado, cambiar de Pokémon), menú in-game para cambiar la dificultad, curva de daño por nivel (`_level_factor`) más pronunciada, y los refactors R1/R2/R3/R5 del informe de auditoría.
 
 ---
 
@@ -308,13 +315,14 @@ Edificio PC2: `wall_box(121, 37, 137, 47)`. Curan HP al máximo, reviven desmaya
 
 ## Estructura de save (v2 multi-mundo — Fase Q1)
 
-`SAVE_VERSION = 2`. **Globales** (compartidos entre mundos): `team`, `bag`, `pokedex`, `chapter2_unlocked`, `world2_completed`. **Per-world** (anidados en `worlds.<id>`): `current_map`, `position`, `defeated_trainers`, `cleared_wild_markers`. `steps` es independiente por mundo.
+`SAVE_VERSION = 2`. **Globales** (compartidos entre mundos): `team`, `bag`, `pokedex`, `chapter2_unlocked`, `world2_completed`, `difficulty`. **Per-world** (anidados en `worlds.<id>`): `current_map`, `position`, `defeated_trainers`, `cleared_wild_markers`. `steps` es independiente por mundo.
 
 ```json
 {
   "slot_name": "mi_partida",
   "save_version": 2,
   "current_world": "world1",
+  "difficulty": "normal",
   "chapter2_unlocked": true,
   "world2_completed": false,
   "steps": {"world1": 336, "world2": 37},
@@ -615,10 +623,35 @@ Solo se usan las **32 especies con ataques** en `attacks.json`. Las 35 especies 
 
 ---
 
+## Sistema de Dificultad (Paquete 2 — implementado)
+
+Selección **Fácil / Normal / Difícil** al crear partida nueva (`main._ask_difficulty()`). Estado global de sesión en **`game/difficulty.py`** (fuente única de verdad, fijado una vez al crear/cargar; evita propagar el valor por toda la cadena de llamadas).
+
+### Presets (`DIFFICULTY_PRESETS`)
+| Modo | `enemy_damage` | `xp` | `ai_status_chance` |
+|------|:---:|:---:|:---:|
+| easy | 0.75 | 1.25 | 0.10 |
+| normal | 1.00 | 1.00 | 0.20 |
+| hard | 1.30 | 0.85 | 0.45 |
+
+### Aplicación
+- **Daño asimétrico** (`combat.py`): `_apply_attack(..., damage_multiplier=1.0)` escala el daño; en `_take_turn` el multiplicador es `enemy_damage_multiplier()` **solo si el atacante es `IAcontroller`** (enemigos y salvajes). El daño del jugador nunca se penaliza. Import lazy para evitar el ciclo combat↔game.
+- **XP** (`experience.py`): el pool se multiplica por `xp_multiplier()` en `finalize_and_award` (helper `_difficulty_xp_multiplier()` con fallback 1.0).
+- **IA táctica Q1** (`controllers/ia.py`): si el rival NO tiene estado, `ChooseAction` tira `ai_status_chance()` para lanzar un **ataque de estado puro** (daño 0: Thunder Wave / Toxic / Sleep Powder) vía `_status_attacks_of()`. Restringido a daño 0 para no degradar el daño con Poison Sting/Fang.
+- **Persistencia** (`save_load.py`): campo **global** `"difficulty"`; `save_game()` lo lee del módulo (merge no-destructivo); migración v1→v2 y saves v2 antiguos → `"normal"`. `main.py` aplica `set_difficulty(save["difficulty"])` al cargar.
+
+---
+
 ## Bugs conocidos / Deuda técnica
 
 - **Deuda técnica:** `defeated_dict` en `main.py` se recarga desde disco en cada transición de mapa (I/O redundante). `cleared_markers_dict` usa el patrón correcto (mutación en RAM por referencia). Pendiente refactorizar `defeated_dict` para igualar.
 - **Respawn/rematch en dungeon y dungeon_pn:** `_check_respawn()` solo opera sobre `main` (World 1). World 2 tiene su propio `_check_respawn_world2()`. Las dungeons (`dungeon`, `dungeon_pn`) no tienen respawn/rematch (no crítico).
-- La IA nunca elige ataques de estado (0 daño); simplificación aceptada en Fase J.
+- La IA usa ataques de estado **puros** (daño 0) con probabilidad por dificultad (Paquete 2 / Q1); aún no prioriza ataques de daño+estado tácticamente ni cambia de Pokémon por estado.
 - El PC cura TODO el equipo (comportamiento estándar).
 - `experience.py._apply_species()` no actualiza `evolution_by_item` tras evolución por nivel (no es problema porque los Pokémon con stone evolutions no tienen level evolutions).
+
+### Bugs resueltos (Paquetes 1–2)
+- **Spawn en partida nueva (Pkg 2):** `position=(None,None)` (tupla truthy) hacía que `run_map` no aplicara el spawn por defecto → crash en el renderer. Corregido en `map/__init__.py`: el guard ahora comprueba `start_pos and start_pos[0] is not None`.
+- **B1 (`damage.py`):** `_lookup_chart` usaba la fila del defensor si faltaba la del atacante → efectividad incorrecta. Ahora usa solo la fila del atacante con default 1.0.
+- **B3 (`damage.py`):** el mensaje de efectividad ya no dice "Special attack" de forma imprecisa.
+- **Código muerto:** eliminada la clase `EvolvedPokemon` de `models.py` (referenciaba `self.base_attack` inexistente).

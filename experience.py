@@ -170,6 +170,16 @@ def _level_disparity_multiplier(my_team: Iterable, enemy_team: Iterable, *, cfg:
 def _clamp_mult(x: float, *, cfg: XPConfig) -> float:
     return clamp(x, cfg.min_total_multiplier, cfg.max_total_multiplier)
 
+
+def _difficulty_xp_multiplier() -> float:
+    """Global difficulty XP scaling (Paquete 2 · P1.B). Defaults to 1.0 if the
+    difficulty module is unavailable, so XP logic never breaks."""
+    try:
+        from .game.difficulty import xp_multiplier
+        return float(xp_multiplier())
+    except Exception:
+        return 1.0
+
 # -----------------------------
 # Species lookup & evolution
 # -----------------------------
@@ -443,7 +453,8 @@ class BattleXPTracker:
 
         mult = self._compute_battle_multiplier(win_team, lose_team)
         base_pool = self._compute_xp_pool(lose_team)
-        pool = max(1, int(round(mult * base_pool)))
+        diff_mult = _difficulty_xp_multiplier()
+        pool = max(1, int(round(mult * base_pool * diff_mult)))
 
         assignments = self._split_among_participants(pool, winners=win_team)
 

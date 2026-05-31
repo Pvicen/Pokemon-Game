@@ -194,7 +194,12 @@ def _choose_action(trainer, enemy_trainer, is_wild: bool = False) -> Dict[str, A
     return {"type": "skip"}
 
 
-def _apply_attack(attacker: Pokemon, defender: Pokemon, attack: Dict) -> Tuple[int, str]:
+def _apply_attack(
+    attacker: Pokemon,
+    defender: Pokemon,
+    attack: Dict,
+    damage_multiplier: float = 1.0,
+) -> Tuple[int, str]:
     if not attack or not isinstance(attack, dict):
         return 0, f"  {getattr(attacker, 'name', 'Pokemon')} failed to act."
 
@@ -212,6 +217,13 @@ def _apply_attack(attacker: Pokemon, defender: Pokemon, attack: Dict) -> Tuple[i
     else:
         dmg = int(calculate_damage(attacker, defender, base_dmg, attack_type=atk_type))
         _, eff_msg = get_effectiveness(attacker.element_type, defender.element_type)
+
+    # ── Difficulty: scale damage by the caller-provided multiplier ──
+    # Asymmetric by design: _take_turn passes >1.0 only when the attacker is
+    # IA-controlled (Hard mode → enemies hit harder). The player's multiplier
+    # is always 1.0, so the player is never penalised for attacking.
+    if damage_multiplier != 1.0 and dmg > 0:
+        dmg = max(1, int(round(dmg * damage_multiplier)))
 
     # ── Ability hook: pre-damage (Levitate immunity, Sturdy) ──
     dmg, ability_pre_msg = fire_pre_damage(attacker, defender, dmg, atk_type)
@@ -370,7 +382,15 @@ def _take_turn(
                     print(para_msg)
                 return True  # skip attack, turn ends
 
-        dmg, msg = _apply_attack(actor, target, attack)
+        # Difficulty: enemies (IA-controlled) scale their damage; the player
+        # never does. Lazy import keeps the combat↔game cycle from forming.
+        from .game.difficulty import enemy_damage_multiplier
+        dmg_mult = (
+            enemy_damage_multiplier()
+            if isinstance(getattr(attacker_trainer, "controller", None), IAcontroller)
+            else 1.0
+        )
+        dmg, msg = _apply_attack(actor, target, attack, damage_multiplier=dmg_mult)
         if log is not None:
             log.append(msg)
         else:

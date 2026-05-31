@@ -80,6 +80,7 @@ def _migrate_v1_to_v2(save_data: Dict[str, Any]) -> Dict[str, Any]:
         "slot_name":         save_data.get("slot_name", ""),
         "save_version":      SAVE_VERSION,
         "current_world":     "world1",
+        "difficulty":        save_data.get("difficulty", "normal"),
         "chapter2_unlocked": bool(save_data.get("chapter2_unlocked", False)),
         "world2_completed":  bool(save_data.get("world2_completed", False)),
         "steps":             steps_dict,
@@ -195,6 +196,15 @@ def save_game(
     for w in WORLD_IDS:
         worlds.setdefault(w, _empty_world_state(w))
 
+    # Difficulty is a global session setting; read it from the difficulty module
+    # (the authoritative source set once in main.py). Fall back to the on-disk
+    # value, then "normal", so a save never loses its difficulty.
+    try:
+        from .difficulty import current as _current_difficulty
+        difficulty_val = _current_difficulty()
+    except Exception:
+        difficulty_val = existing.get("difficulty", "normal")
+
     # Update active world
     worlds[current_world] = {
         "current_map": current_map,
@@ -214,6 +224,7 @@ def save_game(
         "slot_name":         slot_name,
         "save_version":      SAVE_VERSION,
         "current_world":     current_world,
+        "difficulty":        difficulty_val,
         "chapter2_unlocked": bool(chapter2_unlocked or existing.get("chapter2_unlocked", False)),
         "world2_completed":  bool(world2_completed  or existing.get("world2_completed",  False)),
         "steps":             steps_dict,
