@@ -179,30 +179,5 @@ class Pokemon:
         print(f"- Evolution: {self.evolution}")
         print(f"- Evolution Level: {self.evolution_level}")
         print(f"- Current Level: {self.current_level}")
-        
-
-class EvolvedPokemon(Pokemon):
-    
-    def __init__(self, name, element_type, health, defense, speed, special_attacks, evolution_attack):
-        super().__init__(name, element_type, health, defense, speed, special_attacks)
-        self.evolution_attack = evolution_attack
-        self.used_evolution_attack = False
-        
-    def show_stats(self):
-        super().show_stats()
-        print(f"-Evolution_Attack: {self.evolution_attack}")
-    
-    def combined_attack(self, enemy):
-        
-        if not self.used_evolution_attack:
-            print(f"{self.name} HASSS MADEEE ¡¡¡¡¡¡¡COMBINED ATTAAACKKKK!!!!!!!")
-            total_attack = self.base_attack + self.evolution_attack
-            enemy.health -= total_attack
-            enemy.is_alive()
-            print(f"{self.name} Has made {total_attack} points of damage to {enemy.name}")
-            self.used_evolution_attack = True
-            
-        else:
-            self.use_attack(enemy)
 
     

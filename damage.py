@@ -38,7 +38,10 @@ def _lookup_chart(attacker_type: str, defende_type: str):
     attacker_l = attacker.lower()
     defender_l = defender.lower()
 
-    row = TYPE_CHART.get(attacker_l) or TYPE_CHART.get(defender_l)
+    # B1 fix: use ONLY the attacker's row. The previous fallback
+    # (`or TYPE_CHART.get(defender_l)`) silently used the defender's row as if it
+    # were the attacker's when the attacker type was missing → wrong effectiveness.
+    row = TYPE_CHART.get(attacker_l)
     if not isinstance(row, dict):
         return 1.0
     
@@ -48,9 +51,9 @@ def _lookup_chart(attacker_type: str, defende_type: str):
 def get_effectiveness(attacker_type: str, defender_type: str) -> Tuple[float, str]:
     mult = _lookup_chart(attacker_type, defender_type)
     if mult > 1.0:
-        msg = "💥 Special attack is super effective!"
+        msg = "💥 It's super effective!"
     elif mult < 1.0 and mult > 0.0:
-        msg = "😐 Special attack is not very effective..."
+        msg = "😐 It's not very effective..."
     elif mult == 0.0:
         msg = "🛡️ It has no effect!"
     else:

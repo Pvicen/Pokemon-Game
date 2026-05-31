@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from ..terminal import RESET, BG_DARK, VIEWPORT_W, VIEWPORT_H, render_frame
 from .tiles import (
     WORLD2_OBSTACLE_GRID,
     WORLD2_MAP_WIDTH,
@@ -12,9 +13,10 @@ from .tiles import (
 
 # ---------------------------------------------------------------------------
 # ANSI palette — independiente del renderer del Mundo 1
+# (reset y fondo neutro consolidados en map/terminal.py — Propuesta R4)
 # ---------------------------------------------------------------------------
-_RESET   = "\033[0m"
-_BG_VOID = "\033[40m"   # fondo neutro fuera de zonas (corredores/transiciones)
+_RESET   = RESET
+_BG_VOID = BG_DARK        # fondo neutro fuera de zonas (corredores/transiciones)
 
 _BG_AURORA = "\033[106m"  # cyan brillante  — Aldea Aurora
 _BG_BOSQUE = "\033[42m"   # verde oscuro    — Bosque Milenario
@@ -39,8 +41,8 @@ _FG_WILD   = "\033[1;95m"    # magenta brillante — wild marker
 _FG_BOSS   = "\033[1;96m"    # cyan brillante — jefe final (Echo Guardian)
 
 # Viewport
-_VP_W = 40
-_VP_H = 20
+_VP_W = VIEWPORT_W
+_VP_H = VIEWPORT_H
 
 
 def render_world2(player_pos: list, objects: list | None = None) -> None:
@@ -49,9 +51,8 @@ def render_world2(player_pos: list, objects: list | None = None) -> None:
     x0 = max(0, min(px - _VP_W // 2, WORLD2_MAP_WIDTH  - _VP_W))
     y0 = max(0, min(py - _VP_H // 2, WORLD2_MAP_HEIGHT - _VP_H))
 
-    print("\033[2J\033[H", end="")
     border = "═" * (_VP_W + 2)
-    print(f"  {_BG_VOID}╔{border}╗{_RESET}")
+    lines = [f"  {_BG_VOID}╔{border}╗{_RESET}"]
 
     for row in range(y0, y0 + _VP_H):
         line = f"  {_BG_VOID}║ "
@@ -80,11 +81,12 @@ def render_world2(player_pos: list, objects: list | None = None) -> None:
             else:
                 line += f"{bg} {_RESET}"
         line += f"{_BG_VOID} ║{_RESET}"
-        print(line)
+        lines.append(line)
 
-    print(f"  {_BG_VOID}╚{border}╝{_RESET}")
+    lines.append(f"  {_BG_VOID}╚{border}╝{_RESET}")
 
     current_zone = get_zone_for_world2(px, py)
     zone_label = ZONE_NAMES.get(current_zone, "Sendero") if current_zone else "Sendero"
-    print(f"  [WORLD 2 — {zone_label}]  [{px},{py}]  "
-          f"WASD | E | P | T | Q | + centro | N npc/entren. | ! salvaje | ★ jefe | ▲ portal")
+    lines.append(f"  [WORLD 2 — {zone_label}]  [{px},{py}]  "
+                 f"WASD | E | P | T | Q | + centro | N npc/entren. | ! salvaje | ★ jefe | ▲ portal")
+    render_frame(lines)

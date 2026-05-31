@@ -1,14 +1,5 @@
-import os
-
 from .tiles import TILE_WALL
-
-VIEWPORT_W = 40
-VIEWPORT_H = 20
-
-# Enable ANSI escape codes on Windows (no-op on other systems)
-os.system("")
-
-_R = "\033[0m"  # reset
+from .terminal import RESET, VIEWPORT_W, VIEWPORT_H, render_frame
 
 
 def _color(x: int, y: int, tile: str) -> str:
@@ -16,15 +7,15 @@ def _color(x: int, y: int, tile: str) -> str:
     Colors are applied AFTER viewport clipping so len() calculations
     on raw chars are never affected by invisible escape sequences."""
     if tile == "##":
-        return f"\033[90m##\033[0m"          # dark gray walls
+        return f"\033[90m##{RESET}"                    # dark gray walls
     if tile == " @":
-        return f"{_zone_fg(x, y)}\033[93m @\033[0m"   # bright yellow player
+        return f"{_zone_fg(x, y)}\033[93m @{RESET}"     # bright yellow player
     if tile == " T":
-        return f"{_zone_fg(x, y)}\033[96m T\033[0m"   # cyan trainer
+        return f"{_zone_fg(x, y)}\033[96m T{RESET}"     # cyan trainer
     if tile == " !":
-        return f"{_zone_fg(x, y)}\033[95m !\033[0m"   # magenta wild pokemon
+        return f"{_zone_fg(x, y)}\033[95m !{RESET}"     # magenta wild pokemon
     # Empty floor — background tint by zone
-    return f"{_zone_bg(x, y)}  \033[0m"
+    return f"{_zone_bg(x, y)}  {RESET}"
 
 
 def _zone_bg(x: int, y: int) -> str:
@@ -46,9 +37,12 @@ def _zone_fg(x: int, y: int) -> str:
 
 
 def render(obstacle_grid, player_pos, objects):
-    """Draws a VIEWPORT_W x VIEWPORT_H window of the map centered on the player."""
-    os.system("cls")
+    """Draws a VIEWPORT_W x VIEWPORT_H window of the map centered on the player.
 
+    Flicker-free: builds the whole frame as a list of lines and emits it through
+    terminal.render_frame() (cursor home + atomic write), instead of clearing the
+    screen and printing cell-by-cell.
+    """
     map_w = len(obstacle_grid[0])
     map_h = len(obstacle_grid)
 
@@ -57,11 +51,11 @@ def render(obstacle_grid, player_pos, objects):
 
     object_map = {(o["x"], o["y"]): o for o in objects}
 
-    print(" " + "_" * VIEWPORT_W * 2 + " ")
+    lines = [" " + "_" * VIEWPORT_W * 2 + " "]
 
     for row in range(VIEWPORT_H):
         y = cam_y + row
-        print("|", end="")
+        cells = ["|"]
         for col in range(VIEWPORT_W):
             x = cam_x + col
             # Determine raw tile type (no ANSI yet — viewport clipping uses raw chars)
@@ -73,10 +67,12 @@ def render(obstacle_grid, player_pos, objects):
                 raw = " !" if object_map[(x, y)].get("kind") == "wild" else " T"
             else:
                 raw = "  "
-            # Apply ANSI color AFTER determining the tile (safe for viewport math)
-            print(_color(x, y, raw), end="")
-        print("|")
+            cells.append(_color(x, y, raw))
+        cells.append("|")
+        lines.append("".join(cells))
 
-    print(" " + "_" * VIEWPORT_W * 2 + " ")
+    lines.append(" " + "_" * VIEWPORT_W * 2 + " ")
     px, py = player_pos
-    print(f"  Pos ({px:3d},{py:3d})  Cam ({cam_x:3d},{cam_y:3d})  |  WASD mover  Q salir  E bolsa")
+    lines.append(f"  Pos ({px:3d},{py:3d})  Cam ({cam_x:3d},{cam_y:3d})  |  WASD mover  Q salir  E bolsa")
+
+    render_frame(lines)

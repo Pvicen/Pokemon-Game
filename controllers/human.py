@@ -1,4 +1,4 @@
-from ..models import Pokemon, EvolvedPokemon
+from ..models import Pokemon
 from ..utils import load_items, load_pokemons_json
 from ..trainers import Trainer
 from ..inventory import Inventory

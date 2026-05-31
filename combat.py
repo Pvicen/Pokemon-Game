@@ -90,8 +90,13 @@ def _pad(s: str, width: int) -> str:
 # ─────────────────────── Battle screen ───────────────────────
 
 def _draw_battle_screen(enemy: Pokemon, player: Pokemon, log_lines: list) -> None:
-    """Clears terminal and draws the battle status box + last 3 log lines."""
-    _clear_screen()
+    """Draws the battle status box + last 3 log lines, flicker-free.
+
+    Builds the whole frame as a list of lines and emits it via terminal.render_frame()
+    (cursor home + atomic write, no full-screen clear per frame). Subsequent prompts
+    printed below are wiped by the next frame's clear-to-end-of-screen.
+    """
+    from .map.terminal import render_frame  # lazy import: avoids combat↔map cycle
 
     def box_row(content: str) -> str:
         return f"  ║ {_pad(content, _BOX_W - 2)} ║"
@@ -111,27 +116,33 @@ def _draw_battle_screen(enemy: Pokemon, player: Pokemon, log_lines: list) -> Non
     p_header = f"{indent}{_BOLD}{player.name}{_R}  Lv.{p_lv}  {p_tc}[{p_type}]{_R}"
     p_hp     = f"{indent}HP: {_hp_bar(player)}{_status_tag(player)}"
 
-    print(f"  ╔{'═' * _BOX_W}╗")
-    print(box_row(e_header))
-    print(box_row(e_hp))
-    print(box_row(""))
-    print(box_row(p_header))
-    print(box_row(p_hp))
-    print(f"  ╚{'═' * _BOX_W}╝")
+    lines = [
+        f"  ╔{'═' * _BOX_W}╗",
+        box_row(e_header),
+        box_row(e_hp),
+        box_row(""),
+        box_row(p_header),
+        box_row(p_hp),
+        f"  ╚{'═' * _BOX_W}╝",
+    ]
 
     if log_lines:
-        print()
+        lines.append("")
         for entry in list(log_lines)[-3:]:
             for sub in str(entry).split("\n"):
                 if sub.strip():
-                    print(f"    {sub}")
-    print()
+                    lines.append(f"    {sub}")
+    lines.append("")
+    render_frame(lines)
 
 
 # ─────────────────────── Internal helpers ───────────────────────
 
 def _clear_screen() -> None:
-    os.system(CLEAR_CMD)
+    """Full-screen clear via ANSI (no subprocess). Use for one-off transitions,
+    not per frame — per-frame drawing goes through terminal.render_frame()."""
+    from .map.terminal import clear_once  # lazy import: avoids combat↔map cycle
+    clear_once()
 
 
 def _clear_buffs_of(p: Pokemon) -> None:

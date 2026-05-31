@@ -10,6 +10,7 @@ from .map import run_map
 from .map.dungeon import run_dungeon
 from .map.dungeon_pn import run_dungeon_pn
 from .map.world2 import run_world2_map
+from .map.terminal import clear_once, hide_cursor
 
 
 def _flush_kb() -> None:
@@ -139,6 +140,11 @@ def main():
     if player_trainer is None:
         starter_names = choose_starter()
         player_trainer = create_player_trainer(starter_names)
+
+    # Flicker-free rendering: clear once on entry and hide the cursor for the
+    # whole session (auto-restored on exit via atexit in map/terminal.py).
+    clear_once()
+    hide_cursor()
 
     while True:
         state = worlds_state[current_world]

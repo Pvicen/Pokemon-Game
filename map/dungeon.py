@@ -6,6 +6,7 @@ from ..game.save_load import save_game
 from ..game.ui_menus import open_bag_menu, open_pokedex, show_team_summary
 from .player import PlayerState
 from .events import check_collision
+from .terminal import RESET, BG_DARK, VIEWPORT_W, VIEWPORT_H, render_frame
 
 DUNGEON_WIDTH  = 60
 DUNGEON_HEIGHT = 30
@@ -48,8 +49,8 @@ DUNGEON_GRID = _G
 # ---------------------------------------------------------------------------
 # Renderer
 # ---------------------------------------------------------------------------
-_RESET   = "\033[0m"
-_BG      = "\033[40m"
+_RESET   = RESET
+_BG      = BG_DARK
 _WALL    = "\033[90m"
 _FLOOR   = "\033[100m"
 _PLAYER  = "\033[1;93m"
@@ -57,8 +58,8 @@ _TRAINER = "\033[1;91m"
 _WILD    = "\033[1;92m"
 _EXIT    = "\033[1;96m"
 
-_VP_W = 40
-_VP_H = 20
+_VP_W = VIEWPORT_W
+_VP_H = VIEWPORT_H
 
 
 def _render(player_pos: list, objects: list) -> None:
@@ -68,9 +69,8 @@ def _render(player_pos: list, objects: list) -> None:
 
     obj_map = {(o["x"], o["y"]): o for o in objects}
 
-    print("\033[2J\033[H", end="")
     border = "═" * (_VP_W + 2)
-    print(f"  {_BG}╔{border}╗{_RESET}")
+    lines = [f"  {_BG}╔{border}╗{_RESET}"]
 
     for row in range(y0, y0 + _VP_H):
         line = f"  {_BG}║ "
@@ -92,10 +92,11 @@ def _render(player_pos: list, objects: list) -> None:
             else:
                 line += f"{_FLOOR} {_RESET}{_BG}"
         line += f" ║{_RESET}"
-        print(line)
+        lines.append(line)
 
-    print(f"  {_BG}╚{border}╝{_RESET}")
-    print(f"  [{px},{py}]  WASD: move | E: bag | P: pokédex | Q: save & quit | ▲(3,1) exit W  ▲(57,27) exit E")
+    lines.append(f"  {_BG}╚{border}╝{_RESET}")
+    lines.append(f"  [{px},{py}]  WASD: move | E: bag | P: pokédex | Q: save & quit | ▲(3,1) exit W  ▲(57,27) exit E")
+    render_frame(lines)
 
 
 # ---------------------------------------------------------------------------
