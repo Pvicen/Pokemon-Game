@@ -1,5 +1,3 @@
-import dataclasses
-
 from .tiles    import OBSTACLE_GRID, MAP_WIDTH, MAP_HEIGHT, PLAYER_START_X, PLAYER_START_Y
 from .player   import PlayerState
 from .renderer import render
@@ -8,54 +6,12 @@ from ..game.setup_game import get_map_objects, get_wild_marker_objects, WILD_MAR
 from ..game.encounters import trigger_encounter, trigger_wild_encounter, trigger_wild_marker_encounter
 from ..game.save_load import save_game
 from ..game.ui_menus import open_bag_menu, open_pokedex, show_team_summary
+from ..game.respawn import check_respawn, _player_avg_level
 
 POKEMON_CENTER_POS   = (9, 11)
 POKEMON_CENTER_2_POS = (129, 46)
 WORLD2_PORTAL_POS    = (140, 55)  # Fase Q1: portal a Mundo 2 (sólo activo si chapter2_unlocked=True)
 
-
-def _player_avg_level(player_trainer) -> int:
-    if not player_trainer.team:
-        return 5
-    levels = [int(getattr(p, "current_level", getattr(p, "level", 1)))
-              for p in player_trainer.team]
-    return max(1, round(sum(levels) / len(levels)))
-
-
-def _check_respawn(steps, player_trainer, cleared_main, defeated_main, objects) -> None:
-    """Individual-cooldown respawn: wild markers every 100 steps, trainers every 300."""
-    # Phase N: wild marker respawn — cooldown individual de 100 pasos
-    to_restore = [
-        (e[0], e[1]) for e in cleared_main
-        if steps - (e[2] if len(e) > 2 else 0) >= 100
-    ]
-    for pos in to_restore:
-        cleared_main[:] = [e for e in cleared_main if (e[0], e[1]) != pos]
-        for marker in WILD_MARKERS:
-            if (marker.position[0], marker.position[1]) == pos:
-                objects.append({"x": pos[0], "y": pos[1],
-                                "kind": "wild", "name": marker.name, "level": marker.level})
-                break
-
-    # Phase O: trainer rematches — cooldown individual de 300 pasos
-    to_rematch = [
-        (e[0], e[1]) for e in defeated_main
-        if steps - (e[2] if len(e) > 2 else 0) >= 300
-    ]
-    if to_rematch:
-        avg = _player_avg_level(player_trainer)
-        for pos in to_rematch:
-            defeated_main[:] = [e for e in defeated_main if (e[0], e[1]) != pos]
-            for t in TRAINERS:
-                if t.is_friendly:
-                    continue
-                if (t.position[0], t.position[1]) == pos:
-                    scaled_team = [(name, max(orig_lv + 2, avg))
-                                   for name, orig_lv in t.team]
-                    scaled_setup = dataclasses.replace(t, team=scaled_team)
-                    objects.append({"x": pos[0], "y": pos[1],
-                                    "kind": "trainer", "setup": scaled_setup})
-                    break
 
 # Cave boundary triggers — span the full corridor width
 # West: player crosses y=28 anywhere in cols 87-92 (west entrance corridor)
@@ -219,4 +175,5 @@ def run_map(player_trainer, *, start_pos=None, defeated_dict=None,
 
             player.apply_move(new_pos)
             steps += 1
-            _check_respawn(steps, player_trainer, cleared_main, defeated_main, objects)
+            check_respawn(steps, player_trainer, cleared_main, defeated_main,
+                          objects, WILD_MARKERS, TRAINERS)

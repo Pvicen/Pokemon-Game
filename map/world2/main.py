@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import dataclasses
-
 from ...game.save_load import save_game
 from ...game.setup_game import (
     get_world2_objects, get_world2_wild_marker_objects,
@@ -11,7 +9,8 @@ from ...game.encounters import (
     trigger_encounter, trigger_wild_encounter, trigger_wild_marker_encounter,
 )
 from ...game.ui_menus import open_bag_menu, open_pokedex, show_team_summary
-from .. import _heal_at_pokemon_center, _player_avg_level
+from ...game.respawn import check_respawn
+from .. import _heal_at_pokemon_center
 from ..player import PlayerState
 from ..events import check_collision
 from .tiles import (
@@ -37,47 +36,6 @@ def _safe_start(start_pos) -> tuple[int, int]:
                 and WORLD2_OBSTACLE_GRID[sy][sx] != "#":
             return sx, sy
     return WORLD2_PLAYER_START
-
-
-def _check_respawn_world2(steps, player_trainer, cleared_w2, defeated_w2, objects) -> None:
-    """Réplica del patrón de _check_respawn (World 1): wild markers a los 100 pasos,
-    rematches de entrenadores a los 300, equipo escalado con dataclasses.replace().
-
-    Diferencia con World 1: el rematch se filtra a posiciones de WORLD2_TRAINERS. Así
-    el jefe (is_boss) y los NPCs (is_friendly) nunca reaparecen — son one-shot. Sin este
-    filtro, el Echo Guardian volvería a aparecer tras 300 pasos al recargar el save.
-    """
-    # Wild markers — cooldown individual de 100 pasos
-    to_restore = [
-        (e[0], e[1]) for e in cleared_w2
-        if steps - (e[2] if len(e) > 2 else 0) >= 100
-    ]
-    for pos in to_restore:
-        cleared_w2[:] = [e for e in cleared_w2 if (e[0], e[1]) != pos]
-        for marker in WORLD2_WILD_MARKERS:
-            if (marker.position[0], marker.position[1]) == pos:
-                objects.append({"x": pos[0], "y": pos[1], "kind": "wild",
-                                "name": marker.name, "level": marker.level})
-                break
-
-    # Trainer rematches — cooldown individual de 300 pasos (solo entrenadores regulares)
-    rematch_positions = {
-        (t.position[0], t.position[1]): t for t in WORLD2_TRAINERS
-        if not t.is_friendly and not t.is_boss
-    }
-    to_rematch = [
-        (e[0], e[1]) for e in defeated_w2
-        if (e[0], e[1]) in rematch_positions
-        and steps - (e[2] if len(e) > 2 else 0) >= 300
-    ]
-    if to_rematch:
-        avg = _player_avg_level(player_trainer)
-        for pos in to_rematch:
-            defeated_w2[:] = [e for e in defeated_w2 if (e[0], e[1]) != pos]
-            t = rematch_positions[pos]
-            scaled_team = [(name, max(orig_lv + 2, avg)) for name, orig_lv in t.team]
-            scaled_setup = dataclasses.replace(t, team=scaled_team)
-            objects.append({"x": pos[0], "y": pos[1], "kind": "trainer", "setup": scaled_setup})
 
 
 def _chapter2_complete_cinematic(player_trainer) -> None:
@@ -190,5 +148,5 @@ def run_world2_map(player_trainer, *, start_pos=None, defeated_dict=None,
 
             player.apply_move(new_pos)
             steps += 1
-            _check_respawn_world2(steps, player_trainer, cleared_world2,
-                                  defeated_world2, objects)
+            check_respawn(steps, player_trainer, cleared_world2, defeated_world2,
+                          objects, WORLD2_WILD_MARKERS, WORLD2_TRAINERS)
