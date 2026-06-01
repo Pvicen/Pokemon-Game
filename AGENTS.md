@@ -1,6 +1,6 @@
 # Pokemon_Game — Agent Context
 
-> Última actualización: 2026-05-31 — Paquetes 1–2 (anti-flicker + sistema de dificultad + IA táctica) completados. Capítulo 2 y pulido sellados.
+> Última actualización: 2026-06-01 — Paquete 3 parcial: R1 (respawn centralizado) + B4 (validación estricta de especies + limpieza de datos). R5/R2/R3 pendientes. Paquetes 1–2 y Capítulo 2 sellados.
 
 ---
 
@@ -78,6 +78,7 @@ Pokemon_Game/
 │   │                        # WORLD2_TRAINERS, WORLD2_BOSS, WORLD2_WILD_MARKERS,
 │   │                        # get_world2_objects(), get_world2_wild_marker_objects()
 │   │                        # get_zone_for_position(x,y,world_id), get_zone_by_id(id,world_id)
+│   │                        # B4: _build_pokemon() lanza UnknownSpeciesError/SpeciesWithoutAttacksError
 │   ├── encounters.py        # trigger_encounter(), trigger_wild_encounter(...,world_id), trigger_wild_marker_encounter()
 │   ├── save_load.py         # save_game(...,current_world), load_game(), restore_player_trainer(),
 │   │                        # load_defeated_dict(sd,world_id), load_cleared_markers(sd,world_id),
@@ -85,9 +86,10 @@ Pokemon_Game/
 │   ├── ui_menus.py          # open_bag_menu(), open_pokedex(), show_team_summary()
 │   ├── ui_utils.py          # _hp_bar()
 │   ├── difficulty.py        # Paquete 2: presets easy/normal/hard + getters (estado global de sesión)
+│   ├── respawn.py           # Paquete 3 (R1): check_respawn() unificado W1/W2 + _player_avg_level()
 │   └── world.py             # (reservado)
 ├── map/
-│   ├── __init__.py          # run_map(...,chapter2_unlocked), _check_respawn(), _player_avg_level(),
+│   ├── __init__.py          # run_map(...,chapter2_unlocked); llama game.respawn.check_respawn();
 │   │                        # _heal_at_pokemon_center(); WORLD2_PORTAL_POS=(140,55) → "travel_to_world2";
 │   │                        # guard de spawn (None,None) en partida nueva → PLAYER_START
 │   ├── terminal.py          # Paquete 1: anti-flicker + ANSI compartido (render_frame, clear_once, hide_cursor)
@@ -100,7 +102,7 @@ Pokemon_Game/
 │   └── world2/              # Fase Q — Mundo 2 (motor independiente)
 │       ├── tiles.py         # WORLD2_OBSTACLE_GRID 120×50, 5 zonas, WORLD2_PC_POS=(22,8)
 │       ├── renderer.py      # render_world2(pos, objects) — paleta propia; ! wild, N npc, ★ jefe
-│       └── main.py          # run_world2_map(), _check_respawn_world2(), _chapter2_complete_cinematic()
+│       └── main.py          # run_world2_map(), _chapter2_complete_cinematic() (respawn vía game.respawn)
 ├── saves/                   # Partidas guardadas ({nombre}.json) — NO subir a git
 ├── requirements.txt         # readchar>=2.0.0, pytest>=7.0.0
 ├── pyproject.toml           # Build system (setuptools)
@@ -138,6 +140,15 @@ Pokemon_Game/
 | **Q4** | **8 entrenadores + 8 wild markers + salvajes + jefe Echo Guardian + rematches** | ✅ |
 | **Pkg 1** | **Anti-flicker (`map/terminal.py`, redibujado in-place) + consolidación ANSI (R4) + fixes daño B1/B3 + limpieza código muerto (EvolvedPokemon)** | ✅ |
 | **Pkg 2** | **Sistema de Dificultad easy/normal/hard (daño enemigo asimétrico + XP) + IA táctica Q1 (ataques de estado) + fix spawn partida nueva** | ✅ |
+| **Pkg 3 (R1+B4)** | **Respawn centralizado (`game/respawn.py`, unifica W1/W2) + validación estricta de especies (B4) + limpieza de 16 refs NOATK/inexistentes (Champion Nexus ahora con 4 Pokémon)** | ✅ |
+| **Pkg 3 (R5/R2/R3)** | **Helper `pause()`, helpers de selección, refactor menú bolsa + confirmación piedra** | ⏳ pendiente |
+
+### Paquete 3 — Refactor estructural y QoL (R1 + B4 hechos)
+
+- **R1 — `game/respawn.py`**: `check_respawn(steps, player_trainer, cleared_list, defeated_list, objects, wild_markers, trainers)` unifica los antiguos `_check_respawn` (World 1) y `_check_respawn_world2`. Markers 100 pasos, rematches 300; filtro `is_boss`/`is_friendly` generalizado. Sin imports del proyecto (recibe listas como args) → sin ciclos. `_player_avg_level()` migrado aquí.
+- **B4 — validación estricta**: `_build_pokemon()` lanza `UnknownSpeciesError` (inexistente) o `SpeciesWithoutAttacksError` (NOATK), ambas `InvalidSpeciesError(ValueError)`. `restore_player_trainer()` tolera saves legacy (omite con aviso).
+- **Limpieza de datos**: Eevee→Pikachu, Staryu/Tentacool→Poliwag/Psyduck, Gengar→Haunter, Alakazam→Abra, Arcanine→Charizard, Machoke→Primeape, Gastly→Haunter, Onix→Graveler, Charmander→Charmeleon. Corrige equipos silenciosamente reducidos (Champion Nexus peleaba solo con Rhydon).
+- **Pendiente (R5/R2/R3)**: helper `pause()`, helpers de selección de ataques/Pokémon, refactor del menú de bolsa con confirmación de piedra evolutiva.
 
 ### Paquete 2 — Sistema de Dificultad e IA táctica
 
@@ -181,15 +192,16 @@ Pokemon_Game/
 - **8 wild markers** (`WORLD2_WILD_MARKERS`, Lv31-34: Arbok, Rhydon, Primeape, Greninja, Wartortle, Haunter, Magneton, Charizard).
 - **Encuentros salvajes**: 4 zonas a 0.04 (Aldea 0.0), niveles 25-32.
 - **Jefe `WORLD2_BOSS`** (`is_boss=True`): Echo Guardian `(105,15)` — Magneton 36, Arbok 37, Rhydon 38, Charizard 39, Mewtwo 40. Al vencerlo: `world2_completed=True` + cinemática; el jugador permanece en el Mundo 2.
-- **Rematches**: `_check_respawn_world2()` replica el patrón del Mundo 1, filtrando a `WORLD2_TRAINERS` para que el jefe y los NPCs nunca reaparezcan.
+- **Rematches**: desde el Paquete 3 (R1), World 2 usa el `check_respawn()` centralizado de `game/respawn.py` (con `WORLD2_WILD_MARKERS`/`WORLD2_TRAINERS`); el filtro `is_boss`/`is_friendly` (jefe y NPCs nunca reaparecen) vive ahora dentro de esa función.
 - **CRÍTICO**: el Mundo 2 usa solo las **32 especies con ataques** de `attacks.json`. Una especie inexistente crashea el normalizador; una `NOATK` pelearía solo con Struggle.
 
 ---
 
 ## 6. Known bugs / technical debt
 
-### Bugs resueltos (Paquetes 1–2)
+### Bugs resueltos (Paquetes 1–3)
 
+- **Equipos silenciosamente reducidos (Pkg 3 · B4)**: el Champion Nexus tenía 3 especies inexistentes en `pokemons.json` (Gengar/Alakazam/Arcanine) que `_build_pokemon` omitía devolviendo `None` → peleaba solo con Rhydon. Igual Battle Girl Nadia (Machoke). Corregido curando los datos + validación estricta que ahora lo impediría.
 - **Spawn en partida nueva** (`map/__init__.py`): `position=(None,None)` es una tupla *truthy*, así que el guard `if start_pos` no caía al spawn por defecto → `player.pos=(None,None)` → crash en `renderer.render`. Corregido: el guard ahora verifica `start_pos and start_pos[0] is not None`. Era un bug latente desde Q1 (solo se reproducía creando partida desde cero).
 - **B1** (`damage.py`): `_lookup_chart` ya no cae en la fila del defensor cuando falta la del atacante (usaba un `or` erróneo) → efectividad correcta con default 1.0.
 - **B3** (`damage.py`): el mensaje de efectividad ya no dice "Special attack" impreciso.
@@ -198,9 +210,10 @@ Pokemon_Game/
 ### Deuda técnica
 
 - `defeated_dict` en `main.py` se recarga desde disco en cada transición de mapa (I/O redundante). `cleared_markers_dict` ya usa el patrón correcto (mutación en RAM por referencia). Ver TODO en `main.py`.
+- **Paquete 3 incompleto**: faltan R5 (`pause()`), R2 (helpers de selección de ataques/Pokémon) y R3 (refactor del menú de bolsa + confirmación de piedra evolutiva).
 - La IA usa ataques de estado **puros** (daño 0) por probabilidad de dificultad (Q1); aún no integra los de daño+estado en su scoring táctico ni cambia de Pokémon por estado.
 - Static actualmente se activa con cualquier ataque; debería requerir flag de "contacto" en `attacks.json`.
-- Dungeon wild markers (Geodude, Gastly en `dungeon.py`) no tienen respawn — la Fase N solo aplica al overworld.
+- Dungeon wild markers (Geodude, Haunter en `DUNGEON_WILD_MARKERS`) no tienen respawn — `check_respawn` solo se invoca desde el overworld de cada mundo.
 
 ---
 

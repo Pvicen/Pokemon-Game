@@ -102,7 +102,7 @@ ZONES: Dict[str, Zone] = {
         min_player_level=12,
         wild_pokemons=[
             WildPokemonEntry(name="Geodude",  min_level=12, max_level=18, spawn_chance=2.5),
-            WildPokemonEntry(name="Gastly",   min_level=12, max_level=18, spawn_chance=2.0),
+            WildPokemonEntry(name="Haunter",  min_level=12, max_level=18, spawn_chance=2.0),
             WildPokemonEntry(name="Zubat",    min_level=12, max_level=18, spawn_chance=2.0),
         ],
         wild_encounter_chance=0.03,
@@ -114,8 +114,8 @@ ZONES: Dict[str, Zone] = {
         description="A coastal water route with aquatic Pokémon.",
         min_player_level=12,
         wild_pokemons=[
-            WildPokemonEntry(name="Staryu",    min_level=12, max_level=18, spawn_chance=2.5),
-            WildPokemonEntry(name="Tentacool", min_level=12, max_level=18, spawn_chance=2.0),
+            WildPokemonEntry(name="Poliwag",   min_level=12, max_level=18, spawn_chance=2.5),
+            WildPokemonEntry(name="Psyduck",   min_level=12, max_level=18, spawn_chance=2.0),
             WildPokemonEntry(name="Horsea",    min_level=12, max_level=18, spawn_chance=2.0),
         ],
         wild_encounter_chance=0.02,
@@ -150,10 +150,10 @@ WILD_MARKERS: List[WildMarker] = [
     WildMarker("Bellsprout", level=10, position=(52, 18)),
     WildMarker("Venonat",    level=11, position=(75, 8)),
     # Ruta del Mar (x>=119, y<35)
-    WildMarker("Staryu",    level=14, position=(130, 8)),
-    WildMarker("Tentacool", level=13, position=(145, 18)),
+    WildMarker("Poliwag",   level=14, position=(130, 8)),
+    WildMarker("Psyduck",   level=13, position=(145, 18)),
     # Pueblo Nuevo (x>=119, y>=35)
-    WildMarker("Eevee",     level=12, position=(135, 50)),
+    WildMarker("Pikachu",   level=12, position=(135, 50)),
 ]
 
 
@@ -342,7 +342,7 @@ TRAINERS: List[TrainerSetup] = [
     # --- Ruta del Mar + Pueblo Nuevo (hard) ---
     TrainerSetup(
         name="Sailor Marco",
-        team=[("Tentacool", 14), ("Staryu", 13)],
+        team=[("Poliwag", 14), ("Poliwag", 13)],
         position=(128, 54),
         defeat_message="The sea is unforgiving — and so am I!",
         dialogue=[
@@ -359,7 +359,7 @@ TRAINERS: List[TrainerSetup] = [
     ),
     TrainerSetup(
         name="Swimmer Lucia",
-        team=[("Horsea", 15), ("Staryu", 14)],
+        team=[("Horsea", 15), ("Poliwag", 14)],
         position=(143, 54),
         defeat_message="The current was against me today!",
         dialogue=[
@@ -557,7 +557,7 @@ DUNGEON_TRAINERS: List[TrainerSetup] = [
 
 DUNGEON_WILD_MARKERS: List[WildMarker] = [
     WildMarker("Geodude", level=13, position=(8,  5)),
-    WildMarker("Gastly",  level=14, position=(35, 12)),
+    WildMarker("Haunter", level=14, position=(35, 12)),
 ]
 
 
@@ -578,7 +578,7 @@ def get_dungeon_wild_marker_objects() -> List[dict]:
 DUNGEON_PN_TRAINERS: List[TrainerSetup] = [
     TrainerSetup(
         name="Battle Girl Nadia",
-        team=[("Machoke", 20), ("Graveler", 21)],
+        team=[("Primeape", 20), ("Graveler", 21)],
         position=(14, 3),
         defeat_message="Impressive... but the worst is yet to come.",
         dialogue=[
@@ -610,7 +610,7 @@ DUNGEON_PN_TRAINERS: List[TrainerSetup] = [
     ),
     TrainerSetup(
         name="Champion Nexus",
-        team=[("Gengar", 27), ("Rhydon", 26), ("Alakazam", 27), ("Arcanine", 26)],
+        team=[("Haunter", 27), ("Rhydon", 26), ("Abra", 27), ("Charizard", 26)],
         position=(35, 16),
         defeat_message="...The legend ends here. A new chapter awaits.",
         dialogue=[
@@ -627,8 +627,8 @@ DUNGEON_PN_TRAINERS: List[TrainerSetup] = [
 ]
 
 DUNGEON_PN_WILD_MARKERS: List[WildMarker] = [
-    WildMarker("Onix",   level=20, position=(8,  3)),
-    WildMarker("Gengar", level=22, position=(20, 11)),
+    WildMarker("Graveler", level=20, position=(8,  3)),
+    WildMarker("Haunter",  level=22, position=(20, 11)),
 ]
 
 
@@ -1005,12 +1005,41 @@ STARTER_POKEMONS: List[Tuple[str, int]] = [
 # FACTORY FUNCTIONS
 # =============================================================================
 
+class InvalidSpeciesError(ValueError):
+    """Base error (B4) for a Pokémon that cannot be safely built from game data."""
+
+
+class UnknownSpeciesError(InvalidSpeciesError):
+    """Raised when building a Pokémon whose species is not defined in pokemons.json."""
+
+
+class SpeciesWithoutAttacksError(InvalidSpeciesError):
+    """Raised when building a Pokémon whose species has no registered attacks (B4).
+
+    A 'NOATK' species would only be able to use Struggle in combat — a silent
+    degradation that is hard to trace. We fail loudly at construction time so bad
+    data in teams / markers / zones is caught immediately, not mid-battle.
+    """
+
+
 def _build_pokemon(pokemon_name: str, level: int, pokemon_db: dict, attacks_db: dict) -> Optional[Pokemon]:
+    # B4 "Seguridad Total": fail loudly for any species that can't fight properly,
+    # so bad data in teams / markers / zones surfaces at setup, never mid-combat.
+    # (restore_player_trainer wraps this in try/except to tolerate legacy saves.)
     key = pokemon_name.lower()
     data = pokemon_db.get(key)
     if data is None:
-        return None
-    attacks = attacks_db["by_owner"].get(key, [])
+        raise UnknownSpeciesError(
+            f"Species '{pokemon_name}' (key '{key}') is not defined in data/pokemons.json. "
+            f"Add it to pokemons.json or remove it from teams/markers/zones."
+        )
+    attacks = attacks_db.get("by_owner", {}).get(key, [])
+    if not attacks:
+        raise SpeciesWithoutAttacksError(
+            f"Species '{data.get('name', pokemon_name)}' (key '{key}') has no attacks "
+            f"in attacks.json (NOATK) and would fight only with Struggle. "
+            f"Add a moveset to data/attacks.json or remove it from teams/markers/zones."
+        )
     p = Pokemon(
         name=data["name"],
         element_type=data["element_type"],

@@ -119,7 +119,7 @@ class HumanController():
         
     def SelectFirstPokemon(self, trainer, actor):
         pokemons = load_pokemons_json()
-        ALLOWED_POKEMONS = ["Squirtle", "Charmander", "Bulbasaur", "Pikachu"]
+        ALLOWED_POKEMONS = ["Squirtle", "Charmeleon", "Bulbasaur", "Pikachu"]
         initials = [p for p in pokemons if p.name in ALLOWED_POKEMONS]
         
         if not initials:

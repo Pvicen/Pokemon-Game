@@ -54,7 +54,8 @@ Pokemon_Game/
 ├── game/
 │   ├── __init__.py
 │   ├── setup_game.py        # Zone, WildMarker, TrainerSetup, ZONES, TRAINERS, DUNGEON_TRAINERS, DUNGEON_PN_TRAINERS
-│   │                        # _build_pokemon(), create_trainer_instance(), get_zone_for_position()
+│   │                        # _build_pokemon() — B4: lanza UnknownSpeciesError/SpeciesWithoutAttacksError
+│   │                        # create_trainer_instance(), get_zone_for_position()
 │   │                        # get_dungeon_pn_objects(), get_dungeon_pn_wild_marker_objects()
 │   ├── encounters.py        # trigger_encounter(), trigger_wild_encounter(), trigger_wild_marker_encounter()
 │   │                        # clear_status() en Pokémon capturado (no entra al equipo con veneno/parálisis)
@@ -65,6 +66,7 @@ Pokemon_Game/
 │   ├── ui_utils.py          # _hp_bar() — usado por ui_menus y show_team_summary
 │   ├── difficulty.py        # Paquete 2: estado global de dificultad (presets easy/normal/hard;
 │   │                        #   enemy_damage_multiplier(), xp_multiplier(), ai_status_chance())
+│   ├── respawn.py           # Paquete 3 (R1): check_respawn() unificado (World 1 y 2) + _player_avg_level()
 │   ├── world.py             # (reservado)
 │   └── setup_game.py        # + Fase Q: ZONES_WORLD_2, WORLD2_FRIENDLY_NPCS, WORLD2_TRAINERS,
 │                            #   WORLD2_BOSS (Echo Guardian, is_boss), WORLD2_WILD_MARKERS,
@@ -72,7 +74,7 @@ Pokemon_Game/
 │                            #   get_zone_for_position(x,y,world_id), get_zone_by_id(id,world_id)
 ├── map/
 │   ├── __init__.py          # run_map(); _heal_at_pokemon_center() restaura HP+PP y cura estados
-│   │                        # _check_respawn(): wild markers 100 pasos, rematches 300 pasos
+│   │                        # llama game.respawn.check_respawn() (markers 100 pasos, rematches 300)
 │   │                        # WORLD2_PORTAL_POS=(140,55) → "travel_to_world2" si chapter2_unlocked
 │   │                        # spawn guard: (None,None) en partida nueva → PLAYER_START (20,43)
 │   ├── terminal.py          # Paquete 1: anti-flicker + constantes ANSI compartidas
@@ -137,6 +139,8 @@ Pokemon_Game/
 | **Q4** | **8 entrenadores + 8 wild markers + salvajes por zona + jefe Echo Guardian → `world2_completed=True` + rematches** | ✅ |
 | **Pkg 1** | **Anti-flicker (redibujado in-place, `map/terminal.py`) + consolidación ANSI (R4) + fixes de daño B1/B3 + limpieza de código muerto** | ✅ |
 | **Pkg 2** | **Sistema de Dificultad (easy/normal/hard: daño enemigo asimétrico + XP) + IA táctica Q1 (ataques de estado) + fix spawn partida nueva** | ✅ |
+| **Pkg 3 (R1+B4)** | **Respawn centralizado (`game/respawn.py`, unifica World 1 y 2) + validación estricta de especies (B4: `_build_pokemon` lanza error) + limpieza de datos NOATK/inexistentes (16 refs; Champion Nexus ahora pelea con 4 Pokémon)** | ✅ |
+| **Pkg 3 (R5/R2/R3)** | **Helper `pause()`, helpers de selección de ataques/Pokémon, refactor menú de bolsa + confirmación piedra evolutiva** | ⏳ pendiente |
 
 ---
 
@@ -144,7 +148,7 @@ Pokemon_Game/
 
 **Capítulo 1 (Fases 1–P), Capítulo 2 (Fase Q: Q1–Q4) y pulido (Paquetes 1–2) COMPLETOS y verificados en ejecución.** No hay fases pendientes.
 
-Líneas futuras posibles (no planificadas): Capítulo 3 (`world3`, el patrón multi-mundo ya lo soporta), respawn/rematch en dungeons, IA de estado más táctica (priorizar daño+estado, cambiar de Pokémon), menú in-game para cambiar la dificultad, curva de daño por nivel (`_level_factor`) más pronunciada, y los refactors R1/R2/R3/R5 del informe de auditoría.
+Líneas futuras posibles (no planificadas): completar el Paquete 3 (R5 `pause()`, R2 helpers de selección, R3 refactor de la bolsa + confirmación de piedra), Capítulo 3 (`world3`, el patrón multi-mundo ya lo soporta), respawn/rematch en dungeons, IA de estado más táctica (priorizar daño+estado, cambiar de Pokémon), menú in-game para cambiar la dificultad, y curva de daño por nivel (`_level_factor`) más pronunciada.
 
 ---
 
@@ -538,21 +542,21 @@ El campo `"pp"` es obligatorio en todos los ataques. Fallback en código: `.get(
 
 ---
 
-## Respawn y Rematches (Fases N+O — implementado)
+## Respawn y Rematches (Fases N+O; centralizado en Paquete 3 · R1)
 
-Ambos implementados en `_check_respawn()` dentro de `map/__init__.py`, llamado en cada paso del jugador.
+Unificado en **`game/respawn.py` → `check_respawn(steps, player_trainer, cleared_list, defeated_list, objects, wild_markers, trainers)`**, llamado en cada paso del jugador desde `run_map()` (World 1, con `WILD_MARKERS`/`TRAINERS`) y `run_world2_map()` (World 2, con `WORLD2_WILD_MARKERS`/`WORLD2_TRAINERS`). Antes había dos copias casi idénticas (`_check_respawn` en `map/__init__.py` y `_check_respawn_world2` en `map/world2/main.py`); R1 las fusionó. `_player_avg_level()` también vive ahora ahí. Constantes: `MARKER_RESPAWN_STEPS=100`, `TRAINER_REMATCH_STEPS=300`. El módulo no importa nada del proyecto (recibe las listas como argumentos) → sin ciclos game↔map.
 
 ### Respawn wild markers (Fase N)
 - Cooldown individual de **100 pasos** por marker
-- Cada entrada en `cleared_wild_markers["main"]` guarda `(x, y, step_cleared)`
-- Al iterar, si `steps - step_cleared >= 100` → eliminar de `cleared_main` y re-añadir a `objects`
+- Cada entrada en `cleared_wild_markers[<map>]` guarda `(x, y, step_cleared)`
+- Al iterar, si `steps - step_cleared >= 100` → eliminar de la lista y re-añadir a `objects`
 
 ### Rematches trainers (Fase O)
 - Cooldown individual de **300 pasos** por entrenador
-- Cada entrada en `defeated_trainers["main"]` guarda `(x, y, step_defeated)`
+- Cada entrada en `defeated_trainers[<map>]` guarda `(x, y, step_defeated)`
 - Al rematchar, el equipo se escala con `dataclasses.replace(trainer_setup, team=scaled_team)`
 - `scaled_team`: cada Pokémon sube al máximo de `(nivel_original + 2, nivel_promedio_equipo_jugador)`
-- Sólo re-añade entrenadores hostiles (`not t.is_friendly`)
+- **Filtro generalizado**: solo re-aparecen entrenadores con `not is_friendly and not is_boss` (los NPCs y el jefe Echo Guardian nunca reaparecen). Además, solo se elimina de `defeated_list` lo que es rematcheable (corrige un bug latente del World 1 donde un NPC se podía re-mostrar tras recargar).
 
 ---
 
@@ -615,11 +619,11 @@ WORLD2_PC_POS        = (22, 8)   # Centro Pokémon (cura HP+PP+estados)
 ### Flujo post-victoria Echo Guardian
 Al derrotarlo: `world2_completed=True` + `_chapter2_complete_cinematic()`. El jugador **permanece en World 2** (puede seguir explorando/grindeando). El jefe desaparece y no reaparece.
 
-### Rematches (`_check_respawn_world2` en `map/world2/main.py`)
-Réplica del patrón del World 1 (markers 100 pasos, trainers 300 pasos, equipo escalado con `dataclasses.replace()`). **Diferencia:** el rematch se filtra a posiciones de `WORLD2_TRAINERS` — así el jefe (`is_boss`) y los NPCs (`is_friendly`) nunca reaparecen (sin el filtro, el Echo Guardian volvería tras 300 pasos al recargar).
+### Rematches (Paquete 3 · R1 — `game/respawn.check_respawn`)
+Desde el Paquete 3, World 2 usa el mismo `check_respawn()` centralizado que World 1 (ver sección "Respawn y Rematches"), invocado con `WORLD2_WILD_MARKERS`/`WORLD2_TRAINERS`. El filtro `is_boss`/`is_friendly` (jefe y NPCs nunca reaparecen) está generalizado dentro de `check_respawn`, así que el Echo Guardian no vuelve.
 
-### CRÍTICO — especies en World 2
-Solo se usan las **32 especies con ataques** en `attacks.json`. Las 35 especies `NOATK` pelearían solo con Struggle (sin ataques propios → `_build_pokemon` les deja `normal_attacks=[]`). Nunca añadir a equipos/markers/zonas una especie que no exista en `pokemons.json` (crash del normalizador) ni una `NOATK` (combate degradado).
+### CRÍTICO — especies en World 2 (y todo el juego)
+Solo se usan las **32 especies con ataques** en `attacks.json`. Desde el Paquete 3 (B4), `_build_pokemon` **lanza error** si se le pide una especie inexistente (`UnknownSpeciesError`) o sin ataques/`NOATK` (`SpeciesWithoutAttacksError`) — ya no degrada en silencio. Nunca añadir a equipos/markers/zonas una especie que no exista en `pokemons.json` ni una `NOATK`: el juego fallará ruidosamente al construir el objeto (red de seguridad B4). `restore_player_trainer` es la única excepción: tolera especies inválidas en saves legacy omitiéndolas con aviso.
 
 ---
 
@@ -642,10 +646,24 @@ Selección **Fácil / Normal / Difícil** al crear partida nueva (`main._ask_dif
 
 ---
 
+## Validación de especies (Paquete 3 · B4 — implementado)
+
+`game/setup_game._build_pokemon()` es ahora la red de seguridad anti-crash:
+- Especie **inexistente** en `pokemons.json` → `UnknownSpeciesError`.
+- Especie en `pokemons.json` pero **sin ataques** (NOATK) → `SpeciesWithoutAttacksError`.
+- Ambas heredan de `InvalidSpeciesError(ValueError)`.
+
+Antes, una especie mala degradaba en silencio (equipo reducido o combate solo-Struggle); ahora falla al construir, en el setup, no a mitad del combate. `restore_player_trainer()` envuelve la llamada en `try/except` y **omite** Pokémon inválidos de saves legacy (regla "no romper saves").
+
+**Limpieza de datos asociada (16 referencias en `setup_game.py` + 1 en `human.py`):** Eevee→Pikachu (marker), Staryu/Tentacool→Poliwag/Psyduck (zona/markers/NPCs), Gengar→Haunter, Alakazam→Abra, Arcanine→Charizard (Champion Nexus), Machoke→Primeape (Nadia), Gastly→Haunter (zona/dungeon), Onix→Graveler (dungeon_pn), Charmander→Charmeleon (starter). **Bug colateral corregido:** el Champion Nexus usaba 3 especies inexistentes (Gengar/Alakazam/Arcanine) que se omitían en silencio → peleaba solo con Rhydon; ahora pelea con sus 4 Pokémon.
+
+---
+
 ## Bugs conocidos / Deuda técnica
 
 - **Deuda técnica:** `defeated_dict` en `main.py` se recarga desde disco en cada transición de mapa (I/O redundante). `cleared_markers_dict` usa el patrón correcto (mutación en RAM por referencia). Pendiente refactorizar `defeated_dict` para igualar.
-- **Respawn/rematch en dungeon y dungeon_pn:** `_check_respawn()` solo opera sobre `main` (World 1). World 2 tiene su propio `_check_respawn_world2()`. Las dungeons (`dungeon`, `dungeon_pn`) no tienen respawn/rematch (no crítico).
+- **Respawn/rematch en dungeon y dungeon_pn:** `check_respawn()` (centralizado en `game/respawn.py`) solo se invoca desde `run_map` (World 1) y `run_world2_map` (World 2). Las dungeons (`dungeon`, `dungeon_pn`) no tienen respawn/rematch (no crítico).
+- **Paquete 3 pendiente (R5/R2/R3):** helper `pause()`, helpers de selección de ataques/Pokémon, y refactor del menú de la bolsa con confirmación antes de usar piedra evolutiva. Aún no implementado.
 - La IA usa ataques de estado **puros** (daño 0) con probabilidad por dificultad (Paquete 2 / Q1); aún no prioriza ataques de daño+estado tácticamente ni cambia de Pokémon por estado.
 - El PC cura TODO el equipo (comportamiento estándar).
 - `experience.py._apply_species()` no actualiza `evolution_by_item` tras evolución por nivel (no es problema porque los Pokémon con stone evolutions no tienen level evolutions).

@@ -256,7 +256,14 @@ def restore_player_trainer(save_data: Dict[str, Any]):
 
     team = []
     for p_data in save_data.get("team", []):
-        p = _build_pokemon(p_data["name"], int(p_data.get("level", 1)), pokemon_db, attacks_db)
+        # B4: _build_pokemon now raises for invalid species. A legacy save could
+        # hold a since-removed species (e.g. a captured Eevee); skip it with a
+        # warning instead of crashing the whole load (project rule: never break saves).
+        try:
+            p = _build_pokemon(p_data["name"], int(p_data.get("level", 1)), pokemon_db, attacks_db)
+        except Exception as e:
+            print(f"  ⚠️  Skipping invalid saved Pokémon '{p_data.get('name')}': {e}")
+            continue
         if p is not None:
             saved_hp = int(p_data.get("health", p.maximun_hp))
             p.health = min(max(0, saved_hp), p.maximun_hp)
