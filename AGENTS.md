@@ -1,6 +1,6 @@
 # Pokemon_Game — Agent Context
 
-> Última actualización: 2026-06-01 — Paquete 3 parcial: R1 (respawn centralizado) + B4 (validación estricta de especies + limpieza de datos). R5/R2/R3 pendientes. Paquetes 1–2 y Capítulo 2 sellados.
+> Última actualización: 2026-06-02 — **Paquete 3 COMPLETO** (R1+B4 ya estaban; ahora R5/R2/R3 cerrados: `pause()`, helpers de selección, refactor del menú de bolsa + confirmación de piedra evolutiva). **Proyecto sellado — pausa momentánea del desarrollo.** Capítulos 1–2 y Paquetes 1–3 completos y verificados.
 
 ---
 
@@ -17,6 +17,7 @@ Juego de Pokémon por terminal (ASCII) en Python. Combate por turnos con sistema
 - **Fase P completada**: cueva end-game dungeon_pn con Champion Nexus → `chapter2_unlocked=true`.
 - **Fase Q (Q1–Q4) completada y verificada**: arquitectura multi-mundo (save v2), portal World1↔World2, overworld del Mundo 2 con 5 zonas, 5 NPCs, 8 entrenadores, 8 wild markers, encuentros salvajes, rematches, y jefe final Echo Guardian → `world2_completed=true`.
 - **Paquetes 1–2 completados**: renderizado anti-flicker (`map/terminal.py` — redibujado in-place, sin `cls` por frame), y **sistema de dificultad** (easy/normal/hard) con daño enemigo asimétrico, XP escalada e IA que lanza ataques de estado. Campo global `difficulty` en el save.
+- **Paquete 3 completado**: R1 (respawn centralizado en `game/respawn.py`) + B4 (validación estricta de especies + limpieza de datos) + **R5/R2/R3** (módulo `ui_common.py` con `pause()`, `collect_attacks()`, `pick_pokemon()`; refactor de las 3 ramas del menú de bolsa + confirmación estricta `[y/N]` antes de consumir piedra evolutiva). Verificado con compileall + smoke test headless.
 - Saves son retrocompatibles: la migración v1→v2 es automática y no destructiva; los saves sin `difficulty` cargan como `"normal"`.
 
 ---
@@ -53,6 +54,7 @@ Pokemon_Game/
 ├── experience.py            # ExperienceManager, _apply_species(), evolución por nivel
 ├── abilities.py             # ABILITY_BY_SPECIES — hooks: fire_on_entry, fire_pre_damage, fire_on_hit_received
 ├── utils.py                 # clamp(), determine_attack_order() — speed//2 si paralysis
+├── ui_common.py             # Paquete 3 (R5/R2/R3): pause(), collect_attacks(), pick_pokemon() — helpers UI (leaf, sin imports internos)
 ├── data_io/
 │   ├── __init__.py          # load_attacks(), load_pokemons(), load_items(), load_type_chart()
 │   ├── loaders.py           # load_dataset(), read_json_cached()
@@ -141,14 +143,16 @@ Pokemon_Game/
 | **Pkg 1** | **Anti-flicker (`map/terminal.py`, redibujado in-place) + consolidación ANSI (R4) + fixes daño B1/B3 + limpieza código muerto (EvolvedPokemon)** | ✅ |
 | **Pkg 2** | **Sistema de Dificultad easy/normal/hard (daño enemigo asimétrico + XP) + IA táctica Q1 (ataques de estado) + fix spawn partida nueva** | ✅ |
 | **Pkg 3 (R1+B4)** | **Respawn centralizado (`game/respawn.py`, unifica W1/W2) + validación estricta de especies (B4) + limpieza de 16 refs NOATK/inexistentes (Champion Nexus ahora con 4 Pokémon)** | ✅ |
-| **Pkg 3 (R5/R2/R3)** | **Helper `pause()`, helpers de selección, refactor menú bolsa + confirmación piedra** | ⏳ pendiente |
+| **Pkg 3 (R5/R2/R3)** | **`ui_common.py`: `pause()` (centraliza ~30 `input("Press Enter…")`), `collect_attacks()`/`pick_pokemon()` (deduplican human/ia/ui_menus); refactor de las 3 ramas de `_use_item_out_of_battle` + confirmación estricta `[y/N]` antes de gastar piedra evolutiva** | ✅ |
 
-### Paquete 3 — Refactor estructural y QoL (R1 + B4 hechos)
+### Paquete 3 — Refactor estructural y QoL (COMPLETO: R1 + B4 + R5/R2/R3)
 
 - **R1 — `game/respawn.py`**: `check_respawn(steps, player_trainer, cleared_list, defeated_list, objects, wild_markers, trainers)` unifica los antiguos `_check_respawn` (World 1) y `_check_respawn_world2`. Markers 100 pasos, rematches 300; filtro `is_boss`/`is_friendly` generalizado. Sin imports del proyecto (recibe listas como args) → sin ciclos. `_player_avg_level()` migrado aquí.
 - **B4 — validación estricta**: `_build_pokemon()` lanza `UnknownSpeciesError` (inexistente) o `SpeciesWithoutAttacksError` (NOATK), ambas `InvalidSpeciesError(ValueError)`. `restore_player_trainer()` tolera saves legacy (omite con aviso).
 - **Limpieza de datos**: Eevee→Pikachu, Staryu/Tentacool→Poliwag/Psyduck, Gengar→Haunter, Alakazam→Abra, Arcanine→Charizard, Machoke→Primeape, Gastly→Haunter, Onix→Graveler, Charmander→Charmeleon. Corrige equipos silenciosamente reducidos (Champion Nexus peleaba solo con Rhydon).
-- **Pendiente (R5/R2/R3)**: helper `pause()`, helpers de selección de ataques/Pokémon, refactor del menú de bolsa con confirmación de piedra evolutiva.
+- **R5 — `pause(message="  Press Enter to continue...")`** en `ui_common.py`: centraliza ~30 `input("Press Enter…")` (combat, encounters, ui_menus, human, map/__init__, dungeon, dungeon_pn, world2/main, main). Cada llamada pasa su texto original; los `input()` que capturan opciones NO se tocaron.
+- **R2 — `collect_attacks(pokemon)` y `pick_pokemon(candidates, *, title, formatter, prompt, loop=False)`** en `ui_common.py`: deduplican la recogida de ataques (`human.ChooseAttack`, `ia._all_attacks_of`) y la selección de Pokémon (`ui_menus`, `human._pick_fainted`). `ui_common.py` es un módulo *leaf* (solo stdlib) → importable desde `combat.py` sin reabrir el ciclo `combat↔map`.
+- **R3 — menú de bolsa**: `_use_item_out_of_battle()` colapsa sus 3 ramas casi idénticas (revive/evolution/healing) en un único flujo vía `pick_pokemon()`. **Confirmación estricta** `Use <Stone> on <Pokémon>? [y/N]` (default No) antes de consumir una **piedra evolutiva** (ítem irreversible). Verificado: NO cancela sin gastar; YES evoluciona y consume.
 
 ### Paquete 2 — Sistema de Dificultad e IA táctica
 
@@ -210,7 +214,6 @@ Pokemon_Game/
 ### Deuda técnica
 
 - `defeated_dict` en `main.py` se recarga desde disco en cada transición de mapa (I/O redundante). `cleared_markers_dict` ya usa el patrón correcto (mutación en RAM por referencia). Ver TODO en `main.py`.
-- **Paquete 3 incompleto**: faltan R5 (`pause()`), R2 (helpers de selección de ataques/Pokémon) y R3 (refactor del menú de bolsa + confirmación de piedra evolutiva).
 - La IA usa ataques de estado **puros** (daño 0) por probabilidad de dificultad (Q1); aún no integra los de daño+estado en su scoring táctico ni cambia de Pokémon por estado.
 - Static actualmente se activa con cualquier ataque; debería requerir flag de "contacto" en `attacks.json`.
 - Dungeon wild markers (Geodude, Haunter en `DUNGEON_WILD_MARKERS`) no tienen respawn — `check_respawn` solo se invoca desde el overworld de cada mundo.
@@ -261,7 +264,7 @@ Pokemon_Game/
 
 ## 8. Next phase
 
-**Capítulo 1 (Fases 1–P) y Capítulo 2 (Fase Q: Q1–Q4) COMPLETOS y verificados.** No hay fases pendientes planificadas.
+**Capítulo 1 (Fases 1–P), Capítulo 2 (Fase Q: Q1–Q4) y Paquetes de pulido 1–3 COMPLETOS y verificados. Proyecto sellado el 2026-06-02 — pausa momentánea del desarrollo.** No hay fases pendientes planificadas.
 
 Líneas futuras posibles (no planificadas — requieren diseño y aprobación del usuario antes de implementar):
 - **Capítulo 3** (`world3`): el patrón multi-mundo (save v2, state machine por `current_world`, `map/worldN/`) ya lo soporta. Replicar la estructura de `map/world2/` y añadir `"world3"` a `WORLD_IDS`/`WORLD_MAPS`.

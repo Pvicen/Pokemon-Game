@@ -6,9 +6,9 @@ Juego de Pokémon por terminal (ASCII) en Python. Combate por turnos, overworld 
 
 **Capítulo 2 completo (Fase Q).** El juego tiene dos mundos: el overworld original (160×65) y el Mundo 2 (120×50), accesible por un portal en Pueblo Nuevo tras derrotar al Champion Nexus. Incluye save multi-mundo v2, 5 zonas nuevas, NPCs narrativos, 8 entrenadores, encuentros salvajes, rematches y el jefe final **Echo Guardian**.
 
-**Pulido (Paquetes 1–2):** renderizado anti-flicker y **selección de dificultad** (Fácil / Normal / Difícil) al crear partida. En Difícil los enemigos pegan más fuerte, dan menos XP y la IA usa ataques de estado (Thunder Wave, Toxic, Sleep Powder); el daño que infliges tú nunca se penaliza.
+**Pulido (Paquetes 1–3):** renderizado anti-flicker; **selección de dificultad** (Fácil / Normal / Difícil) al crear partida — en Difícil los enemigos pegan más fuerte, dan menos XP y la IA usa ataques de estado (Thunder Wave, Toxic, Sleep Powder), pero el daño que infliges tú nunca se penaliza; y un **refactor de calidad** (respawn centralizado, validación estricta de especies, helpers de UI compartidos y confirmación antes de usar piedras evolutivas).
 
-No hay fases pendientes planificadas. Ver [AGENTS.md](AGENTS.md) y [CLAUDE.md](CLAUDE.md) para detalle y posibles líneas futuras.
+**Proyecto sellado el 2026-06-02 (pausa momentánea del desarrollo).** No hay fases pendientes planificadas. Ver [AGENTS.md](AGENTS.md) y [CLAUDE.md](CLAUDE.md) para detalle y posibles líneas futuras.
 
 ## Cómo ejecutar
 
@@ -53,6 +53,6 @@ Instalar con: `pip install -r requirements.txt`
 
 ## Fases completadas
 
-1–14, A–P (Capítulo 1), Q1–Q4 (Capítulo 2) y Paquetes 1–2 (pulido): combate, mapa ASCII, cuevas, Pokédex, PP, estados alterados, habilidades pasivas, respawn, rematches, cueva end-game, arquitectura multi-mundo, Mundo 2 con jefe final, renderizado anti-flicker y sistema de dificultad con IA táctica.
+1–14, A–P (Capítulo 1), Q1–Q4 (Capítulo 2) y Paquetes 1–3 (pulido): combate, mapa ASCII, cuevas, Pokédex, PP, estados alterados, habilidades pasivas, respawn, rematches, cueva end-game, arquitectura multi-mundo, Mundo 2 con jefe final, renderizado anti-flicker, sistema de dificultad con IA táctica, y refactor de calidad (respawn centralizado, validación de especies, helpers de UI y confirmación de piedra evolutiva).
 
 Ver [AGENTS.md](AGENTS.md) y [CLAUDE.md](CLAUDE.md) para el detalle completo de arquitectura, fases y save format.

@@ -7,6 +7,7 @@ from ..game.encounters import trigger_encounter, trigger_wild_encounter, trigger
 from ..game.save_load import save_game
 from ..game.ui_menus import open_bag_menu, open_pokedex, show_team_summary
 from ..game.respawn import check_respawn, _player_avg_level
+from ..ui_common import pause
 
 POKEMON_CENTER_POS   = (9, 11)
 POKEMON_CENTER_2_POS = (129, 46)
@@ -29,18 +30,18 @@ def _heal_at_pokemon_center(player_trainer) -> None:
     )
     if already_healthy:
         print("\n  Nurse Joy: \"Your Pokemon are already in perfect health!\"")
-        input("  Press Enter to continue...")
+        pause("  Press Enter to continue...")
         return
 
     print("\n  Nurse Joy: \"Welcome! We'll heal your Pokemon to full health!\"")
-    input("  ...")
+    pause("  ...")
     for p in player_trainer.team:
         p.health = p.maximun_hp
         p.restore_all_pp()
         p.clear_status()
     player_trainer.active_index = 0
     print("\n  Nurse Joy: \"Your Pokemon are fully healed. Have a great trip!\"")
-    input("  Press Enter to continue...")
+    pause("  Press Enter to continue...")
 
 
 def run_map(player_trainer, *, start_pos=None, defeated_dict=None,
@@ -136,7 +137,7 @@ def run_map(player_trainer, *, start_pos=None, defeated_dict=None,
                           cleared_markers_dict=cleared_markers_dict, steps=steps,
                           chapter2_unlocked=True)
                 print("\n  A strange portal hums beneath your feet...")
-                input("  Press Enter to step through into the new world...")
+                pause("  Press Enter to step through into the new world...")
                 return "travel_to_world2"
 
             elif (new_pos[0], new_pos[1]) == POKEMON_CENTER_2_POS:

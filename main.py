@@ -12,6 +12,7 @@ from .map.dungeon_pn import run_dungeon_pn
 from .map.world2 import run_world2_map
 from .map.terminal import clear_once, hide_cursor
 from .game.difficulty import set_difficulty
+from .ui_common import pause
 
 
 def _flush_kb() -> None:
@@ -61,7 +62,7 @@ def _main_menu() -> tuple[str | None, bool]:
     else:
         print("  No saved games found.\n")
         _flush_kb()
-        input("  Press Enter to start a new game...")
+        pause("  Press Enter to start a new game...")
         return _ask_save_name([]), True
 
 
@@ -156,7 +157,7 @@ def main():
             lead = player_trainer.team[0]
             print(f"\n  Welcome back! {lead.name} Lv.{lead.current_level} is ready.")
             _flush_kb()
-            input("  Press Enter to continue...")
+            pause("  Press Enter to continue...")
 
     if player_trainer is None:
         starter_names = choose_starter()

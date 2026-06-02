@@ -3,6 +3,7 @@ from __future__ import annotations
 from ..trainers import Trainer
 from ..data_io import load_pokemons, load_attacks
 from .ui_utils import _hp_bar
+from ..ui_common import pause, pick_pokemon
 
 _CATEGORY_ORDER  = ["healing", "revive", "buff", "capture", "evolution"]
 _CATEGORY_LABELS = {
@@ -14,22 +15,24 @@ _CATEGORY_LABELS = {
 }
 
 
-def _switch_pokemon_out_of_battle(player_trainer: Trainer) -> None:
-    print("\n  Choose your active Pokémon:")
-    for i, p in enumerate(player_trainer.team, start=1):
-        status = "K.O." if not p.is_alive() else "OK"
-        active = "  <- active" if i - 1 == player_trainer.active_index else ""
-        lv_str = f"Lv.{getattr(p, 'current_level', '?')}"
-        bar    = _hp_bar(p, length=12)
-        print(f"    [{i}] {p.name:<10} {lv_str:<6}  {bar}  {status}{active}")
-    print("    [0] Cancel")
+def _switch_active_line(idx: int, p) -> str:
+    status = "K.O." if not p.is_alive() else "OK"
+    lv_str = f"Lv.{getattr(p, 'current_level', '?')}"
+    bar    = _hp_bar(p, length=12)
+    return f"{p.name:<10} {lv_str:<6}  {bar}  {status}"
 
-    choice = input("  Choose: ").strip()
-    if choice == "0" or not choice.isdigit():
-        return
-    index = int(choice) - 1
-    if not (0 <= index < len(player_trainer.team)):
-        print("  ❌ Invalid.")
+
+def _switch_pokemon_out_of_battle(player_trainer: Trainer) -> None:
+    def _fmt(idx, p):
+        active = "  <- active" if idx == player_trainer.active_index else ""
+        return _switch_active_line(idx, p) + active
+
+    index = pick_pokemon(
+        list(enumerate(player_trainer.team)),
+        title="\n  Choose your active Pokémon:",
+        formatter=_fmt,
+    )
+    if index is None:
         return
     if index == player_trainer.active_index:
         print("  ⚠️ That Pokémon is already active.")
@@ -39,14 +42,14 @@ def _switch_pokemon_out_of_battle(player_trainer: Trainer) -> None:
         return
     player_trainer.active_index = index
     print(f"  ✅ {player_trainer.team[index].name} is now active!")
-    input("  Press Enter...")
+    pause("  Press Enter...")
 
 
 def _use_item_out_of_battle(player_trainer: Trainer, bag) -> None:
     usable = bag.usable_items(in_battle=False)
     if not usable:
         print("  ❌ No usable items outside battle.")
-        input("  Press Enter...")
+        pause("  Press Enter...")
         return
 
     grouped: dict = {}
@@ -83,65 +86,48 @@ def _use_item_out_of_battle(player_trainer: Trainer, bag) -> None:
     idef = bag.get_definitions(item_key) or {}
     item_type = idef.get("type")
 
+    # All three item families share the same flow: filter the team to the
+    # valid targets, bail with a message if none qualify, then ask which one.
+    # Only the filter, the heading and the per-row text differ.
     if item_type == "revive":
-        fainted = [(i, p) for i, p in enumerate(player_trainer.team) if not p.is_alive()]
-        if not fainted:
-            print("  ⚠️ No fainted Pokémon to revive.")
-            input("  Press Enter...")
-            return
-        print("\n  Choose a Pokémon to revive:")
-        for display, (team_idx, p) in enumerate(fainted, start=1):
-            print(f"    [{display}] {p.name} (0/{p.maximun_hp} HP)")
-        print("    [0] Cancel")
-        c = input("  Choose: ").strip()
-        if c == "0" or not c.isdigit():
-            return
-        pick = int(c) - 1
-        if not (0 <= pick < len(fainted)):
-            print("  ❌ Invalid.")
-            return
-        target_index = fainted[pick][0]
+        candidates = [(i, p) for i, p in enumerate(player_trainer.team) if not p.is_alive()]
+        empty_msg  = "  ⚠️ No fainted Pokémon to revive."
+        title      = "\n  Choose a Pokémon to revive:"
+        row        = lambda idx, p: f"{p.name} (0/{p.maximun_hp} HP)"
     elif item_type == "evolution":
-        alive = [(i, p) for i, p in enumerate(player_trainer.team) if p.is_alive()]
-        if not alive:
-            print("  ⚠️ All Pokémon are fainted.")
-            input("  Press Enter...")
-            return
-        print("\n  Choose a Pokémon to use the stone on:")
-        for display, (team_idx, p) in enumerate(alive, start=1):
-            lv_str = f"Lv.{getattr(p, 'current_level', '?')}"
-            print(f"    [{display}] {p.name} {lv_str} ({p.health}/{p.maximun_hp} HP)")
-        print("    [0] Cancel")
-        c = input("  Choose: ").strip()
-        if c == "0" or not c.isdigit():
-            return
-        pick = int(c) - 1
-        if not (0 <= pick < len(alive)):
-            print("  ❌ Invalid.")
-            return
-        target_index = alive[pick][0]
+        candidates = [(i, p) for i, p in enumerate(player_trainer.team) if p.is_alive()]
+        empty_msg  = "  ⚠️ All Pokémon are fainted."
+        title      = "\n  Choose a Pokémon to use the stone on:"
+        row        = lambda idx, p: f"{p.name} Lv.{getattr(p, 'current_level', '?')} ({p.health}/{p.maximun_hp} HP)"
     else:
-        healable = [(i, p) for i, p in enumerate(player_trainer.team)
-                    if p.is_alive() and p.health < p.maximun_hp]
-        if not healable:
-            print("  ⚠️ All Pokémon are already at full health.")
-            input("  Press Enter...")
+        candidates = [(i, p) for i, p in enumerate(player_trainer.team)
+                      if p.is_alive() and p.health < p.maximun_hp]
+        empty_msg  = "  ⚠️ All Pokémon are already at full health."
+        title      = "\n  Choose a Pokémon:"
+        row        = lambda idx, p: f"{p.name} ({p.health}/{p.maximun_hp} HP)"
+
+    if not candidates:
+        print(empty_msg)
+        pause("  Press Enter...")
+        return
+
+    target_index = pick_pokemon(candidates, title=title, formatter=row)
+    if target_index is None:
+        return
+
+    # Strict confirmation before consuming an irreversible item (evolution stones).
+    if item_type == "evolution":
+        target    = player_trainer.team[target_index]
+        item_name = idef.get("name", item_key)
+        print("\n  ⚠️  Evolution stones are used up permanently and cannot be undone.")
+        confirm = input(f"  Use {item_name} on {target.name}? [y/N]: ").strip().lower()
+        if confirm not in ("y", "yes"):
+            print("  Cancelled — the stone was not used.")
+            pause("  Press Enter...")
             return
-        print("\n  Choose a Pokémon:")
-        for display, (team_idx, p) in enumerate(healable, start=1):
-            print(f"    [{display}] {p.name} ({p.health}/{p.maximun_hp} HP)")
-        print("    [0] Cancel")
-        c = input("  Choose: ").strip()
-        if c == "0" or not c.isdigit():
-            return
-        pick = int(c) - 1
-        if not (0 <= pick < len(healable)):
-            print("  ❌ Invalid.")
-            return
-        target_index = healable[pick][0]
 
     bag.use(item_key, player_trainer, in_battle=False, target_index=target_index)
-    input("  Press Enter...")
+    pause("  Press Enter...")
 
 
 def _pokedex_detail(pokemon_name: str, pokemon_db: dict, attacks_db: dict, entry: dict | None = None) -> None:
@@ -186,7 +172,7 @@ def _pokedex_detail(pokemon_name: str, pokemon_db: dict, attacks_db: dict, entry
             admg  = atk_entry.get("damage", "?")
             print(f"  ║    {aname:<18} {atype:<10} {admg:>3} dmg  ║")
     print("  ╚══════════════════════════════════════════╝")
-    input("  Press Enter to go back...")
+    pause("  Press Enter to go back...")
 
 
 def open_pokedex(player_trainer: Trainer) -> None:
@@ -247,14 +233,14 @@ def show_team_summary(player_trainer: Trainer) -> None:
         lv_str = f"Lv.{getattr(p, 'current_level', '?')}"
         bar    = _hp_bar(p, length=12)
         print(f"  [{i+1}] {p.name:<10} {lv_str:<6}  {bar}  {status}{active}")
-    input("\n  Press Enter to continue...")
+    pause("\n  Press Enter to continue...")
 
 
 def open_bag_menu(player_trainer: Trainer) -> None:
     bag = getattr(player_trainer, "bag", None)
     if bag is None:
         print("\n  No bag available.")
-        input("  Press Enter...")
+        pause("  Press Enter...")
         return
     while True:
         print("\n  ╔══════════════════════════════╗")

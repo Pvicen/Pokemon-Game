@@ -3,6 +3,7 @@ from ..utils import load_items, load_pokemons_json
 from ..trainers import Trainer
 from ..inventory import Inventory
 from ..game.ui_utils import _hp_bar
+from ..ui_common import pause, collect_attacks, pick_pokemon
 
 class HumanController():
     
@@ -98,23 +99,12 @@ class HumanController():
         if not fainted:
             print("  No fainted Pokémon to revive.")
             return None
-
-        print("\n  Choose a Pokémon to revive:")
-        for display, (team_idx, p) in enumerate(fainted, start=1):
-            print(f"  [{display}] {p.name} (0/{p.maximun_hp} HP)")
-        print("  [0] Cancel")
-
-        while True:
-            choice = input("  Choose: ").strip()
-            if choice == "0":
-                return None
-            if not choice.isdigit():
-                print("❌ Invalid input.")
-                continue
-            pick = int(choice) - 1
-            if 0 <= pick < len(fainted):
-                return fainted[pick][0]
-            print(f"❌ Enter a number between 0 and {len(fainted)}.")
+        return pick_pokemon(
+            fainted,
+            title="\n  Choose a Pokémon to revive:",
+            formatter=lambda idx, p: f"{p.name} (0/{p.maximun_hp} HP)",
+            loop=True,
+        )
         
         
     def SelectFirstPokemon(self, trainer, actor):
@@ -151,11 +141,7 @@ class HumanController():
                 
     @staticmethod
     def ChooseAttack(actor):
-        all_attacks = []
-        if getattr(actor, "special_attacks", None):
-            all_attacks.extend(list(actor.special_attacks))
-        if getattr(actor, "normal_attacks", None):
-            all_attacks.extend(list(actor.normal_attacks))
+        all_attacks = collect_attacks(actor)
 
         if not all_attacks:
             print(f"  {getattr(actor, 'name', 'Pokemon')} has no attacks. Using Struggle!")
@@ -165,7 +151,7 @@ class HumanController():
 
         if not available:
             print(f"\n  {actor.name} has no PP left! Using Struggle!")
-            input("  Press Enter...")
+            pause("  Press Enter...")
             return {"name": "Struggle", "type": "Normal", "damage": 50}
 
         while True:

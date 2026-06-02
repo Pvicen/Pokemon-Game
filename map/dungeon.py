@@ -7,6 +7,7 @@ from ..game.ui_menus import open_bag_menu, open_pokedex, show_team_summary
 from .player import PlayerState
 from .events import check_collision
 from .terminal import RESET, BG_DARK, VIEWPORT_W, VIEWPORT_H, render_frame
+from ..ui_common import pause
 
 DUNGEON_WIDTH  = 60
 DUNGEON_HEIGHT = 30
@@ -171,7 +172,7 @@ def run_dungeon(player_trainer, *, start_pos=None, defeated_dict=None,
                           current_map="main", defeated_dict=_cur_dict(),
                           cleared_markers_dict=cleared_markers_dict, steps=steps)
                 print("\n  You climb out of the cave (west)...")
-                input("  Press Enter to return to the overworld...")
+                pause("  Press Enter to return to the overworld...")
                 return "exit_west"
 
             elif (new_pos[0], new_pos[1]) == DUNGEON_EXIT_EAST_POS:
@@ -179,7 +180,7 @@ def run_dungeon(player_trainer, *, start_pos=None, defeated_dict=None,
                           current_map="main", defeated_dict=_cur_dict(),
                           cleared_markers_dict=cleared_markers_dict, steps=steps)
                 print("\n  You emerge from the east side of the cave...")
-                input("  Press Enter to continue...")
+                pause("  Press Enter to continue...")
                 return "exit_east"
 
             else:

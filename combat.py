@@ -15,6 +15,7 @@ from .utils import determine_attack_order
 from .experience import ExperienceManager
 from .game.ui_utils import _hp_bar
 from .abilities import fire_on_entry, fire_pre_damage, fire_on_hit_received
+from .ui_common import pause
 
 
 CLEAR_CMD = "cls" if os.name == "nt" else "clear"
@@ -534,7 +535,7 @@ def pokemon_combat(
     fire_on_entry(trainer_a.ActivePokemon, trainer_b.ActivePokemon, log)
     fire_on_entry(trainer_b.ActivePokemon, trainer_a.ActivePokemon, log)
     print("  ⚔️  BATTLE START!")
-    input("  Press Enter to begin...")
+    pause("  Press Enter to begin...")
 
     round_n = 1
     while True:
@@ -582,7 +583,7 @@ def pokemon_combat(
 
         if result == "captured":
             redraw()
-            input("  Press Enter to continue...")
+            pause("  Press Enter to continue...")
             _cleanup_battle(trainer_a, trainer_b)
             return "captured"
 
@@ -602,7 +603,7 @@ def pokemon_combat(
                         print(f"  {line}")
                 except Exception:
                     pass
-            input("  Press Enter to continue...")
+            pause("  Press Enter to continue...")
             _cleanup_battle(trainer_a, trainer_b)
             return None if fled else winner_tr.name
 
@@ -614,7 +615,7 @@ def pokemon_combat(
                     print(f"  {line}")
             except Exception:
                 pass
-            input("  Press Enter to continue...")
+            pause("  Press Enter to continue...")
             _cleanup_battle(trainer_a, trainer_b)
             return first_trainer.name
 
@@ -632,7 +633,7 @@ def pokemon_combat(
 
         if result2 == "captured":
             redraw()
-            input("  Press Enter to continue...")
+            pause("  Press Enter to continue...")
             _cleanup_battle(trainer_a, trainer_b)
             return "captured"
 
@@ -652,7 +653,7 @@ def pokemon_combat(
                         print(f"  {line}")
                 except Exception:
                     pass
-            input("  Press Enter to continue...")
+            pause("  Press Enter to continue...")
             _cleanup_battle(trainer_a, trainer_b)
             return None if fled else winner_tr.name
 
@@ -679,12 +680,12 @@ def pokemon_combat(
                                 print(f"  {line}")
                         except Exception:
                             pass
-                        input("  Press Enter to continue...")
+                        pause("  Press Enter to continue...")
                         _cleanup_battle(trainer_a, trainer_b)
                         return winner_tr.name
 
         # ── End of round: show result and wait for player ──
         redraw()
-        input("  Press Enter to continue...")
+        pause("  Press Enter to continue...")
 
         round_n += 1

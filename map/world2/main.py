@@ -10,6 +10,7 @@ from ...game.encounters import (
 )
 from ...game.ui_menus import open_bag_menu, open_pokedex, show_team_summary
 from ...game.respawn import check_respawn
+from ...ui_common import pause
 from .. import _heal_at_pokemon_center
 from ..player import PlayerState
 from ..events import check_collision
@@ -49,7 +50,7 @@ def _chapter2_complete_cinematic(player_trainer) -> None:
     print("  You have conquered the new world — Chapter 2 is complete.")
     print("\n  ...Yet the world remains open. Explore, train, and grow stronger.")
     print("═" * 52)
-    input("  Press Enter to continue...")
+    pause("  Press Enter to continue...")
 
 
 def run_world2_map(player_trainer, *, start_pos=None, defeated_dict=None,
@@ -115,7 +116,7 @@ def run_world2_map(player_trainer, *, start_pos=None, defeated_dict=None,
             if (new_pos[0], new_pos[1]) == WORLD2_RETURN_PORTAL:
                 _save(new_pos[0], new_pos[1])
                 print("\n  The portal hums and the air shimmers...")
-                input("  Press Enter to return to your home world...")
+                pause("  Press Enter to return to your home world...")
                 return "travel_to_world1"
 
             elif (new_pos[0], new_pos[1]) == WORLD2_PC_POS:

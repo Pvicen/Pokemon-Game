@@ -6,6 +6,7 @@ from ..trainers import Trainer
 from ..combat import pokemon_combat
 from ..controllers import IAcontroller
 from .setup_game import create_trainer_instance, get_zone_for_position, get_zone_by_id, _build_pokemon
+from ..ui_common import pause
 
 
 def _player_has_alive_pokemon(player_trainer: Trainer) -> bool:
@@ -17,7 +18,7 @@ def _show_dialogue(name: str, lines: list) -> None:
         return
     for line in lines:
         print(f"\n  {name}: \"{line}\"")
-        input("  ...")
+        pause("  ...")
 
 
 def _give_reward(player_trainer: Trainer, reward_pool: list) -> None:
@@ -50,13 +51,13 @@ def trigger_encounter(map_obj: dict, player_trainer: Trainer) -> bool:
     if setup.is_friendly:
         _show_dialogue(setup.name, setup.dialogue)
         _give_reward(player_trainer, setup.reward_pool)
-        input("  Press Enter to continue...")
+        pause("  Press Enter to continue...")
         return True
 
     if not _player_has_alive_pokemon(player_trainer):
         print("\n  Your Pokemon are too exhausted to battle!")
         print("  Find a Pokemon Center to heal your team.")
-        input("  Press Enter to continue...")
+        pause("  Press Enter to continue...")
         return False
 
     npc_trainer = create_trainer_instance(setup)
@@ -68,7 +69,7 @@ def trigger_encounter(map_obj: dict, player_trainer: Trainer) -> bool:
 
     _show_dialogue(setup.name, setup.dialogue)
     print(f"\n  {setup.name} wants to battle!")
-    input("  Press Enter to start...")
+    pause("  Press Enter to start...")
 
     winner = pokemon_combat(player_trainer, npc_trainer, pause_between_turns=True)
 
@@ -80,7 +81,7 @@ def trigger_encounter(map_obj: dict, player_trainer: Trainer) -> bool:
     else:
         print("\n  You lost... head to a Pokemon Center to heal your team.")
 
-    input("  Press Enter to return to map...")
+    pause("  Press Enter to return to map...")
     return winner == player_trainer.name
 
 
@@ -92,7 +93,7 @@ def trigger_wild_marker_encounter(marker_obj: dict, player_trainer: Trainer) -> 
     if not _player_has_alive_pokemon(player_trainer):
         print("\n  Your Pokemon are too exhausted to battle!")
         print("  Find a Pokemon Center to heal your team.")
-        input("  Press Enter to continue...")
+        pause("  Press Enter to continue...")
         return False
 
     from ..data_io import load_pokemons, load_attacks
@@ -108,7 +109,7 @@ def trigger_wild_marker_encounter(marker_obj: dict, player_trainer: Trainer) -> 
 
     player_trainer.register_seen(name)
     print(f"\n  A wild {name} (Lv. {level}) is blocking your path!")
-    input("  Press Enter to start...")
+    pause("  Press Enter to start...")
 
     winner = pokemon_combat(player_trainer, wild_trainer, pause_between_turns=True, wild=True)
 
@@ -123,7 +124,7 @@ def trigger_wild_marker_encounter(marker_obj: dict, player_trainer: Trainer) -> 
     else:
         print(f"\n  You were defeated by the wild {name}...")
 
-    input("  Press Enter to return to map...")
+    pause("  Press Enter to return to map...")
 
     return winner == "captured" or winner == player_trainer.name
 
@@ -163,7 +164,7 @@ def trigger_wild_encounter(x: int, y: int, player_trainer: Trainer, zone_id: str
 
     player_trainer.register_seen(entry.name)
     print(f"\n  A wild {entry.name} (Lv. {level}) appeared!")
-    input("  Press Enter to start...")
+    pause("  Press Enter to start...")
 
     winner = pokemon_combat(player_trainer, wild_trainer, pause_between_turns=True, wild=True)
 
@@ -178,4 +179,4 @@ def trigger_wild_encounter(x: int, y: int, player_trainer: Trainer, zone_id: str
     else:
         print(f"\n  You were defeated by the wild {entry.name}...")
 
-    input("  Press Enter to return to map...")
+    pause("  Press Enter to return to map...")

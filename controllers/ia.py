@@ -3,22 +3,15 @@ import random
 from ..models import Pokemon
 from ..damage import get_effectiveness, damage_without_element, calculate_damage
 from ..trainers import Trainer
+from ..ui_common import collect_attacks
 
 class IAcontroller():
 
 
     @staticmethod
     def _all_attacks_of(pokemon):
-
-        all_attacks = []
-
-        if getattr(pokemon, "special_attacks", None):
-            all_attacks.extend(list(pokemon.special_attacks))
-
-        if getattr(pokemon, "normal_attacks", None):
-            all_attacks.extend(list(pokemon.normal_attacks))
-
-        return (all_attacks if all_attacks else None)
+        attacks = collect_attacks(pokemon)
+        return attacks if attacks else None
 
 
     @staticmethod

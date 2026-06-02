@@ -7,6 +7,7 @@ from ..game.ui_menus import open_bag_menu, open_pokedex, show_team_summary
 from .player import PlayerState
 from .events import check_collision
 from .terminal import RESET, BG_DARK, VIEWPORT_W, VIEWPORT_H, render_frame
+from ..ui_common import pause
 
 DUNGEON_PN_WIDTH  = 40
 DUNGEON_PN_HEIGHT = 20
@@ -104,7 +105,7 @@ def _champion_cinematic(player_trainer) -> None:
     print("\n  The legend of this cave has been rewritten.")
     print("  A new horizon stirs beyond the darkness...")
     print("═" * 46)
-    input("  Press Enter to continue...")
+    pause("  Press Enter to continue...")
 
 
 # ---------------------------------------------------------------------------
@@ -178,7 +179,7 @@ def run_dungeon_pn(player_trainer, *, start_pos=None, defeated_dict=None,
                           current_map="main", defeated_dict=_cur_dict(),
                           cleared_markers_dict=cleared_markers_dict, steps=steps)
                 print("\n  You emerge from the depths of the cave...")
-                input("  Press Enter to return to Pueblo Nuevo...")
+                pause("  Press Enter to return to Pueblo Nuevo...")
                 return "exit_pn"
 
             else:
@@ -205,7 +206,7 @@ def run_dungeon_pn(player_trainer, *, start_pos=None, defeated_dict=None,
                                           cleared_markers_dict=cleared_markers_dict, steps=steps,
                                           chapter2_unlocked=True)
                                 print("\n  You emerge victorious from the depths...")
-                                input("  Press Enter to return to Pueblo Nuevo...")
+                                pause("  Press Enter to return to Pueblo Nuevo...")
                                 return "exit_pn"
                     save_game(player_trainer, new_pos[0], new_pos[1], slot_name,
                               current_map="dungeon_pn", defeated_dict=_cur_dict(),
