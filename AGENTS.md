@@ -7,9 +7,9 @@ Caja que él manda.
 
 ## Método C.C.D. y escalada de modelos
 
-**C**ajas, **C**ontratos y **D**euda Técnica. Documento maestro de Vicente (2026-09-25), piedra
-angular de todo repo bajo `C:\Dev`; se reproduce igual en cada `AGENTS.md`. La IA solo ejecuta lo
-que Vicente manda por Cajas.
+**C**ajas, **C**ontratos y **D**euda Técnica. Documento maestro de Vicente (2026-09-25; §6
+añadido el 2026-10-08), piedra angular de todo repo bajo `C:\Dev`; se reproduce igual en cada
+`AGENTS.md`. La IA solo ejecuta lo que Vicente manda por Cajas.
 
 ### 1. Ley primera: avance sobre perfección
 El objetivo del desarrollador y las IAs es alcanzar el Producto Mínimo Viable (MVP). Si el «Camino
@@ -60,6 +60,23 @@ Feliz» funciona y no hay riesgos graves, se aprueba y se avanza.
   modelos anteriores fracasan resolviendo un crasheo grave, se le pasa el problema a Astra para que
   diagnostique y repare.
 
+### 6. Lotes y Cajas críticas (enmienda de Vicente, 2026-10-08)
+Antes de programar, cada Caja se clasifica. **Ante la duda, es crítica.**
+* **Caja de lote (fácil):** documentación o código satélite, con su Contrato aprobado, que no usa
+  la salida de otra Caja del mismo lote ni toca el núcleo del repo (esquema de la base de datos,
+  migraciones, protocolo, seguridad, núcleo protegido). Se hacen **hasta 5 seguidas**, una detrás
+  de otra y sin pedir permiso entre ellas, cada una programada solo contra su Contrato, con su gate
+  en verde y su propio commit en la rama. Si necesita mirar el código de otra, no es de lote.
+* **Caja crítica:** la que toca el núcleo (p. ej. crear la base de datos) o un algoritmo central.
+  Se hace **sola**, de una en una.
+* **Parada:** al terminar un lote o una Caja crítica, la IA se detiene para la verificación y el
+  arbitraje de Vicente. El push y el merge, solo con su orden.
+* **Errores dentro de un lote:** lo medio y lo bajo va a `DEUDA_TECNICA.md` y el lote sigue. Ante
+  algo Bloqueante o Alto, el lote se detiene: esa Caja no se commitea, las anteriores se quedan y
+  se avisa a Vicente.
+* **Modelo:** lo fija la matriz (§5). Un lote es Nivel 1; una Caja crítica también, salvo si es un
+  cuello de botella algorítmico (Nivel 3). Un cambio de rumbo sigue siendo Nivel 2 o 4.
+
 ## Cajas de este repo
 
 | Caja | Ficheros | Contrato que la une al resto |
@@ -72,6 +89,10 @@ Feliz» funciona y no hay riesgos graves, se aprueba y se avanza.
 | Orquestación | `main.py` | Solo la máquina de estados; despacha por `(current_world, current_map)` |
 
 `ui_common.py` es una hoja compartida (solo stdlib) y la usan todas las Cajas.
+
+**Lotes (C.C.D. §6):** son críticas las Cajas Guardado (partidas de Vicente) y Orquestación, y todo
+cambio de esquema en `docs/contratos.md`; Datos, Combate, Mapa y Juego pueden ir en lote, cada una
+con el gate de «Ejecutar y verificar» en verde y su commit.
 
 ## Qué no hacer
 
